@@ -1,7 +1,11 @@
 import { Client, Session } from '@heroiclabs/nakama-js';
+import type { Socket } from '@heroiclabs/nakama-js';
 
 let client: Client | null = null;
 let session: Session | null = null;
+let socket: Socket | null = null;
+
+export type NakamaSocket = Socket;
 
 export function getClient(): Client {
   if (!client) {
@@ -37,6 +41,45 @@ export function getSession(): Session | null {
     session = null;
   }
   return session;
+}
+
+/** Connects a realtime socket for match play. */
+export async function connectSocket(s: Session): Promise<Socket> {
+  if (socket) return socket;
+  socket = getClient().createSocket(false, false);
+  await socket.connect(s, false);
+  return socket;
+}
+
+export async function disconnectSocket() {
+  if (socket) {
+    socket.disconnect(false);
+    socket = null;
+  }
+}
+
+/** Registers a disconnect handler; returns a cleanup fn. */
+export function onSocketDisconnect(s: Socket, cb: () => void): () => void {
+  s.ondisconnect = cb;
+  return () => {
+    s.ondisconnect = () => {};
+  };
+}
+
+/** Creates an authoritative match via socket.createMatch() and returns its id. */
+export async function createMatchViaSocket(s: Socket): Promise<string> {
+  const match = await s.createMatch();
+  return match.match_id;
+}
+
+/** Joins an existing authoritative match. */
+export async function joinMatch(s: Socket, matchId: string) {
+  await s.joinMatch(matchId);
+}
+
+/** Sends an input frame (JSON string) to the match on OP_INPUT. */
+export async function sendMatchInput(s: Socket, matchId: string, data: string) {
+  await s.sendMatchState(matchId, 1, data);
 }
 
 export interface ServerStats {

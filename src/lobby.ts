@@ -1,14 +1,41 @@
 import type { Settings } from './settings';
+import type { LeaderboardEntry, MatchRecord } from './net/leaderboard';
 
 export interface LobbyCallbacks {
   onStartMatch: () => void;
   onSettingsChange: (changes: Partial<Settings>) => void;
 }
 
+export interface LobbyActivity {
+  history: MatchRecord[];
+  leaderboard: LeaderboardEntry[];
+}
+
+function escapeHtml(value: string): string {
+  return value.replace(/[&<>"']/g, (char) => {
+    const entities: Record<string, string> = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;',
+    };
+    return entities[char];
+  });
+}
+
+function placementLabel(placement: number): string {
+  if (placement === 1) return '1st';
+  if (placement === 2) return '2nd';
+  if (placement === 3) return '3rd';
+  return `${placement}th`;
+}
+
 export function showLobby(
   stats: { level: number; xp: number; wins: number; kills: number; matches: number },
   settings: Settings,
-  callbacks: LobbyCallbacks
+  callbacks: LobbyCallbacks,
+  activity: LobbyActivity = { history: [], leaderboard: [] }
 ) {
   const existing = document.getElementById('lobby-overlay');
   if (existing) existing.remove();
@@ -23,6 +50,28 @@ export function showLobby(
 
   const row = (label: string, sel: string) =>
     `<label style="display:flex;justify-content:space-between;align-items:center;gap:10px;">${label}${sel}</label>`;
+
+  const historyMarkup =
+    activity.history.length === 0
+      ? '<span style="color:#889;">No matches played yet</span>'
+      : activity.history
+          .slice(0, 5)
+          .map(
+            (match) =>
+              `<div style="display:flex;justify-content:space-between;gap:16px;"><span>${placementLabel(match.placement)} · ${match.kills} K</span><span style="color:${match.won ? '#4f4' : '#889'};">${match.won ? 'WIN' : 'LOSS'}</span></div>`
+          )
+          .join('');
+
+  const leaderboardMarkup =
+    activity.leaderboard.length === 0
+      ? '<span style="color:#889;">Connect online to load rankings</span>'
+      : activity.leaderboard
+          .slice(0, 10)
+          .map(
+            (entry, index) =>
+              `<div style="display:grid;grid-template-columns:24px minmax(80px,1fr) auto auto;gap:8px;"><span>${index + 1}</span><span>${escapeHtml(entry.username)}</span><span>${placementLabel(entry.placement)}</span><span>${entry.kills} K</span></div>`
+          )
+          .join('');
 
   overlay.innerHTML = `
     <h1 style="font-size:46px;margin:0 0 6px;letter-spacing:4px;text-transform:uppercase;color:#4af;">ROBOT ARENA</h1>
@@ -102,6 +151,16 @@ export function showLobby(
             )
           )}
         </div>
+      </div>
+    </div>
+    <div style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin-top:14px;max-width:760px;width:calc(100% - 32px);">
+      <div style="background:rgba(255,255,255,0.05);padding:10px 18px;border-radius:8px;font-size:13px;min-width:220px;flex:1;">
+        <b style="color:#8af;display:block;font-size:11px;margin-bottom:6px;">RECENT MATCHES</b>
+        <div style="display:flex;flex-direction:column;gap:5px;">${historyMarkup}</div>
+      </div>
+      <div style="background:rgba(255,255,255,0.05);padding:10px 18px;border-radius:8px;font-size:13px;min-width:260px;flex:1;">
+        <b style="color:#8af;display:block;font-size:11px;margin-bottom:6px;">SEASON LEADERBOARD</b>
+        <div style="display:flex;flex-direction:column;gap:5px;">${leaderboardMarkup}</div>
       </div>
     </div>
   `;

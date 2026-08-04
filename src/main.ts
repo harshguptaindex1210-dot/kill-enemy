@@ -4,6 +4,7 @@ import { AudioManager } from './audio';
 import { loadSettings, saveSettings, type Settings } from './settings';
 import { defaultStats, recordMatchOnce, createWriteId, type PlayerStats } from './persistence';
 import { showAd } from './ad';
+import { fetchLeaderboard, loadLocalHistory } from './net/leaderboard';
 
 const STATS_KEY = 'robot_arena_stats_v1';
 
@@ -99,7 +100,8 @@ function init() {
     document.documentElement.dataset.quality = quality;
   }
 
-  function showLobbyUI() {
+  async function showLobbyUI() {
+    const [history, leaderboard] = await Promise.all([loadLocalHistory(), fetchLeaderboard()]);
     showLobby(
       {
         level: stats.level,
@@ -119,7 +121,8 @@ function init() {
           applyQuality(settings.quality);
           audio.setVolume(settings.volume);
         },
-      }
+      },
+      { history, leaderboard }
     );
   }
 

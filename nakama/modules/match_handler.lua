@@ -275,6 +275,56 @@ local function apply_input(p, input, dt)
   p.x, p.z = clamp_pos(p.x, p.z)
 end
 
+-- ── server-side bot AI (mirrors src/bots.ts decideBotInput) ──────────────
+local BOT_SIGHT_RANGE = 70
+local BOT_FIRE_INTERVAL = 900
+
+local function bot_input(state, p)
+  local nearest, nearest_d = nil, nil
+  for uid, o in pairs(state.players) do
+    if uid ~= p.user_id and o.alive then
+      local d = dist2d(p.x, p.z, o.x, o.z)
+      if not nearest or d < nearest_d then
+        nearest, nearest_d = o, d
+      end
+    end
+  end
+
+  local input = {
+    forward = false, backward = false, left = false, right = false,
+    sprint = false, jump = false, aim = false, fire = false, reload = false,
+    mouseX = 0, mouseY = 0,
+  }
+
+  local tx, tz = state.zone_cx, state.zone_cz
+  local goal = "zone"
+  if nearest and nearest_d <= BOT_SIGHT_RANGE then
+    goal = "combat"
+    tx, tz = nearest.x, nearest.z
+  end
+
+  if goal == "combat" then
+    local dz = tz - p.z
+    local dx = tx - p.x
+    local dist = math.max(dist2d(p.x, p.z, tx, tz), 0.1)
+    if dist > 14 then input.forward = true end
+    if dist < 8 then input.backward = true end
+    -- turn toward target
+    local target_yaw = math.atan2(-dx, -dz)
+    input.mouseX = -(wrap_angle(target_yaw - p.yaw)) / 0.002
+    if not p.last_shot_ms or state.time_ms - p.last_shot_ms >= BOT_FIRE_INTERVAL then
+      input.fire = true
+      p.last_shot_ms = state.time_ms
+    end
+  else
+    local dist = math.max(dist2d(p.x, p.z, tx, tz), 0.1)
+    if dist > 5 then input.forward = true end
+    local target_yaw = math.atan2(-(tx - p.x), -(tz - p.z))
+    input.mouseX = -(wrap_angle(target_yaw - p.yaw)) / 0.002
+  end
+  return input
+end
+
 -- ── hitscan (100 ms rewind) ───────────────────────────────────────────────
 local function ray_hit(ax, ay, az, dx, dy, dz, tx, ty, tz, radius)
   local len = math.sqrt(dx*dx + dy*dy + dz*dz)
@@ -369,16 +419,18 @@ local function match_init(context, params)
   params = params or {}
   local seed = tonumber(params.map_seed) or 12345
   local bot_count = tonumber(params.bot_count) or 0
+  local mode = params.mode or "online"
   local rng = seeded_rng(seed)
 
   local state = {
     match_id = context.match_id,
-    label = "battle-royale",
+    label = "battle-royale|" .. mode,
     tick = 0,
     time_ms = 0,
     open = true,
     map_seed = seed,
     bot_count = bot_count,
+    mode = mode,
     players = {},
     pending_inputs = {},
     loot = generate_loot(seed),
@@ -393,7 +445,7 @@ local function match_init(context, params)
     airdrop_tick = 0,
   }
 
-  nk.logger_info(string.format("match_init seed=%d bots=%d", seed, bot_count))
+  nk.logger_info(string.format("match_init seed=%d bots=%d mode=%s", seed, bot_count, mode))
 
   -- pre-spawn AI bots (server-side, no client input)
   for i = 1, bot_count do
@@ -478,7 +530,8 @@ local function match_loop(context, dispatcher, tick, state, messages)
     for uid, p in pairs(state.players) do
       if p.alive then
         push_history(p)
-        local input = state.pending_inputs[uid] or {}
+        local is_bot = string.sub(uid, 1, 4) == "bot_"
+        local input = is_bot and bot_input(state, p) or (state.pending_inputs[uid] or {})
         apply_input(p, input, TICK_DT)
         try_fire(state, p, input)
         try_pickup_loot(state, p)
@@ -525,11 +578,18 @@ local function match_signal(context, dispatcher, tick, state, data)
   return state
 end
 
--- matchmaker hook: create authoritative match when players matched
+-- matchmaker hook: create authoritative match when players matched (#40).
+-- Fill with server-side bots so lobbies cap at 10 total.
 local function matchmaker_matched(context, matched_users)
   nk.logger_info(string.format("matchmaker matched %d users", #matched_users))
+  local humans = math.min(#matched_users, 10)
+  local bots = 10 - humans
   local seed = math.floor(nk.time() % 100000)
-  local match_id = nk.match_create("battle_royale", { map_seed = seed, bot_count = 0 })
+  local match_id = nk.match_create("battle_royale", {
+    map_seed = seed,
+    bot_count = bots,
+    mode = "online",
+  })
   return match_id
 end
 

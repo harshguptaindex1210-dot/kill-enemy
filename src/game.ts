@@ -19,6 +19,7 @@ import type { AudioManager } from './audio';
 import type { Settings } from './settings';
 import { formatPlacement, formatTimer, formatCompassBearing } from './feedback';
 import { calculateXP } from './match';
+import { recordMatchResult } from './net/leaderboard';
 
 export interface MatchSummary {
   won: boolean;
@@ -524,6 +525,14 @@ export class MatchGame {
     const spectateOverlay = document.getElementById('spectate-overlay');
     if (spectateOverlay) spectateOverlay.remove();
     const summary = summarizeMatch(this.sim);
+    void recordMatchResult({
+      matchId: `local-${this.sim.seed}`,
+      placement: summary.placement,
+      kills: summary.kills,
+      damage: summary.damage,
+      won: summary.won,
+      mode: 'local',
+    });
     this.callbacks.onFinished(summary);
     this.showResults(summary);
   }

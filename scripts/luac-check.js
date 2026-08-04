@@ -68,8 +68,12 @@ if (tryDockerLuac(files)) {
 // No luac/docker: offline fallback — verify modules exist and basic structure
 for (const f of files) {
   const src = readFileSync(f, 'utf8');
-  if (!src.includes('nk.register_match')) {
-    console.error(`missing nk.register_match in ${f}`);
+  const hasRegistration =
+    src.includes('nk.register_match') ||
+    src.includes('nk.register_rpc') ||
+    src.includes('nk.register_hook');
+  if (!hasRegistration) {
+    console.error(`no nk registration found in ${f}`);
     process.exit(1);
   }
 }
