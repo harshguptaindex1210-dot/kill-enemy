@@ -187,6 +187,7 @@ export class MatchSim {
   private rng: () => number;
   private spawnPoints: THREE.Vector3[] = [];
   private zoneDespawned = new Set<number>();
+  private humanInput: PlayerInput | undefined;
 
   constructor(config: MatchSimConfig = {}) {
     this.seed = config.seed ?? Math.floor(Math.random() * 100000);
@@ -305,6 +306,7 @@ export class MatchSim {
   update(dt: number, humanInput?: PlayerInput) {
     const dtMs = dt * 1000;
     this.time += dtMs;
+    this.humanInput = humanInput;
     tickMatch(this.match, dtMs, this.time);
     if (
       this.match.phase === 'lobby' ||
@@ -654,12 +656,35 @@ export class MatchSim {
         (u) => u.alive && u.inVehicleId === v.id
       );
       if (occupant) {
+        const input = this.getVehicleInput(occupant.id);
+        updateVehicle(v.state, input.throttle, input.steer, dt, GROUND_Y);
+        // Sync unit position with vehicle
+        occupant.player.position.copy(v.state.position);
+        // Note: vehicle mesh rotation is synced in game.ts; player yaw not needed for vehicle control
         const dmg = this.zone.damagePerSec * dt;
         if (dmg > 0 && this.zone.isOutsideZone(v.state.position)) {
           this.applyDamage('zone', occupant.id, dmg, 'zone');
         }
+        if (v.state.health <= 0) {
+          this.eject(occupant);
+        }
       }
     }
+  }
+
+  private getVehicleInput(unitId: string): { throttle: number; steer: number } {
+    const unit = this.units.get(unitId);
+    if (!unit) return { throttle: 0, steer: 0 };
+    if (!unit.isBot && this.humanInput) {
+      let throttle = 0;
+      if (this.humanInput.forward) throttle = 1;
+      else if (this.humanInput.backward) throttle = -1;
+      let steer = 0;
+      if (this.humanInput.left) steer = -1;
+      else if (this.humanInput.right) steer = 1;
+      return { throttle, steer };
+    }
+    return { throttle: 0, steer: 0 };
   }
 
   private updateAirdrops() {
