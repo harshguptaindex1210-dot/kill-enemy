@@ -689,8 +689,15 @@ export class MatchGame {
         : 'FISTS';
     const ammo = weapon ? weapon.ammo : 0;
     const reserve = weapon ? (human.inventory.ammo[weapon.def.type] ?? 0) : 0;
-
     const zoneTimeMs = this.zoneSys.phaseTotalDuration - this.zoneSys.phaseTime;
+
+    let healProgress = 0;
+    if (human.healing) {
+      const dur = human.healing.kind === 'medkit' ? 4000 : 2000;
+      const elapsed = dur - (human.healing.until - this.sim.time);
+      healProgress = Math.max(0, Math.min(1, elapsed / dur));
+    }
+
     const data: HUDData = {
       kills: this.sim.match.players[this.humanId].kills,
       alive: this.sim.match.aliveCount,
@@ -702,12 +709,29 @@ export class MatchGame {
       reloading: weapon ? weapon.reloading : false,
       grenades: human.grenadeCount,
       heals: human.heals.medkit + human.heals.bandage,
+      matchTimer: formatTimer(this.sim.time),
+      phaseLabel: this.phaseLabel(),
       zoneTimer: formatTimer(zoneTimeMs * 1000),
+      healProgress,
       inStorm: human.alive && this.zoneSys.isOutsideZone(human.player.position),
       justHit: human.lastDamageTime > 0 && this.sim.time - human.lastDamageTime < 150,
       prompt: human.alive ? computeInteractionPrompt(this.sim, this.humanId) : '',
     };
     this.hud.update(data);
+  }
+
+  private phaseLabel(): string {
+    const labels: Record<string, string> = {
+      lobby: 'LOBBY',
+      countdown: 'STARTING',
+      dropping: 'JUMP!',
+      playing: 'IN MATCH',
+      dead: 'ELIMINATED',
+      spectate: 'SPECTATING',
+      ended: 'FINISHED',
+      results: 'RESULTS',
+    };
+    return labels[this.sim.match.phase] ?? this.sim.match.phase.toUpperCase();
   }
 
   private updateMinimap() {
@@ -725,6 +749,11 @@ export class MatchGame {
         { x: -300, z: 0 },
         { x: 0, z: -300 },
       ],
+      loot: this.sim.loot.map((l) => ({
+        x: l.position.x,
+        z: l.position.z,
+        collected: l.collected,
+      })),
       enemies: Array.from(this.sim.units.values()).map((u) => ({
         x: u.player.position.x,
         z: u.player.position.z,

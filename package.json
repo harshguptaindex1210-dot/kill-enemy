@@ -13,6 +13,8 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write \"src/**/*.{ts,tsx,json,css,md}\" \"tests/**/*.ts\"",
     "typecheck": "tsc --noEmit",
+    "sim:game": "tsx scripts/simulate-game.ts",
+    "smoke": "node scripts/smoke.mjs",
     "bench:render": "npm run bench:render:low && npm run bench:render:med",
     "bench:render:low": "node scripts/bench-render.js low",
     "bench:render:med": "node scripts/bench-render.js medium"
@@ -28,6 +30,7 @@
     "jsdom": "^24.1.0",
     "prettier": "^3.3.2",
     "puppeteer": "^22.12.1",
+    "tsx": "^4.23.5",
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.62.1",
     "vite": "^5.3.3",

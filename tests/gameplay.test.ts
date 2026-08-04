@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { MatchSim } from '../src/gameplay';
+import { createWeapon } from '../src/weapons';
 
 function makeSim(botCount = 3, seed = 12345): MatchSim {
   return new MatchSim({ seed, botCount, time: 0 });
@@ -87,14 +88,95 @@ describe('MatchSim', () => {
     sim.startMatch();
     runFor(sim, 9);
     const player = sim.units.get('player')!;
+    player.player.position.set(0, 0.9, 0);
     const spawn = sim.loot[0];
     spawn.collected = false;
-    spawn.position.copy(player.player.position);
+    spawn.position.set(0, 0.5, 0);
     const ok = sim.contextAction('player');
     expect(ok).toBe(true);
     expect(spawn.collected).toBe(true);
     runFor(sim, 31);
     expect(spawn.collected).toBe(false);
+  });
+
+  it('despawns loot inside the closing zone and never respawns it', () => {
+    const sim = makeSim(1);
+    sim.startMatch();
+    runFor(sim, 9);
+    const spawn = sim.loot[0];
+    spawn.collected = false;
+    spawn.position.set(480, 0.5, 480);
+    runFor(sim, 1);
+    expect(spawn.collected).toBe(true);
+    sim.lootRespawns.push({ id: spawn.id, until: sim.time + 1000 });
+    runFor(sim, 2);
+    expect(spawn.collected).toBe(true);
+  });
+
+  it('pickup fills weapon slots in order, then full-slot replacement drops the old weapon', () => {
+    const sim = makeSim(1);
+    const player = sim.units.get('player')!;
+    player.inventory.weapons = ['rifle', null];
+    player.inventory.weaponIndex = 0;
+    player.weapons = [createWeapon('rifle'), null];
+    sim.loot.push({
+      id: 1001,
+      position: player.player.position.clone(),
+      loot: { type: 'weapon', subtype: 'pistol', amount: 1 },
+      collected: false,
+    });
+    expect(sim.contextAction('player')).toBe(true);
+    expect(player.weapons[1]!.def.type).toBe('pistol');
+
+    player.inventory.weaponIndex = 0;
+    sim.loot.push({
+      id: 1002,
+      position: player.player.position.clone(),
+      loot: { type: 'weapon', subtype: 'rifle', amount: 1 },
+      collected: false,
+    });
+    const before = sim.loot.length;
+    expect(sim.contextAction('player')).toBe(true);
+    expect(player.weapons[0]!.def.type).toBe('rifle');
+    expect(player.weapons[1]!.def.type).toBe('pistol');
+    expect(sim.loot.length).toBe(before + 1);
+    const dropped = sim.loot[sim.loot.length - 1];
+    expect(dropped.loot.subtype).toBe('rifle');
+    expect(dropped.position.distanceTo(player.player.position)).toBeLessThan(0.1);
+  });
+
+  it('ammo loot pools into inventory reserves', () => {
+    const sim = makeSim(1);
+    const player = sim.units.get('player')!;
+    const before = player.inventory.ammo.rifle;
+    sim.loot.push({
+      id: 3001,
+      position: player.player.position.clone(),
+      loot: { type: 'ammo', subtype: 'rifle', amount: 30 },
+      collected: false,
+    });
+    expect(sim.contextAction('player')).toBe(true);
+    expect(player.inventory.ammo.rifle).toBe(before + 30);
+  });
+
+  it('armor loot caps at 100', () => {
+    const sim = makeSim(1);
+    const player = sim.units.get('player')!;
+    player.armor = 90;
+    sim.loot.push({
+      id: 4001,
+      position: player.player.position.clone(),
+      loot: { type: 'armor', subtype: 'vest', amount: 50 },
+      collected: false,
+    });
+    expect(sim.contextAction('player')).toBe(true);
+    expect(player.armor).toBe(100);
+  });
+
+  it('healing is blocked at full health', () => {
+    const sim = makeSim(1);
+    sim.useHealing('player', 'medkit');
+    expect(sim.units.get('player')!.healing).toBeNull();
   });
 
   it('healing restores health after duration', () => {

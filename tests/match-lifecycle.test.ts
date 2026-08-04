@@ -42,6 +42,34 @@ describe('match countdown + drop timing', () => {
     expect(m.winnerId).toBeDefined();
   });
 
+  it('win by last alive: survivor takes placement 1', () => {
+    const m = createMatch(['p1', 'p2', 'p3']);
+    startCountdown(m, 0);
+    tickMatch(m, 1, 5000);
+    tickMatch(m, 1, 8000);
+    killPlayer(m, 'p3', 'p1');
+    expect(m.phase).toBe('playing');
+    killPlayer(m, 'p2', 'p1');
+    expect(m.phase).toBe('ended');
+    expect(m.winnerId).toBe('p1');
+    expect(m.players.p1.placement).toBe(1);
+    expect(m.players.p2.placement).toBe(2);
+    expect(m.players.p3.placement).toBe(3);
+  });
+
+  it('win by zone timeout: leader among survivors wins', () => {
+    const m = createMatch(['p1', 'p2', 'p3']);
+    startCountdown(m, 0);
+    tickMatch(m, 1, 5000);
+    tickMatch(m, 1, 8000);
+    registerDamage(m, 'p1', 100);
+    registerDamage(m, 'p2', 50);
+    m.maxDuration = 1000;
+    tickMatch(m, 1, 25 * 60 * 1000);
+    expect(m.phase).toBe('ended');
+    expect(m.winnerId).toBe('p1');
+  });
+
   it('no-one-alive end picks last killer', () => {
     const m = createMatch(['p1', 'p2']);
     killPlayer(m, 'p2', 'p1');

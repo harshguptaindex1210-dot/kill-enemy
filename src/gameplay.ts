@@ -16,7 +16,7 @@ import {
   type WeaponState,
   type WeaponType,
 } from './weapons';
-import { createInventory, pickupAmmo, pickupArmor, type Inventory } from './inventory';
+import { createInventory, pickupAmmo, type Inventory } from './inventory';
 import {
   createMeleeWeapon,
   startMeleeSwing,
@@ -173,6 +173,7 @@ export class MatchSim {
   private obstacles: { x: number; z: number; r: number }[];
   private rng: () => number;
   private spawnPoints: THREE.Vector3[] = [];
+  private zoneDespawned = new Set<number>();
 
   constructor(config: MatchSimConfig = {}) {
     this.seed = config.seed ?? Math.floor(Math.random() * 100000);
@@ -584,6 +585,12 @@ export class MatchSim {
 
   private updateZone(dt: number) {
     this.zone.update(dt);
+    for (const s of this.loot) {
+      if (!s.collected && this.zone.isOutsideZone(s.position)) {
+        s.collected = true;
+        this.zoneDespawned.add(s.id);
+      }
+    }
     const dmg = this.zone.damagePerSec * dt;
     if (dmg <= 0) return;
     for (const unit of this.units.values()) {
@@ -641,7 +648,7 @@ export class MatchSim {
       const r = this.lootRespawns[i];
       if (this.time >= r.until) {
         const s = this.loot.find((l) => l.id === r.id);
-        if (s) s.collected = false;
+        if (s && !this.zoneDespawned.has(r.id)) s.collected = false;
         this.lootRespawns.splice(i, 1);
       }
     }
@@ -688,14 +695,18 @@ export class MatchSim {
           unit.grenadeCount = Math.min(unit.grenadeCount + loot.amount, 5);
         } else {
           const type = loot.subtype as WeaponType;
-          const slot = unit.weapons[0] ? (unit.weapons[1] ? -1 : 1) : 0;
-          if (slot >= 0) {
+          if (unit.weapons[0] && unit.weapons[1]) {
+            const slot = Math.max(0, Math.min(unit.inventory.weaponIndex, 1));
+            const dropped = unit.weapons[slot]!.def.type;
+            unit.weapons[slot] = createWeapon(type);
+            unit.inventory.weapons[slot] = type;
+            this.dropLootPad(unit.player.position, dropped);
+          } else {
+            const slot = unit.weapons[0] ? 1 : 0;
             unit.weapons[slot] = createWeapon(type);
             unit.inventory.weapons[slot] = type;
             unit.inventory.weaponIndex = slot;
             unit.meleeMode = false;
-          } else {
-            pickupAmmo(unit.inventory, type, loot.amount);
           }
         }
         break;
@@ -703,15 +714,27 @@ export class MatchSim {
       case 'ammo':
         pickupAmmo(unit.inventory, loot.subtype, loot.amount);
         break;
-      case 'armor':
-        pickupArmor(unit.inventory, loot.amount);
-        unit.armor = unit.inventory.armor;
+      case 'armor': {
+        const capped = Math.min(unit.armor + loot.amount, 100);
+        unit.armor = capped;
+        unit.inventory.armor = capped;
         break;
+      }
       case 'heal':
         if (loot.subtype === 'medkit') unit.heals.medkit = Math.min(unit.heals.medkit + 1, 3);
         else unit.heals.bandage = Math.min(unit.heals.bandage + 1, 5);
         break;
     }
+  }
+
+  private dropLootPad(pos: THREE.Vector3, subtype: string) {
+    const id = this.loot.reduce((max, l) => Math.max(max, l.id), 0) + 1;
+    this.loot.push({
+      id,
+      position: pos.clone(),
+      loot: { type: 'weapon', subtype, amount: 1 },
+      collected: false,
+    });
   }
 
   enterVehicle(unitId: string): boolean {

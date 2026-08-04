@@ -7,6 +7,8 @@ export function createHUD(): { update: (data: HUDData) => void; remove: () => vo
     <div id="hud-top" style="position:absolute;top:12px;left:50%;transform:translateX(-50%);display:flex;gap:24px;background:rgba(0,0,0,0.5);padding:6px 16px;border-radius:4px;color:#fff;font-size:13px;">
       <span id="hud-kills">☠️ 0</span>
       <span id="hud-alive">👥 0 Alive</span>
+      <span id="hud-phase" style="color:#8af;">LOBBY</span>
+      <span id="hud-timer">⏲ 0:00</span>
       <span id="hud-zone" style="color:#8af;">⏱ 0:00</span>
       <span id="hud-storm" style="display:none;color:#f44;">⚠️ STORM</span>
     </div>
@@ -21,6 +23,7 @@ export function createHUD(): { update: (data: HUDData) => void; remove: () => vo
           <span>ARMOR</span><span id="hud-armor-num">0</span>
         </div>
         <div style="height:6px;width:140px;background:#333;border-radius:4px;overflow:hidden;"><div id="hud-armor-bar" style="height:100%;width:0%;background:#49f;border-radius:4px;transition:width 0.2s;"></div></div>
+        <div id="hud-heal-row" style="display:none;height:5px;width:140px;background:#333;border-radius:4px;overflow:hidden;"><div id="hud-heal-bar" style="height:100%;width:0%;background:#ffaa44;border-radius:4px;"></div></div>
       </div>
       <div id="hud-weapon" style="text-align:center;">
         <div id="hud-weapon-name" style="font-size:13px;font-weight:bold;">RIFLE</div>
@@ -42,6 +45,8 @@ export function createHUD(): { update: (data: HUDData) => void; remove: () => vo
       el.style.display = 'block';
       document.getElementById('hud-kills')!.textContent = `☠️ ${data.kills}`;
       document.getElementById('hud-alive')!.textContent = `👥 ${data.alive} Alive`;
+      document.getElementById('hud-phase')!.textContent = data.phaseLabel;
+      document.getElementById('hud-timer')!.textContent = `⏲ ${data.matchTimer}`;
       document.getElementById('hud-zone')!.textContent = `⏱ ${data.zoneTimer}`;
       document.getElementById('hud-health-bar')!.style.width =
         `${Math.max(0, Math.min(100, data.health))}%`;
@@ -57,6 +62,14 @@ export function createHUD(): { update: (data: HUDData) => void; remove: () => vo
       document.getElementById('hud-heals')!.textContent = String(data.heals);
       const stormEl = document.getElementById('hud-storm')!;
       stormEl.style.display = data.inStorm ? 'block' : 'none';
+      const healRow = document.getElementById('hud-heal-row')!;
+      if (data.healProgress > 0) {
+        healRow.style.display = 'block';
+        document.getElementById('hud-heal-bar')!.style.width =
+          `${Math.round(data.healProgress * 100)}%`;
+      } else {
+        healRow.style.display = 'none';
+      }
       const promptEl = document.getElementById('hud-prompt')!;
       if (data.prompt) {
         promptEl.textContent = data.prompt;
@@ -98,7 +111,10 @@ export interface HUDData {
   reloading: boolean;
   grenades: number;
   heals: number;
+  matchTimer: string;
+  phaseLabel: string;
   zoneTimer: string;
+  healProgress: number;
   inStorm: boolean;
   justHit: boolean;
   prompt: string;
@@ -149,6 +165,12 @@ export function createMinimap(): { update: (data: MinimapData) => void; remove: 
       ctx.fillStyle = '#555';
       for (const b of data.buildings) ctx.fillRect(b.x * s + ox - 2, b.z * s + oz - 2, 4, 4);
 
+      ctx.fillStyle = '#2f2';
+      for (const l of data.loot) {
+        if (l.collected) continue;
+        ctx.fillRect(l.x * s + ox - 1.5, l.z * s + oz - 1.5, 3, 3);
+      }
+
       ctx.fillStyle = '#f44';
       for (const e of data.enemies) {
         if (!e.alive) continue;
@@ -183,6 +205,7 @@ export interface MinimapData {
   sz: number;
   sr: number;
   buildings: { x: number; z: number }[];
+  loot: { x: number; z: number; collected: boolean }[];
   enemies: { x: number; z: number; alive: boolean }[];
   fullscreen?: boolean;
 }

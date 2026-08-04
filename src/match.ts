@@ -148,7 +148,7 @@ function forceEnd(match: MatchState) {
 export function calculateXP(match: MatchState, playerId: string): number {
   const p = match.players[playerId];
   if (!p) return 0;
-  const placementXP = Math.max(0, (match.aliveCount - p.placement + 1) * 10);
+  const placementXP = Math.max(10, (match.aliveCount - p.placement + 1) * 10);
   const killXP = p.kills * 25;
   const damageXP = Math.round(p.damage / 10);
   return placementXP + killXP + damageXP;
