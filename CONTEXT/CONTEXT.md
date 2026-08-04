@@ -28,6 +28,29 @@ A browser-based, 3D battle royale game set in a robot apocalypse — Titanfall-s
 | D13 | Persistence | Full — Nakama accounts + storage | Stats, inventory, progression |
 | D14 | Team | Solo developer | Scope must fit one person |
 
+## Current Effort — Production-Grade Completion (map: #23)
+
+The MVP shipped a playable single-match demo (main.ts vs 5 bots, no win/lose loop).
+This effort makes it a **fully functional battle royale** end to end. Decisions locked
+for this effort (extend the MVP cuts):
+
+| # | Decision | Choice |
+|---|----------|--------|
+| E1 | Game loop | Full BR lifecycle: lobby → countdown → drop → play → dead/spectate → results → lobby |
+| E2 | Modes | Local (bots-only, no Nakama needed) AND Online (Nakama authoritative, bots fill). Same sim code path. |
+| E3 | Zone | Live storm: shrinking ring + phase damage, schedule broadcast in snapshots online |
+| E4 | Loot | Pads across POIs; weapon/ammo/armor/meds; airdrop care packages mid-match |
+| E5 | Inventory | 2 weapon slots + melee + grenades; ammo pool; armor absorb; med use timers |
+| E6 | Progression | Placement + kills + damage → XP → level; persisted locally (local) and Nakama storage (online) |
+| E7 | Netcode | Server-authoritative (INV-4). Client rollback/prediction via existing netcode.ts wired to real snapshots |
+| E8 | Vehicles | In scope now (was D8-deferred): sedan + buggy, enter/exit/drive, zone-eligible |
+| E9 | Audio | Procedural WebAudio SFX, no asset files |
+| E10 | Combat feedback | Hit markers, damage numbers, kill feed, compass, match timer, alive counter |
+| E11 | Ads | Stubbed overlay between matches (unchanged from MVP) |
+| E12 | Settings | Persisted locally (quality, sensitivity, audio volume, camera mode) |
+| E13 | Bots | 3 difficulty profiles, permadeath, placement-aware; fill online lobbies to 10 |
+| E14 | Win condition | Last alive (or zone) wins; match hard-terminates ≤ 25 min (INV-5) |
+
 ## MVP Scope Cut
 
 To fit a solo dev in a browser, the MVP is **scoped down** from the full vision:

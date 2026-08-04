@@ -122,7 +122,8 @@ export function checkMeleeHit(
     if (dist > melee.def.range) continue;
 
     const angle = forward.angleTo(toTarget.clone().normalize());
-    if (angle > 0.8) continue;
+    // Increased angle threshold to allow wider melee swing (about 90 degrees)
+    if (angle > Math.PI / 2) continue;
 
     return { hit: true, targetId: t.id, damage: melee.def.damage };
   }
