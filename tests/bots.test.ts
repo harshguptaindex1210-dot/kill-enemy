@@ -71,6 +71,29 @@ describe('bot AI', () => {
     expect(input.forward).toBe(true);
   });
 
+  it('prioritizes zone safety over nearby loot', () => {
+    const c = ctx({
+      pos: new THREE.Vector3(0, 0, 0),
+      safeCenter: new THREE.Vector3(100, 0, 100),
+      safeRadius: 10,
+      loot: { id: 1, position: new THREE.Vector3(0, 0, -15) },
+    });
+    decideBotInput(c);
+    expect(c.brain.goal).toBe('zone');
+  });
+
+  it('switches from loot goal to combat when an enemy appears', () => {
+    const c = ctx({
+      loot: { id: 1, position: new THREE.Vector3(0, 0, -15) },
+    });
+    decideBotInput(c);
+    expect(c.brain.goal).toBe('loot');
+    c.enemy = { position: new THREE.Vector3(0, 0, -20) };
+    c.time += 100;
+    decideBotInput(c);
+    expect(c.brain.goal).toBe('combat');
+  });
+
   it('moves toward loot when nearby', () => {
     const c = ctx({
       loot: { id: 1, position: new THREE.Vector3(0, 0, -15) },

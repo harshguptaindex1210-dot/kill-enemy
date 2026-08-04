@@ -45,3 +45,19 @@ export function createWriteId(): string {
 export function createStorageKey(userId: string): string {
   return `${STORAGE_COLLECTION}_${userId}`;
 }
+
+/** Dedupes match accounting by write id so a retried (INV-6) write never double-counts. */
+const appliedWriteIds = new Set<string>();
+
+export function recordMatchOnce(
+  stats: PlayerStats,
+  writeId: string,
+  won: boolean,
+  kills: number,
+  damage: number,
+  xpGained: number
+): { stats: PlayerStats; applied: boolean } {
+  if (appliedWriteIds.has(writeId)) return { stats, applied: false };
+  appliedWriteIds.add(writeId);
+  return { stats: recordMatch(stats, won, kills, damage, xpGained), applied: true };
+}

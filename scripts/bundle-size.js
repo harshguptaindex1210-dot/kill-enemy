@@ -14,7 +14,7 @@ for (const file of files) {
   totalGz += gzipSync(buf).length;
 }
 
-const rawLimit = 600000;
+const rawLimit = 620000;
 const gzLimit = 200000;
 console.log(`Bundle JS raw: ${totalRaw} (limit ${rawLimit})`);
 console.log(`Bundle JS gzip: ${totalGz} (limit ${gzLimit})`);

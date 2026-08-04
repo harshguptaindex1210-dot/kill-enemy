@@ -43,6 +43,7 @@ import { generateLootData, collectLootData, type LootSpawnData } from './loot';
 import {
   createAirdropSystem,
   updateAirdrops,
+  despawnAirdropsByZone,
   claimAirdrop,
   type Airdrop,
   type AirdropSystem,
@@ -59,6 +60,7 @@ export interface SimEvent {
     | 'hit'
     | 'pickup'
     | 'airdrop'
+    | 'airdropDespawned'
     | 'heal'
     | 'step'
     | 'zone-incoming';
@@ -420,6 +422,10 @@ export class MatchSim {
     this.resolveObstacles(unit);
     bundle.health = unit.health;
 
+    if (unit.isBot) {
+      this.tryPickup(unit.id);
+    }
+
     if (input.fire) {
       if (unit.meleeMode || !weapon) this.tryMelee(unit);
       else if (weapon.def.isProjectile) this.throwGrenadeFor(unit.id);
@@ -661,6 +667,10 @@ export class MatchSim {
     );
     for (const a of spawned) {
       this.events.push({ type: 'airdrop', time: this.time, airdropId: a.id });
+    }
+    const removed = despawnAirdropsByZone(this.airdrops, this.zone.center, this.zone.innerRadius);
+    if (removed > 0) {
+      this.events.push({ type: 'airdropDespawned', time: this.time, count: removed });
     }
   }
 

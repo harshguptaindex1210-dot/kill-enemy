@@ -5,11 +5,19 @@ import { ZoneSystem } from './zone';
 import { createInputManager, type InputManager } from './input';
 import { updateCamera } from './camera';
 import { createRobotModel, transitionAnim, updateRobotAnim, type RobotAnimState } from './robot';
-import { createHUD, createMinimap, addKillFeedEntry, type HUDData, type MinimapData } from './hud';
+import {
+  createHUD,
+  createMinimap,
+  addKillFeedEntry,
+  addCompassPing,
+  addDamageNumber,
+  type HUDData,
+  type MinimapData,
+} from './hud';
 import { createVehicle } from './vehicle';
 import type { AudioManager } from './audio';
 import type { Settings } from './settings';
-import { formatPlacement, formatTimer } from './feedback';
+import { formatPlacement, formatTimer, formatCompassBearing } from './feedback';
 import { calculateXP } from './match';
 
 export interface MatchSummary {
@@ -76,6 +84,7 @@ export function computeInteractionPrompt(sim: MatchSim, unitId: string): string 
   for (const a of sim.airdrops.airdrops) {
     if (
       !a.claimed &&
+      !a.despawned &&
       Math.hypot(a.position.x - pos.x, a.position.z - pos.z) <= INTERACT_RANGE_AIRDROP
     ) {
       return 'Press E to open airdrop';
@@ -111,6 +120,7 @@ export class MatchGame {
   private lootMeshes = new Map<number, THREE.Mesh>();
   private vehicleMeshes = new Map<number, THREE.Group>();
   private airdropMeshes = new Map<number, THREE.Group>();
+  private beaconMesh: THREE.Group | null = null;
   private projMeshes = new Map<number, THREE.Mesh>();
   private explosionFx: { light: THREE.PointLight; mesh: THREE.Mesh; until: number }[] = [];
 
@@ -138,7 +148,11 @@ export class MatchGame {
     if (e.code === 'KeyH') this.healMedPressed = true;
     if (e.code === 'KeyB') this.healBandPressed = true;
     if (e.code === 'KeyF') this.spectatePressed = true;
-    if (e.code === 'KeyM') this.minimapFullscreen = !this.minimapFullscreen;
+    if (e.code === 'KeyM') {
+      this.audio.setMuted(!this.audio.isMuted());
+      this.banner(this.audio.isMuted() ? '🔇 SOUND MUTED' : '🔊 SOUND ON', 1200);
+    }
+    if (e.code === 'KeyN') this.minimapFullscreen = !this.minimapFullscreen;
   };
   private onKeyUp = (e: KeyboardEvent) => this.keys.delete(e.code);
   private onResize = () => {
@@ -327,7 +341,12 @@ export class MatchGame {
     if (this.sim.match.phase === 'playing' && human.alive) {
       const raw = this.input.getInput();
       const sens = this.settings.sensitivity;
-      input = { ...raw, mouseX: raw.mouseX * sens, mouseY: raw.mouseY * sens };
+      input = {
+        ...raw,
+        mouseX: raw.mouseX * sens,
+        mouseY: raw.mouseY * sens,
+        aim: raw.aim || this.settings.cameraMode === 'fps',
+      };
     } else {
       this.input.getInput();
     }
@@ -378,6 +397,15 @@ export class MatchGame {
           else if (e.grenade) this.audio.play('shot');
           else this.audio.play(e.weapon === 'pistol' ? 'pistol' : 'shot');
           this.muzzleFlash(String(e.unitId));
+          if (String(e.unitId) !== this.humanId && !e.melee && !e.grenade) {
+            const firing = this.sim.units.get(String(e.unitId));
+            const human = this.sim.units.get(this.humanId);
+            if (firing && human) {
+              const dz = firing.player.position.z - human.player.position.z;
+              const dx = firing.player.position.x - human.player.position.x;
+              addCompassPing(formatCompassBearing(Math.atan2(dx, dz)));
+            }
+          }
           break;
         }
         case 'explosion':
@@ -390,6 +418,7 @@ export class MatchGame {
           if (attacker === this.humanId) {
             this.showHitmarker(Boolean(e.kill));
             this.audio.play(e.kill ? 'clink' : 'hit');
+            this.spawnDamageNumber(victim, Number(e.damage), Boolean(e.kill));
           } else if (victim === this.humanId) {
             this.audio.play('hit');
           }
@@ -612,6 +641,34 @@ export class MatchGame {
   }
 
   private syncAirdrops() {
+    const falling = this.sim.airdrops.airdrops.find(
+      (a) => !a.claimed && !a.despawned && this.sim.time < a.landingTime
+    );
+    if (falling) {
+      if (!this.beaconMesh) {
+        const body = new THREE.Mesh(
+          new THREE.BoxGeometry(3, 0.4, 4),
+          new THREE.MeshStandardMaterial({ color: 0x8899aa })
+        );
+        const wing = new THREE.Mesh(
+          new THREE.BoxGeometry(5, 0.1, 1.2),
+          new THREE.MeshStandardMaterial({ color: 0x556677 })
+        );
+        const beacon = new THREE.Group();
+        beacon.add(body, wing);
+        beacon.visible = true;
+        this.scene.add(beacon);
+        this.beaconMesh = beacon;
+      }
+      const landing = Math.max(this.sim.time / Math.max(falling.landingTime, 1), 0.02);
+      const start = new THREE.Vector3(falling.position.x + 500, 120, falling.position.z + 500);
+      const target = new THREE.Vector3(falling.position.x, 20, falling.position.z);
+      this.beaconMesh.position.lerpVectors(start, target, landing);
+      this.beaconMesh.lookAt(new THREE.Vector3(falling.position.x, 0, falling.position.z));
+      this.beaconMesh.visible = true;
+    } else if (this.beaconMesh) {
+      this.beaconMesh.visible = false;
+    }
     for (const a of this.sim.airdrops.airdrops) {
       let mesh = this.airdropMeshes.get(a.id);
       if (!mesh) {
@@ -633,7 +690,7 @@ export class MatchGame {
         mesh = group;
         this.airdropMeshes.set(a.id, group);
       }
-      mesh.visible = !a.claimed;
+      mesh.visible = !a.claimed && !a.despawned;
       mesh.position.set(a.position.x, 0, a.position.z);
       const t = this.sim.time >= a.landingTime ? 1 : this.sim.time / Math.max(a.landingTime, 1);
       mesh.position.y = 1.7 * (1 - t) + 0.1;
@@ -737,6 +794,7 @@ export class MatchGame {
       inStorm: human.alive && this.zoneSys.isOutsideZone(human.player.position),
       justHit: human.lastDamageTime > 0 && this.sim.time - human.lastDamageTime < 150,
       prompt: human.alive ? computeInteractionPrompt(this.sim, this.humanId) : '',
+      bearing: formatCompassBearing(human.player.yaw),
     };
     this.hud.update(data);
   }
@@ -780,6 +838,12 @@ export class MatchGame {
         z: u.player.position.z,
         alive: u.alive && u.id !== this.humanId,
       })),
+      airdrops: this.sim.airdrops.airdrops.map((a) => ({
+        x: a.position.x,
+        z: a.position.z,
+        claimed: a.claimed || a.despawned,
+      })),
+      size: this.settings.minimapSize === 'large' ? 240 : 160,
       fullscreen: this.minimapFullscreen,
     };
     this.minimap.update(data);
@@ -796,5 +860,21 @@ export class MatchGame {
       () => (this.hitmarkerEl.style.display = 'none'),
       200
     );
+  }
+
+  /** Projects an enemy's world position to screen and floats a damage number there. */
+  private spawnDamageNumber(victimId: string, amount: number, isKill: boolean) {
+    const unit = this.sim.units.get(victimId);
+    if (!unit || !unit.alive) return;
+    const pos = new THREE.Vector3(
+      unit.player.position.x,
+      unit.player.position.y + 1.8,
+      unit.player.position.z
+    );
+    pos.project(this.camera);
+    const x = (pos.x * 0.5 + 0.5) * this.renderer.domElement.clientWidth;
+    const y = (-pos.y * 0.5 + 0.5) * this.renderer.domElement.clientHeight;
+    if (pos.z > 1 || x < 0 || y < 0) return;
+    addDamageNumber(amount, x, y, isKill);
   }
 }

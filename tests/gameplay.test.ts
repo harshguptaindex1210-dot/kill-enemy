@@ -305,6 +305,28 @@ describe('MatchSim', () => {
   });
 });
 
+describe('bot AI v2 (#29)', () => {
+  it('bots pick up loot pads they run over', () => {
+    const sim = makeSim(1);
+    sim.startMatch();
+    runFor(sim, 9);
+    const bot = sim.units.get('bot_1')!;
+    const pad = sim.loot[0];
+    pad.collected = false;
+    pad.position.set(bot.player.position.x, 0.5, bot.player.position.z);
+    runFor(sim, 0.05);
+    expect(pad.collected).toBe(true);
+  });
+
+  it('bots have permadeath and get a placement', () => {
+    const sim = makeSim(2);
+    sim.applyDamage('player', 'bot_1', 1000, 'shot');
+    expect(sim.units.get('bot_1')!.alive).toBe(false);
+    expect(sim.match.players.bot_1.placement).toBe(3);
+    expect(sim.match.aliveCount).toBe(2);
+  });
+});
+
 describe('grenade gameplay (#26)', () => {
   it('grenade explosion damages the thrower (self-damage)', () => {
     const sim = makeSim(1);

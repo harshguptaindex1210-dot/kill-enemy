@@ -33,6 +33,7 @@ vi.mock('@heroiclabs/nakama-js', () => ({
     useSSL: _ssl ?? false,
     authenticateCustom: vi.fn().mockResolvedValue(mockGuestSession),
     authenticateEmail: vi.fn().mockResolvedValue(mockEmailSession),
+    writeStorageObjects: vi.fn().mockResolvedValue([{ key: 'ok' }]),
   })),
   Session: { restore: vi.fn().mockReturnValue(mockRestoredSession) },
 }));
@@ -58,5 +59,26 @@ describe('nakama client', () => {
     const { reconnectSession } = await import('../src/net/nakama');
     const s = await reconnectSession('old-token');
     expect(s?.token).toBe('restored-token');
+  });
+
+  it('writes stats to storage after auth with a write id', async () => {
+    const nakama = await import('../src/net/nakama');
+    await nakama.authenticateGuest();
+    const written = await nakama.saveStatsToServer(
+      'u1',
+      { wins: 1, kills: 3, matches: 1, xp: 120, level: 1, damage: 100 },
+      'write_123'
+    );
+    expect(written).toBe(true);
+  });
+
+  it('skips server write when unauthenticated', async () => {
+    const nakama = await import('../src/net/nakama');
+    const written = await nakama.saveStatsToServer(
+      'u1',
+      { wins: 0, kills: 0, matches: 0, xp: 0, level: 1, damage: 0 },
+      'write_456'
+    );
+    expect(written).toBe(false);
   });
 });

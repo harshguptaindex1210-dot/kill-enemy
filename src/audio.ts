@@ -46,7 +46,7 @@ export class AudioManager {
   }
 
   private ensure(): AudioContext | null {
-    if (this.muted) return null;
+    if (this.muted || this.volume <= 0) return null;
     if (typeof window === 'undefined') return null;
     const AC =
       window.AudioContext ||

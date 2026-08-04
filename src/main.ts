@@ -2,7 +2,7 @@ import { MatchGame } from './game';
 import { showLobby } from './lobby';
 import { AudioManager } from './audio';
 import { loadSettings, saveSettings, type Settings } from './settings';
-import { defaultStats, recordMatch, type PlayerStats } from './persistence';
+import { defaultStats, recordMatchOnce, createWriteId, type PlayerStats } from './persistence';
 
 const STATS_KEY = 'robot_arena_stats_v1';
 
@@ -56,7 +56,16 @@ function init() {
       callbacks: {
         onFinished(summary) {
           const levelBefore = stats.level;
-          stats = recordMatch(stats, summary.won, summary.kills, summary.damage, summary.xpGained);
+          const writeId = createWriteId();
+          const { stats: next } = recordMatchOnce(
+            stats,
+            writeId,
+            summary.won,
+            summary.kills,
+            summary.damage,
+            summary.xpGained
+          );
+          stats = next;
           saveStats(stats);
           if (stats.level > levelBefore) audio.play('levelup');
         },
@@ -73,6 +82,10 @@ function init() {
     game.start();
   }
 
+  function applyQuality(quality: 'low' | 'medium') {
+    document.documentElement.dataset.quality = quality;
+  }
+
   function showLobbyUI() {
     showLobby(
       {
@@ -82,21 +95,22 @@ function init() {
         kills: stats.kills,
         matches: stats.matches,
       },
+      settings,
       {
         onStartMatch() {
           launchMatch();
         },
         onSettingsChange(changes) {
-          if (changes.quality === 'low' || changes.quality === 'medium') {
-            settings = { ...settings, quality: changes.quality };
-            saveSettings(settings);
-          }
+          settings = { ...settings, ...changes };
+          saveSettings(settings);
+          applyQuality(settings.quality);
           audio.setVolume(settings.volume);
         },
       }
     );
   }
 
+  applyQuality(settings.quality);
   showLobbyUI();
 }
 

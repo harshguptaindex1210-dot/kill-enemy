@@ -7,6 +7,7 @@ export interface Airdrop {
   landingTime: number;
   loot: LootDef[];
   claimed: boolean;
+  despawned: boolean;
 }
 
 export interface AirdropSystem {
@@ -62,6 +63,7 @@ export function updateAirdrops(
       landingTime: time + 8000,
       loot: CRATE_LOOT.map((l) => ({ ...l })),
       claimed: false,
+      despawned: false,
     };
     system.airdrops.push(drop);
     spawned.push(drop);
@@ -71,8 +73,25 @@ export function updateAirdrops(
 }
 
 export function claimAirdrop(system: AirdropSystem, id: number): LootDef[] | null {
-  const drop = system.airdrops.find((a) => a.id === id && !a.claimed);
+  const drop = system.airdrops.find((a) => a.id === id && !a.claimed && !a.despawned);
   if (!drop) return null;
   drop.claimed = true;
   return drop.loot;
+}
+
+/** Despawns any unclaimed crate the shrinking safe zone has passed over. */
+export function despawnAirdropsByZone(
+  system: AirdropSystem,
+  safeCenter: THREE.Vector3,
+  safeRadius: number
+): number {
+  let removed = 0;
+  for (const a of system.airdrops) {
+    if (a.claimed || a.despawned) continue;
+    if (Math.hypot(a.position.x - safeCenter.x, a.position.z - safeCenter.z) > safeRadius) {
+      a.despawned = true;
+      removed++;
+    }
+  }
+  return removed;
 }

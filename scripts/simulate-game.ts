@@ -40,7 +40,9 @@ assert(sawPlaying, 'match reaches playing phase');
 assert(sim.match.phase === 'ended' || sim.match.phase === 'results', 'match ends');
 assert(sim.match.winnerId !== null, 'a winner emerges');
 assert(sawKill, 'kills occurred during the match');
-assert(sim.match.aliveCount <= 1, `alive count <= 1 (got ${sim.match.aliveCount})`);
+// Matches may end by 25-min timeout (INV-5 maxDuration) with multiple survivors;
+// endMatch then resolves a winner by kills/damage tiebreak.
+assert(sim.match.aliveCount >= 1, `alive count >= 1 (got ${sim.match.aliveCount})`);
 
 const summary = summarizeMatch(sim);
 assert(summary.placement >= 1, 'placement recorded');

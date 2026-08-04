@@ -37,6 +37,10 @@ export function createHUD(): { update: (data: HUDData) => void; remove: () => vo
     </div>
     <div id="hud-killfeed" style="position:absolute;top:64px;right:12px;display:flex;flex-direction:column;gap:4px;align-items:flex-end;"></div>
     <div id="hud-damage" style="position:absolute;inset:0;background:radial-gradient(transparent 50%, rgba(255,0,0,0.4) 100%);opacity:0;transition:opacity 0.1s;pointer-events:none;"></div>
+    <div id="hud-compass" style="position:absolute;top:56px;left:50%;transform:translateX(-50%);display:flex;gap:5px;background:rgba(0,0,0,0.45);padding:3px 10px;border-radius:4px;font-size:12px;">
+      ${['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'].map((d) => `<span data-dir="${d}" style="color:#889;min-width:15px;text-align:center;">${d}</span>`).join('')}
+    </div>
+    <div id="hud-damage-numbers" style="position:absolute;inset:0;overflow:hidden;pointer-events:none;"></div>
   `;
   document.body.appendChild(el);
 
@@ -60,6 +64,13 @@ export function createHUD(): { update: (data: HUDData) => void; remove: () => vo
       reloadEl.style.display = data.reloading ? 'block' : 'none';
       document.getElementById('hud-grenades')!.textContent = String(data.grenades);
       document.getElementById('hud-heals')!.textContent = String(data.heals);
+      if (data.bearing) {
+        document.querySelectorAll('#hud-compass span[data-dir]').forEach((s) => {
+          const active = (s as HTMLElement).dataset.dir === data.bearing;
+          (s as HTMLElement).style.color = active ? '#fff' : '#889';
+          (s as HTMLElement).style.fontWeight = active ? 'bold' : 'normal';
+        });
+      }
       const stormEl = document.getElementById('hud-storm')!;
       stormEl.style.display = data.inStorm ? 'block' : 'none';
       const healRow = document.getElementById('hud-heal-row')!;
@@ -100,6 +111,36 @@ export function addKillFeedEntry(text: string) {
   setTimeout(() => entry.remove(), 4000);
 }
 
+/** Flashes an enemy-ping marker on the compass when a nearby enemy fires. */
+export function addCompassPing(bearing: string) {
+  const span = document.querySelector(
+    `#hud-compass span[data-dir="${bearing}"]`
+  ) as HTMLElement | null;
+  if (!span) return;
+  span.style.color = '#f66';
+  setTimeout(() => {
+    if (span.isConnected) span.style.color = '#889';
+  }, 350);
+}
+
+/** Spawns a floating damage number at a screen position, drifting up as it fades. */
+export function addDamageNumber(amount: number, x: number, y: number, isKill: boolean) {
+  const host = document.getElementById('hud-damage-numbers');
+  if (!host) return;
+  const el = document.createElement('div');
+  el.textContent = `-${Math.max(1, Math.round(amount))}`;
+  el.style.cssText =
+    `position:absolute;left:${x}px;top:${y}px;transform:translate(-50%,-50%);` +
+    `color:${isKill ? '#f66' : '#fff'};font-size:${isKill ? 22 : 15}px;font-weight:bold;` +
+    'text-shadow:0 0 6px rgba(0,0,0,0.8);transition:opacity 0.7s linear, transform 0.7s linear;pointer-events:none;';
+  host.appendChild(el);
+  requestAnimationFrame(() => {
+    el.style.transform = 'translate(-50%, -130%)';
+    el.style.opacity = '0';
+  });
+  setTimeout(() => el.remove(), 750);
+}
+
 export interface HUDData {
   kills: number;
   alive: number;
@@ -118,6 +159,7 @@ export interface HUDData {
   inStorm: boolean;
   justHit: boolean;
   prompt: string;
+  bearing?: string;
 }
 
 export function createMinimap(): { update: (data: MinimapData) => void; remove: () => void } {
@@ -133,7 +175,8 @@ export function createMinimap(): { update: (data: MinimapData) => void; remove: 
   return {
     update(data: MinimapData) {
       const full = data.fullscreen || false;
-      const size = full ? Math.min(window.innerWidth, window.innerHeight) * 0.5 : 160;
+      const base = data.size || 160;
+      const size = full ? Math.min(window.innerWidth, window.innerHeight) * 0.5 : base;
       canvas.width = size;
       canvas.height = size;
       canvas.style.width = size + 'px';
@@ -179,6 +222,14 @@ export function createMinimap(): { update: (data: MinimapData) => void; remove: 
         ctx.fill();
       }
 
+      ctx.fillStyle = '#fc0';
+      for (const a of data.airdrops || []) {
+        if (a.claimed) continue;
+        ctx.beginPath();
+        ctx.arc(a.x * s + ox, a.z * s + oz, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
       ctx.fillStyle = '#0f0';
       ctx.beginPath();
       ctx.arc(ox, oz, 4, 0, Math.PI * 2);
@@ -207,5 +258,7 @@ export interface MinimapData {
   buildings: { x: number; z: number }[];
   loot: { x: number; z: number; collected: boolean }[];
   enemies: { x: number; z: number; alive: boolean }[];
+  airdrops?: { x: number; z: number; claimed: boolean }[];
+  size?: number;
   fullscreen?: boolean;
 }
