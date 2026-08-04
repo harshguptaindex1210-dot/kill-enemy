@@ -2,13 +2,21 @@ import type { Settings } from './settings';
 import type { LeaderboardEntry, MatchRecord } from './net/leaderboard';
 
 export interface LobbyCallbacks {
-  onStartMatch: () => void;
+  onPlayLocal: () => void;
+  onPlayOnline: () => void;
+  onCancelQueue: () => void;
   onSettingsChange: (changes: Partial<Settings>) => void;
 }
 
 export interface LobbyActivity {
   history: MatchRecord[];
   leaderboard: LeaderboardEntry[];
+}
+
+/** Queue state shown on the main button while matchmaking is active. */
+export interface QueueStatus {
+  active: boolean;
+  message: string;
 }
 
 function escapeHtml(value: string): string {
@@ -35,7 +43,8 @@ export function showLobby(
   stats: { level: number; xp: number; wins: number; kills: number; matches: number },
   settings: Settings,
   callbacks: LobbyCallbacks,
-  activity: LobbyActivity = { history: [], leaderboard: [] }
+  activity: LobbyActivity = { history: [], leaderboard: [] },
+  queue: QueueStatus = { active: false, message: '' }
 ) {
   const existing = document.getElementById('lobby-overlay');
   if (existing) existing.remove();
@@ -76,7 +85,13 @@ export function showLobby(
   overlay.innerHTML = `
     <h1 style="font-size:46px;margin:0 0 6px;letter-spacing:4px;text-transform:uppercase;color:#4af;">ROBOT ARENA</h1>
     <p style="color:#889;margin:0 0 26px;font-size:13px;">Battle Royale — Robot Apocalypse</p>
-    <button id="btn-start" style="padding:13px 42px;font-size:17px;background:#4af;color:#000;border:none;border-radius:4px;cursor:pointer;font-weight:bold;margin-bottom:20px;">Start Match</button>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:10px;margin-bottom:20px;">
+      <button id="btn-online" style="padding:13px 42px;font-size:17px;background:#4af;color:#000;border:none;border-radius:4px;cursor:pointer;font-weight:bold;">${queue.active ? queue.message : 'Play Online'}</button>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <button id="btn-local" style="padding:8px 20px;font-size:13px;background:#444;color:#fff;border:none;border-radius:4px;cursor:pointer;">Play Local</button>
+        <button id="btn-cancel-queue" style="padding:8px 20px;font-size:13px;background:#a33;color:#fff;border:none;border-radius:4px;cursor:pointer;display:${queue.active ? 'inline-block' : 'none'};">Cancel</button>
+      </div>
+    </div>
     <div style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center;">
       <div style="background:rgba(255,255,255,0.05);padding:10px 18px;border-radius:8px;font-size:13px;">
         <b style="color:#8af;display:block;text-align:center;font-size:11px;margin-bottom:6px;">PLAYER</b>
@@ -167,8 +182,19 @@ export function showLobby(
 
   document.body.appendChild(overlay);
 
-  document.getElementById('btn-start')?.addEventListener('click', () => {
-    callbacks.onStartMatch();
+  document.getElementById('btn-online')?.addEventListener('click', () => {
+    if (queue.active) return;
+    callbacks.onPlayOnline();
+  });
+
+  document.getElementById('btn-local')?.addEventListener('click', () => {
+    if (queue.active) return;
+    overlay.remove();
+    callbacks.onPlayLocal();
+  });
+
+  document.getElementById('btn-cancel-queue')?.addEventListener('click', () => {
+    callbacks.onCancelQueue();
     overlay.remove();
   });
 

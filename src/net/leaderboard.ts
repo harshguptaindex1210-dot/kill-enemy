@@ -1,4 +1,3 @@
-import { getClient, getSession } from './nakama';
 import { createWriteId } from '../persistence';
 
 export interface MatchRecord {
@@ -26,6 +25,11 @@ const MAX_HISTORY = 20;
 
 /** Tracks submitted writeIds so a retried (INV-6) submission never double-counts. */
 const submittedWriteIds = new Set<string>();
+
+/** Lazy-load nakama so local play never pulls the socket client into the entry chunk. */
+async function nakamaApi() {
+  return import('./nakama');
+}
 
 /** Appends a match record to the local history log (capped). */
 export function appendLocalHistory(record: MatchRecord): MatchRecord[] {
@@ -67,8 +71,7 @@ export async function recordMatchResult(
   const record: MatchRecord = { ...partial, writeId, timestamp: Date.now() };
   appendLocalHistory(record);
 
-  const s = getSession();
-  if (record.mode !== 'online' || !s || !s.user_id) return { local: true, online: false };
+  if (record.mode !== 'online') return { local: true, online: false };
   return submitOnlineMatchRecord(record);
 }
 
@@ -79,6 +82,7 @@ export async function recordMatchResult(
 export async function submitOnlineMatchRecord(
   record: MatchRecord
 ): Promise<{ local: boolean; online: boolean }> {
+  const { getClient, getSession } = await nakamaApi();
   const s = getSession();
   if (!s || !s.user_id) return { local: true, online: false };
   if (submittedWriteIds.has(record.writeId)) return { local: true, online: true };
@@ -123,6 +127,7 @@ export function mapLeaderboardRecords(
 
 /** Fetches the top `limit` leaderboard records; returns [] when offline. */
 export async function fetchLeaderboard(limit = 10): Promise<LeaderboardEntry[]> {
+  const { getClient, getSession } = await nakamaApi();
   const s = getSession();
   if (!s || !s.user_id) return [];
   try {

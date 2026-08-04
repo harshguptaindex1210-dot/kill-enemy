@@ -41,7 +41,8 @@ try {
 
   await page.goto(`http://localhost:${port}`, { waitUntil: 'networkidle0', timeout: 30000 });
   await wait(1000);
-  await page.click('#btn-start');
+  // Local bot match runs without a Nakama server, so exercise that path.
+  await page.click('#btn-local');
   await wait(3000);
 
   const hudVisible = await page.evaluate(() => {
@@ -54,7 +55,14 @@ try {
     };
   });
 
-  console.log(JSON.stringify({ hudVisible, errors }, null, 2));
+  // Assert at least one render frame actually advances (INV-7 runtime check) by
+  // sampling the HUD match timer twice; it increments every second.
+  const timerA = await page.evaluate(() => document.getElementById('hud-timer')?.textContent ?? '');
+  await wait(1500);
+  const timerB = await page.evaluate(() => document.getElementById('hud-timer')?.textContent ?? '');
+  const frameAdvanced = timerA !== timerB;
+
+  console.log(JSON.stringify({ hudVisible, frameAdvanced, errors }, null, 2));
 
   const fatal = errors.filter(
     (e) =>
@@ -63,8 +71,12 @@ try {
       !e.includes('canvas.getContext') &&
       !e.includes('Failed to load resource')
   );
+  const renderOk = hudVisible.hudExists && hudVisible.aliveShown && frameAdvanced;
   if (fatal.length > 0) {
     console.error('SMOKE FAILED: console/page errors');
+    process.exitCode = 1;
+  } else if (!renderOk) {
+    console.error('SMOKE FAILED: HUD/game did not render or advance a frame');
     process.exitCode = 1;
   } else {
     console.log('SMOKE OK');

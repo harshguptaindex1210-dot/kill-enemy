@@ -4,9 +4,22 @@ import { AudioManager } from './audio';
 import { loadSettings, saveSettings, type Settings } from './settings';
 import { defaultStats, recordMatchOnce, createWriteId, type PlayerStats } from './persistence';
 import { showAd } from './ad';
-import { fetchLeaderboard, loadLocalHistory } from './net/leaderboard';
+import { fetchLeaderboard, loadLocalHistory, recordMatchResult } from './net/leaderboard';
+import type { OnlineMatchGame } from './net/onlineGame';
+import type { MatchClient } from './net/client';
+import type { NakamaSocket } from './net/nakama';
 
 const STATS_KEY = 'robot_arena_stats_v1';
+
+/** Lazy-loaded online stack — kept out of the initial bundle (INV-3). */
+async function loadOnlineStack() {
+  const [{ OnlineMatchGame }, { MatchClient }, nakama] = await Promise.all([
+    import('./net/onlineGame'),
+    import('./net/client'),
+    import('./net/nakama'),
+  ]);
+  return { OnlineMatchGame, MatchClient, nakama };
+}
 
 function loadStats(): PlayerStats {
   try {
@@ -46,6 +59,11 @@ function init() {
   audio.setVolume(settings.volume);
 
   let game: MatchGame | null = null;
+  let onlineGame: OnlineMatchGame | null = null;
+  let onlineClient: MatchClient | null = null;
+  let socket: NakamaSocket | null = null;
+  let queueTicket: string | null = null;
+  let queueActive = false;
 
   function launchMatch() {
     game?.dispose();
@@ -70,8 +88,6 @@ function init() {
           stats = next;
           saveStats(stats);
           if (stats.level > levelBefore) audio.play('levelup');
-          // After match finishes, results screen is shown by game.ts.
-          // Ad will be shown when user clicks "Return to Lobby" or "Play Again".
         },
         onLobby() {
           showAdThenLobby();
@@ -84,9 +100,124 @@ function init() {
     game.start();
   }
 
+  async function ensureOnlineConnection(): Promise<NakamaSocket> {
+    if (socket) return socket;
+    const { nakama } = await loadOnlineStack();
+    const session = nakama.getSession() ?? (await nakama.authenticateGuest());
+    socket = await nakama.connectSocket(session);
+    return socket;
+  }
+
+  async function resetQueue() {
+    if (queueTicket && socket) {
+      try {
+        const { nakama } = await loadOnlineStack();
+        await nakama.removeFromMatchmaker(socket, queueTicket);
+      } catch {
+        // ignore cancel failures
+      }
+    }
+    queueTicket = null;
+    queueActive = false;
+  }
+
+  async function cancelQueue() {
+    await resetQueue();
+    showLobbyUI();
+  }
+
+  async function launchOnlineMatch() {
+    const { OnlineMatchGame: OnlineGame } = await loadOnlineStack();
+    onlineGame?.dispose();
+    audio.resume();
+    onlineGame = new OnlineGame({
+      canvas,
+      settings,
+      audio,
+      client: onlineClient!,
+      callbacks: {
+        onFinished(summary) {
+          const levelBefore = stats.level;
+          const writeId = createWriteId();
+          const xpGained =
+            Math.max(10, (11 - summary.placement) * 10) +
+            summary.kills * 25 +
+            Math.round(summary.damage / 10);
+          const { stats: next } = recordMatchOnce(
+            stats,
+            writeId,
+            summary.won,
+            summary.kills,
+            summary.damage,
+            xpGained
+          );
+          stats = next;
+          saveStats(stats);
+          void recordMatchResult({
+            matchId: onlineClient?.matchIdString ?? `online_${writeId}`,
+            placement: summary.placement,
+            kills: summary.kills,
+            damage: summary.damage,
+            won: summary.won,
+            mode: 'online',
+          });
+          if (stats.level > levelBefore) audio.play('levelup');
+        },
+        onLobby() {
+          showAdThenLobby();
+        },
+      },
+    });
+    onlineGame.start();
+  }
+
+  async function joinOnlineMatch(matchId: string) {
+    queueActive = false;
+    await resetQueue();
+    const { MatchClient: Client } = await loadOnlineStack();
+    onlineClient = new Client('online', {
+      onSnapshot: () => {},
+      onDisconnect: () => {
+        // INV-5: reconnection failure returns to lobby cleanly.
+        showAdThenLobby();
+      },
+    });
+    await onlineClient.connect();
+    await onlineClient.joinExistingMatch(matchId);
+    await launchOnlineMatch();
+  }
+
+  async function startOnlineQueue() {
+    if (queueActive) return;
+    queueActive = true;
+    showLobbyUI();
+    try {
+      const { nakama } = await loadOnlineStack();
+      const s = await ensureOnlineConnection();
+      queueTicket = await nakama.addToMatchmaker(s);
+      nakama.onSocketDisconnect(s, () => {
+        queueActive = false;
+        queueTicket = null;
+        showAdThenLobby();
+      });
+      nakama.onMatchmakerMatched(s, (matchId) => {
+        void joinOnlineMatch(matchId);
+      });
+    } catch {
+      queueActive = false;
+      queueTicket = null;
+      showLobbyUI();
+    }
+  }
+
   async function showAdThenLobby() {
     game?.dispose();
     game = null;
+    onlineGame?.dispose();
+    onlineGame = null;
+    onlineClient?.dispose();
+    onlineClient = null;
+    await resetQueue();
     await showAd({ skipAfterMs: 5000, online: false }); // Local: 5s skip
     showLobbyUI();
   }
@@ -112,8 +243,14 @@ function init() {
       },
       settings,
       {
-        onStartMatch() {
+        onPlayLocal() {
           launchMatch();
+        },
+        onPlayOnline() {
+          void startOnlineQueue();
+        },
+        onCancelQueue() {
+          void cancelQueue();
         },
         onSettingsChange(changes) {
           settings = { ...settings, ...changes };
@@ -122,7 +259,8 @@ function init() {
           audio.setVolume(settings.volume);
         },
       },
-      { history, leaderboard }
+      { history, leaderboard },
+      { active: queueActive, message: 'Searching for match...' }
     );
   }
 

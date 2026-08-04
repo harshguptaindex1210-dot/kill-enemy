@@ -100,6 +100,17 @@ export class MatchClient {
     return this.matchId;
   }
 
+  /**
+   * Online only: joins a match already created by the matchmaker hook (bot fill
+   * caps at 10). Used by the "Play Online" flow (#40).
+   */
+  async joinExistingMatch(matchId: string): Promise<string> {
+    this.matchId = matchId;
+    await joinMatch(this.socket!, this.matchId);
+    this.flushTimer = setInterval(() => this.flushInputs(), TICK_MS);
+    return this.matchId;
+  }
+
   /** Queue an input frame; sent at 20 Hz by flushInputs(). */
   sendInput(input: WireInput) {
     this.pending.push(input);

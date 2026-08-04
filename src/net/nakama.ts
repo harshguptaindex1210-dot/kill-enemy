@@ -82,6 +82,30 @@ export async function sendMatchInput(s: Socket, matchId: string, data: string) {
   await s.sendMatchState(matchId, 1, data);
 }
 
+/**
+ * Joins the matchmaking queue for an online match (#40). Returns the ticket so
+ * the client can cancel via removeFromMatchmaker.
+ */
+export async function addToMatchmaker(s: Socket): Promise<string> {
+  const matched = await s.addMatchmaker('*', 2, 10);
+  return matched.ticket;
+}
+
+/** Leaves the matchmaking queue by ticket. */
+export async function removeFromMatchmaker(s: Socket, ticket: string) {
+  await s.removeMatchmaker(ticket);
+}
+
+/** Registers the handler for a successful matchmaker match; returns cleanup. */
+export function onMatchmakerMatched(s: Socket, cb: (matchId: string) => void): () => void {
+  s.onmatchmakermatched = (m) => {
+    if (m && m.match_id) cb(m.match_id);
+  };
+  return () => {
+    s.onmatchmakermatched = () => {};
+  };
+}
+
 export interface ServerStats {
   wins: number;
   kills: number;
