@@ -100,14 +100,14 @@ export class InterpolationBuffer {
 }
 
 /** Accumulates inputs and flushes them as one batch per server tick. */
-export class InputBatcher {
-  private queue: unknown[] = [];
+export class InputBatcher<T> {
+  private queue: T[] = [];
 
-  push(input: unknown) {
+  push(input: T) {
     this.queue.push(input);
   }
 
-  flush(): unknown[] {
+  flush(): T[] {
     if (this.queue.length === 0) return [];
     const batch = this.queue;
     this.queue = [];

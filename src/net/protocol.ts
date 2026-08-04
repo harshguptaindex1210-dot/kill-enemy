@@ -41,6 +41,8 @@ export interface WireSnapshot {
   time_ms: number;
   phase: string;
   alive: number;
+  /** Last processed input sequence per entity; used for rollback replay. */
+  acks?: Record<string, number>;
   zone: { cx: number; cz: number; r: number; dps: number; phase: number };
   entities: Record<string, WireEntity>;
   loot: { id: number; px: number; pz: number; t: string }[];

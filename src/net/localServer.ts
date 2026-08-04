@@ -16,6 +16,7 @@ export interface LocalServerCallbacks {
 export class LocalServer {
   sim: MatchSim;
   private input: WireInput | null = null;
+  private lastInputSeq = 0;
   private tick = 0;
   private timer: ReturnType<typeof setInterval> | null = null;
   private started = false;
@@ -55,7 +56,8 @@ export class LocalServer {
   /** Advance one tick manually (used by tests and the browser driver). */
   step() {
     this.tick++;
-    this.sim.update(TICK_HZ / 1000, this.toPlayerInput(this.input));
+    if (this.input) this.lastInputSeq = Math.max(this.lastInputSeq, this.input.seq);
+    this.sim.update(1 / TICK_HZ, this.toPlayerInput(this.input));
     this.input = null;
     if (this.listeners.onEvents) {
       const events = this.sim.events.splice(0, this.sim.events.length);
@@ -115,6 +117,7 @@ export class LocalServer {
       time_ms: Math.round(s.time),
       phase: s.match.phase,
       alive: s.match.aliveCount,
+      acks: { [this.humanId]: this.lastInputSeq },
       zone: {
         cx: quantize(s.zone.center.x),
         cz: quantize(s.zone.center.z),

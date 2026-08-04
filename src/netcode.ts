@@ -20,6 +20,10 @@ export interface InputFrame {
 
 export interface Snapshot {
   tick: number;
+  /** Last client input sequence the server applied for this snapshot. */
+  inputAck?: number;
+  /** Optional server-authoritative yaw for the local entity (radians). */
+  yaw?: number;
   entities: Record<string, { pos: THREE.Vector3; vel: THREE.Vector3; health: number }>;
 }
 
@@ -37,8 +41,12 @@ export class RollbackEngine {
   predictedStates: EntityState[] = [];
   /** Latest server-confirmed tick; inputs with seq <= this are acked. */
   lastAckedTick = -1;
+  /** Predicted yaw (accumulated from mouseX). Server snapshot may correct. */
+  yaw = 0;
   /** Confirmed state from the last snapshot, used as replay base (INV-2). */
   private baseState: EntityState;
+  private baseYaw = 0;
+  private readonly mouseSensitivity = 0.002;
 
   constructor(
     public entityId: string,
@@ -55,7 +63,8 @@ export class RollbackEngine {
   /** Applies an input frame to the local prediction state (no server dependency). */
   applyInput(input: InputFrame, dt: number, groundY: number) {
     this.inputs.push(input);
-    this.step(this.localState, input, dt, groundY);
+    this.yaw = wrapAngle(this.yaw - input.mouseX * this.mouseSensitivity);
+    this.step(this.localState, input, dt, groundY, this.yaw);
     this.tick++;
   }
 
@@ -67,18 +76,26 @@ export class RollbackEngine {
     const serverEnt = snapshot.entities[this.entityId];
     if (!serverEnt) return;
 
-    this.lastAckedTick = Math.max(this.lastAckedTick, snapshot.tick);
+    const ack = snapshot.inputAck ?? snapshot.tick;
+    this.lastAckedTick = Math.max(this.lastAckedTick, ack);
     this.baseState.pos.copy(serverEnt.pos);
     this.baseState.vel.copy(serverEnt.vel);
     this.baseState.health = serverEnt.health;
+    if (snapshot.yaw !== undefined) this.baseYaw = snapshot.yaw;
 
     this.localState.pos.copy(serverEnt.pos);
     this.localState.vel.copy(serverEnt.vel);
     this.localState.health = serverEnt.health;
+    let replayYaw = this.baseYaw;
 
     for (const inp of this.inputs) {
-      if (inp.seq > snapshot.tick) this.step(this.localState, inp, dt, groundY);
+      if (inp.seq > ack) {
+        replayYaw = wrapAngle(replayYaw - inp.mouseX * this.mouseSensitivity);
+        this.step(this.localState, inp, dt, groundY, replayYaw);
+      }
     }
+    this.yaw = replayYaw;
+    this.inputs = this.inputs.filter((input) => input.seq > ack);
     this.predictedStates.push({
       pos: this.localState.pos.clone(),
       vel: this.localState.vel.clone(),
@@ -100,24 +117,51 @@ export class RollbackEngine {
     } else {
       // small drift: adopt server health only, keep prediction
       local.health = server.health;
-      this.lastAckedTick = Math.max(this.lastAckedTick, snapshot.tick);
+      const ack = snapshot.inputAck ?? snapshot.tick;
+      this.lastAckedTick = Math.max(this.lastAckedTick, ack);
+      this.inputs = this.inputs.filter((input) => input.seq > ack);
     }
   }
 
-  /** Single movement step used by both prediction and replay. */
-  private step(state: EntityState, input: InputFrame, dt: number, groundY: number) {
+  /**
+   * Single movement step used by both prediction and replay. Mirrors
+   * src/player.ts: forward is yaw-rotated (-sin(yaw), 0, -cos(yaw)); right is
+   * (forward.z, 0, -forward.x). This must match the server sim or reconciliation
+   * will fight the client every tick.
+   */
+  private step(state: EntityState, input: InputFrame, dt: number, groundY: number, yaw = 0) {
     const speed = input.sprint ? 9 : 6;
-    const forward = new THREE.Vector3(0, 0, -1);
-    const right = new THREE.Vector3(1, 0, 0);
-    const move = new THREE.Vector3();
-    if (input.forward) move.add(forward);
-    if (input.backward) move.sub(forward);
-    if (input.left) move.sub(right);
-    if (input.right) move.add(right);
-    if (move.length() > 0) move.normalize().multiplyScalar(speed);
+    const fwdX = -Math.sin(yaw);
+    const fwdZ = -Math.cos(yaw);
+    const rgtX = fwdZ;
+    const rgtZ = -fwdX;
 
-    state.vel.x = move.x;
-    state.vel.z = move.z;
+    let mx = 0;
+    let mz = 0;
+    if (input.forward) {
+      mx += fwdX;
+      mz += fwdZ;
+    }
+    if (input.backward) {
+      mx -= fwdX;
+      mz -= fwdZ;
+    }
+    if (input.left) {
+      mx -= rgtX;
+      mz -= rgtZ;
+    }
+    if (input.right) {
+      mx += rgtX;
+      mz += rgtZ;
+    }
+    const len = Math.hypot(mx, mz);
+    if (len > 0) {
+      mx = (mx / len) * speed;
+      mz = (mz / len) * speed;
+    }
+
+    state.vel.x = mx;
+    state.vel.z = mz;
     if (input.jump && state.pos.y <= groundY + 0.9) {
       state.vel.y = 5;
     }
@@ -132,6 +176,12 @@ export class RollbackEngine {
       state.vel.y = 0;
     }
   }
+}
+
+function wrapAngle(a: number): number {
+  while (a > Math.PI) a -= Math.PI * 2;
+  while (a < -Math.PI) a += Math.PI * 2;
+  return a;
 }
 
 export function createBotInput(

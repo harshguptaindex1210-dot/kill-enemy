@@ -12,8 +12,8 @@ import {
   type NakamaSocket,
 } from './nakama';
 import { LocalServer } from './localServer';
-import { InterpolationBuffer, type InterpolatedEntity } from './interpolation';
-import { RollbackEngine } from '../netcode';
+import { InputBatcher, InterpolationBuffer, type InterpolatedEntity } from './interpolation';
+import { RollbackEngine, type InputFrame } from '../netcode';
 import { TICK_MS, encodeInput, type WireInput, type WireSnapshot } from './protocol';
 import type { SimEvent } from '../gameplay';
 
@@ -41,12 +41,15 @@ export class MatchClient {
   private seq = 0;
   private flushTimer: ReturnType<typeof setInterval> | null = null;
   private latencyMs = 0;
-  /** Input frames queued since the last flush. */
-  private pending: WireInput[] = [];
+  /** Server clock offset (performance.now - server time_ms) once calibrated. */
+  private clockOffset: number | null = null;
+  /** Input frames queued since the last 20 Hz client tick. */
+  private pending = new InputBatcher<WireInput>();
 
   rollback: RollbackEngine;
   interp = new InterpolationBuffer();
   private selfEntity = 'player';
+  private disconnected = false;
 
   constructor(mode: MatchMode, cb: MatchClientCallbacks) {
     this.mode = mode;
@@ -62,6 +65,10 @@ export class MatchClient {
     return this.matchId;
   }
 
+  get selfId(): string {
+    return this.selfEntity;
+  }
+
   async connect(): Promise<void> {
     if (this.mode === 'local') {
       this.local = new LocalServer(
@@ -74,6 +81,8 @@ export class MatchClient {
       return;
     }
     this.session = getSession() ?? (await authenticateGuest());
+    this.selfEntity = this.session.user_id;
+    this.rollback = new RollbackEngine(this.selfEntity, new THREE.Vector3(0, 0.9, 0));
     this.socket = await connectSocket(this.session);
     onSocketDisconnect(this.socket, () => this.handleDisconnect());
   }
@@ -82,10 +91,11 @@ export class MatchClient {
   async startMatch(): Promise<string> {
     if (this.mode === 'local') {
       this.local!.start();
-      return 'local-match';
+      this.matchId = 'local-match';
+    } else {
+      this.matchId = await createMatchViaSocket(this.socket!);
+      await joinMatch(this.socket!, this.matchId);
     }
-    this.matchId = await createMatchViaSocket(this.socket!);
-    await joinMatch(this.socket!, this.matchId);
     this.flushTimer = setInterval(() => this.flushInputs(), TICK_MS);
     return this.matchId;
   }
@@ -95,17 +105,16 @@ export class MatchClient {
     this.pending.push(input);
   }
 
-  /** Local mode: pull one server tick (used by the browser/sim driver). */
-  stepLocal() {
-    this.local?.step();
-  }
-
   private flushInputs() {
-    if (this.pending.length === 0) return;
-    this.seq++;
-    const latest = this.pending[this.pending.length - 1];
-    this.pending = [];
-    void sendMatchInput(this.socket!, this.matchId, encodeInput({ ...latest, seq: this.seq }));
+    const frames = this.pending.flush();
+    if (frames.length === 0) return;
+    const latest = { ...frames[frames.length - 1], seq: ++this.seq };
+    this.rollback.applyInput(this.toPredictionInput(latest), 1 / 20, 0);
+    if (this.mode === 'local') {
+      this.local?.sendInput(latest);
+    } else if (this.socket) {
+      void sendMatchInput(this.socket, this.matchId, encodeInput(latest));
+    }
   }
 
   get latency(): number {
@@ -115,6 +124,7 @@ export class MatchClient {
   private handleSnapshot(snap: WireSnapshot) {
     if (!snap || !snap.entities) return;
     this.interp.push(snap);
+    this.measureLatency(snap);
     const self = snap.entities[this.selfEntity];
     if (self) {
       this.rollback.applySnapshot({
@@ -126,6 +136,8 @@ export class MatchClient {
             health: self.hp,
           },
         },
+        inputAck: snap.acks?.[this.selfEntity],
+        yaw: self.yaw / 100,
       });
     }
     this.cb.onSnapshot(snap);
@@ -136,8 +148,54 @@ export class MatchClient {
     return this.interp.sample(timeMs);
   }
 
+  /**
+   * Estimates one-way latency from the server tick timestamp. The server clock
+   * increment (serverWriterTime - serverReaderTick) is only meaningful when we
+   * reuse the same RTT; calibrate an offset on the first snapshot, then measure
+   * how far behind the latest snapshot is. Clamped non-negative.
+   */
+  private measureLatency(snap: WireSnapshot) {
+    // Local server shares the process clock; skip measurement.
+    if (this.mode !== 'online') return;
+    const now = performance.now();
+    if (this.clockOffset === null) {
+      // First sample: assume the offset equals this snapshot's age. Subsequent
+      // samples then drift as network delay changes.
+      this.clockOffset = now - snap.time_ms;
+      this.latencyMs = 0;
+      return;
+    }
+    const delayed = now - snap.time_ms - this.clockOffset;
+    this.latencyMs = Math.max(0, Math.round(delayed));
+    this.cb.onLatency?.(this.latencyMs);
+  }
+
   private handleDisconnect() {
+    if (this.disconnected) return;
+    this.disconnected = true;
+    if (this.flushTimer) clearInterval(this.flushTimer);
+    this.flushTimer = null;
     this.cb.onDisconnect();
+  }
+
+  private toPredictionInput(input: WireInput): InputFrame {
+    return {
+      seq: input.seq,
+      forward: input.forward ?? false,
+      backward: input.backward ?? false,
+      left: input.left ?? false,
+      right: input.right ?? false,
+      sprint: input.sprint ?? false,
+      jump: input.jump ?? false,
+      aim: input.aim ?? false,
+      mouseX: input.mouseX ?? 0,
+      mouseY: input.mouseY ?? 0,
+      fire: input.fire ?? false,
+      reload: input.reload ?? false,
+      weapon1: false,
+      weapon2: false,
+      weapon3: false,
+    };
   }
 
   dispose() {

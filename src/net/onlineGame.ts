@@ -4,6 +4,7 @@ import { createRobotModel, updateRobotAnim, type RobotAnimState } from '../robot
 import { ZoneSystem } from '../zone';
 import { createHUD, createMinimap, type HUDData } from '../hud';
 import { updateCamera } from '../camera';
+import { createInputManager, type InputManager } from '../input';
 import { MatchClient } from './client';
 import type { AudioManager } from '../audio';
 import type { Settings } from '../settings';
@@ -52,6 +53,7 @@ export class OnlineMatchGame {
   private lastSnap: WireSnapshot | null = null;
   private renderTimeMs = 0;
   private latencyEl: HTMLElement;
+  private input: InputManager;
   private finished = false;
 
   constructor(opts: OnlineGameOptions) {
@@ -69,6 +71,7 @@ export class OnlineMatchGame {
     this.renderer = renderer;
 
     this.zoneSys = new ZoneSystem(scene);
+    this.input = createInputManager(c);
     this.hud = createHUD();
     this.minimap = createMinimap();
 
@@ -92,6 +95,7 @@ export class OnlineMatchGame {
   dispose() {
     cancelAnimationFrame(this.raf);
     this.latencyEl.remove();
+    this.input.dispose();
     this.hud.remove();
     this.minimap.remove();
     for (const rig of this.rigs.values()) this.scene.remove(rig.group);
@@ -102,6 +106,21 @@ export class OnlineMatchGame {
   private frame(now: number) {
     const dt = Math.min((now - this.lastTime) / 1000, 0.05);
     this.lastTime = now;
+    const input = this.input.getInput();
+    this.client.sendInput({
+      seq: 0,
+      forward: input.forward,
+      backward: input.backward,
+      left: input.left,
+      right: input.right,
+      sprint: input.sprint,
+      jump: input.jump,
+      aim: input.aim,
+      mouseX: input.mouseX,
+      mouseY: input.mouseY,
+      fire: input.fire,
+      reload: input.reload,
+    });
     this.renderTimeMs = this.lastSnap ? this.lastSnap.time_ms - REWIND_MS : 0;
 
     const snap = this.client.interp.latest;
@@ -121,7 +140,7 @@ export class OnlineMatchGame {
     const remotes = this.client.sampleRemotes(this.renderTimeMs);
     if (remotes) {
       for (const e of remotes) {
-        if (e.id === 'player') continue;
+        if (e.id === this.client.selfId) continue;
         this.syncRemoteRig(e.id, e.x, e.y, e.z, e.yaw, e.alive);
       }
     }
@@ -175,12 +194,12 @@ export class OnlineMatchGame {
 
   private selfYaw(): number {
     const snap = this.client.interp.latest;
-    const self = snap?.entities['player'];
+    const self = snap?.entities[this.client.selfId];
     return self ? self.yaw / 100 : 0;
   }
 
   private updateHUD(snap: WireSnapshot | null) {
-    const self = snap?.entities['player'];
+    const self = snap?.entities[this.client.selfId];
     const data: HUDData = {
       kills: 0,
       alive: snap?.alive ?? 0,

@@ -200,6 +200,7 @@ local function make_player(user_id, x, y, z)
     kills = 0,
     ammo = RIFLE_MAG,
     last_fire_ms = -RIFLE_FIRE_MS,
+    last_input_seq = 0,
     on_ground = true,
     history = {},  -- ring buffer of {x,y,z} for lag comp
   }
@@ -378,6 +379,7 @@ end
 -- ── snapshot (quantized ints, clients never send state) ───────────────────
 local function build_snapshot(state)
   local entities = {}
+  local acks = {}
   for uid, p in pairs(state.players) do
     entities[uid] = {
       px = q100(p.x), py = q100(p.y), pz = q100(p.z),
@@ -385,6 +387,7 @@ local function build_snapshot(state)
       hp = p.health, ar = p.armor, al = p.alive and 1 or 0,
       yaw = q100(p.yaw),
     }
+    acks[uid] = p.last_input_seq or 0
   end
   local loot_arr = {}
   for _, l in pairs(state.loot) do
@@ -404,6 +407,7 @@ local function build_snapshot(state)
       phase = state.zone_phase,
     },
     entities = entities,
+    acks = acks,
     loot = loot_arr,
     winner = state.winner_id,
   })
@@ -520,7 +524,12 @@ local function match_loop(context, dispatcher, tick, state, messages)
       if msg.op_code == OP_INPUT then
         local ok, input = pcall(nk.json_decode, msg.data)
         if ok and input then
-          state.pending_inputs[msg.sender.user_id] = input
+          local p = state.players[msg.sender.user_id]
+          local seq = tonumber(input.seq)
+          if p and seq and seq > (p.last_input_seq or 0) then
+            p.last_input_seq = seq
+            state.pending_inputs[msg.sender.user_id] = input
+          end
         end
       end
     end
