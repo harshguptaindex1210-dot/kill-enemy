@@ -461,7 +461,7 @@ export class MatchGame {
     } else if (phase === 'playing' && !human.alive && !this.dead) {
       this.dead = true;
       document.exitPointerLock();
-      this.banner('ELIMINATED — SPECTATING', 2500);
+      this.showSpectateOverlay();
       this.pickSpectateTarget();
     } else if ((phase === 'ended' || phase === 'results') && !this.finished) {
       this.finished = true;
@@ -476,10 +476,53 @@ export class MatchGame {
     const idx = alive.findIndex((u) => u.id === current);
     const next = alive[(idx + 1) % alive.length];
     this.spectateId = next.id;
+    this.updateSpectateOverlay();
+  }
+
+  private showSpectateOverlay() {
+    const existing = document.getElementById('spectate-overlay');
+    if (existing) existing.remove();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'spectate-overlay';
+    overlay.style.cssText =
+      'position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;flex-direction:column;align-items:center;justify-content:flex-start;z-index:9998;font-family:sans-serif;color:#fff;pointer-events:none;padding-top:60px;';
+    overlay.innerHTML = `
+      <div id="spectate-info" style="background:rgba(0,0,0,0.6);padding:12px 24px;border-radius:8px;font-size:16px;text-align:center;">
+        <div id="spectate-placement" style="color:#fa0;font-size:20px;font-weight:bold;"></div>
+        <div id="spectate-target" style="color:#8af;margin-top:8px;"></div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+  }
+
+  private updateSpectateOverlay() {
+    const overlay = document.getElementById('spectate-overlay');
+    if (!overlay) return;
+    const target = this.spectateId ? this.sim.units.get(this.spectateId) : null;
+    const placement =
+      this.sim.match.players[this.humanId]?.placement || this.sim.match.aliveCount + 1;
+    const placementEl = document.getElementById('spectate-placement');
+    const targetEl = document.getElementById('spectate-target');
+    if (placementEl) placementEl.textContent = `PLACED ${this.formatPlacement(placement)}`;
+    if (targetEl && target) {
+      targetEl.textContent = `SPECTATING ${target.name} (${target.id})`;
+    } else if (targetEl) {
+      targetEl.textContent = 'NO TARGETS ALIVE';
+    }
+  }
+
+  private formatPlacement(n: number): string {
+    if (n === 1) return '1ST';
+    if (n === 2) return '2ND';
+    if (n === 3) return '3RD';
+    return `${n}TH`;
   }
 
   private finishMatch() {
     document.exitPointerLock();
+    const spectateOverlay = document.getElementById('spectate-overlay');
+    if (spectateOverlay) spectateOverlay.remove();
     const summary = summarizeMatch(this.sim);
     this.callbacks.onFinished(summary);
     this.showResults(summary);
