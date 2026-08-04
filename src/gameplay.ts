@@ -52,7 +52,16 @@ import { createVehicle, updateVehicle, type VehicleState, type VehicleType } fro
 export type DamageCause = 'shot' | 'melee' | 'grenade' | 'zone' | 'vehicle';
 
 export interface SimEvent {
-  type: 'kill' | 'explosion' | 'shot' | 'hit' | 'pickup' | 'airdrop' | 'heal' | 'step';
+  type:
+    | 'kill'
+    | 'explosion'
+    | 'shot'
+    | 'hit'
+    | 'pickup'
+    | 'airdrop'
+    | 'heal'
+    | 'step'
+    | 'zone-incoming';
   time: number;
   [key: string]: unknown;
 }
@@ -106,6 +115,7 @@ const CAPSULE_RADIUS = 0.4;
 const GROUND_Y = 0;
 const LOOT_RESPAWN_MS = 30000;
 const GRENADE_THROW_COOLDOWN_MS = 800;
+const GRENADE_KNOCKBACK = 6;
 
 const DEFAULT_OBSTACLES = [
   { x: 300, z: 0, r: 45 },
@@ -585,6 +595,9 @@ export class MatchSim {
 
   private updateZone(dt: number) {
     this.zone.update(dt);
+    if (this.zone.consumeZoneIncoming()) {
+      this.events.push({ type: 'zone-incoming', time: this.time, phase: this.zone.currentPhase });
+    }
     for (const s of this.loot) {
       if (!s.collected && this.zone.isOutsideZone(s.position)) {
         s.collected = true;
@@ -611,6 +624,14 @@ export class MatchSim {
         const dmg = aoeDamageAt(ex, d);
         if (dmg > 0) {
           this.applyDamage(ex.ownerId, unit.id, dmg, 'grenade');
+        }
+        const falloff = 1 - Math.min(d / ex.radius, 1);
+        if (falloff > 0) {
+          const dir = unit.player.position.clone().sub(ex.position);
+          dir.y = 0;
+          if (dir.lengthSq() > 0.0001) {
+            unit.player.position.addScaledVector(dir.normalize(), GRENADE_KNOCKBACK * falloff);
+          }
         }
       }
     }

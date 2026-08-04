@@ -9,12 +9,14 @@ export interface ZonePhase {
 
 const MAP_BOUND = 480;
 const SHRINK_DURATION = 30;
+export const ZONE_WARNING_LEAD = 5;
 
 export class ZoneLogic {
   phases: ZonePhase[] = [];
   currentPhase = 0;
   phaseTime = 0;
   totalTime = 0;
+  private warnedPhase = -1;
 
   constructor() {
     this.phases = [
@@ -72,6 +74,22 @@ export class ZoneLogic {
     if (!phase) return false;
     return pos.distanceTo(phase.center) > this.currentSafeRadius;
   }
+
+  /** True once per phase while a shrink is imminent (last ZONE_WARNING_LEAD seconds). */
+  get zoneIncoming(): boolean {
+    const phase = this.phases[this.currentPhase];
+    if (!phase) return false;
+    return phase.duration - this.phaseTime <= ZONE_WARNING_LEAD;
+  }
+
+  /** Fires zoneIncoming once per phase; used to raise a single warning event. */
+  consumeZoneIncoming(): boolean {
+    if (this.zoneIncoming && this.warnedPhase !== this.currentPhase) {
+      this.warnedPhase = this.currentPhase;
+      return true;
+    }
+    return false;
+  }
 }
 
 export class ZoneSystem extends ZoneLogic {
@@ -120,5 +138,24 @@ export class ZoneSystem extends ZoneLogic {
 
   getDamagePerSec(): number {
     return this.damagePerSec;
+  }
+
+  /** Drives the ring mesh purely from an authoritative safe radius (e.g. the sim zone). */
+  updateFromZone(safeRadius: number) {
+    const inner = Math.max(safeRadius - 15, 0);
+    const positions = this.ring.geometry.attributes.position;
+    const thetaSegments = 64;
+    for (let i = 0; i <= thetaSegments; i++) {
+      const angle = (i / thetaSegments) * Math.PI * 2;
+      const innerIdx = i * 2;
+      const outerIdx = i * 2 + 1;
+      if (innerIdx < positions.count) {
+        positions.setXYZ(innerIdx, Math.cos(angle) * inner, 0, Math.sin(angle) * inner);
+      }
+      if (outerIdx < positions.count) {
+        positions.setXYZ(outerIdx, Math.cos(angle) * safeRadius, 0, Math.sin(angle) * safeRadius);
+      }
+    }
+    positions.needsUpdate = true;
   }
 }

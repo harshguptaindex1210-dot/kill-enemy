@@ -238,6 +238,7 @@ export class MatchGame {
     for (const m of this.vehicleMeshes.values()) this.scene.remove(m);
     for (const m of this.airdropMeshes.values()) this.scene.remove(m);
     for (const m of this.projMeshes.values()) this.scene.remove(m);
+    for (const m of this.pool) this.scene.remove(m);
     for (const fx of this.explosionFx) {
       this.scene.remove(fx.light);
       this.scene.remove(fx.mesh);
@@ -332,6 +333,7 @@ export class MatchGame {
     }
 
     this.sim.update(dt, input);
+    this.zoneSys.updateFromZone(this.sim.zone.innerRadius);
     this.processEvents(this.sim.events.splice(0, this.sim.events.length), dt);
     this.syncVisuals(dt);
     this.updateCamera(dt);
@@ -404,6 +406,10 @@ export class MatchGame {
           break;
         case 'step':
           if (e.unitId === this.humanId) this.audio.play('step');
+          break;
+        case 'zone-incoming':
+          this.audio.play('ui');
+          this.banner('⚠️ ZONE INCOMING', 2500);
           break;
         default:
           break;
@@ -584,8 +590,9 @@ export class MatchGame {
         rig.group.position.y = unit.player.position.y + ROBOT_GROUP_Y_OFFSET;
         rig.group.rotation.y = unit.player.yaw;
         const state = unit.player.state;
-        const anim =
-          state === 'sprint'
+        const anim = unit.melee.swinging
+          ? 'melee'
+          : state === 'sprint'
             ? 'run'
             : state === 'crouch'
               ? 'crouch'
@@ -639,21 +646,35 @@ export class MatchGame {
       active.add(p.id);
       let mesh = this.projMeshes.get(p.id);
       if (!mesh) {
-        mesh = new THREE.Mesh(
-          new THREE.SphereGeometry(0.15, 6, 6),
-          new THREE.MeshStandardMaterial({ color: 0x223322, metalness: 0.6, roughness: 0.4 })
-        );
-        this.scene.add(mesh);
+        mesh = this.retireProjMesh();
         this.projMeshes.set(p.id, mesh);
       }
+      mesh.visible = true;
       mesh.position.copy(p.position);
     }
     for (const [id, mesh] of this.projMeshes) {
       if (!active.has(id)) {
-        this.scene.remove(mesh);
+        mesh.visible = false;
+        this.pool.push(mesh);
         this.projMeshes.delete(id);
       }
     }
+  }
+
+  private pool: THREE.Mesh[] = [];
+
+  private makeProjMesh(): THREE.Mesh {
+    const mesh = new THREE.Mesh(
+      new THREE.SphereGeometry(0.15, 6, 6),
+      new THREE.MeshStandardMaterial({ color: 0x223322, metalness: 0.6, roughness: 0.4 })
+    );
+    mesh.visible = false;
+    this.scene.add(mesh);
+    return mesh;
+  }
+
+  private retireProjMesh(): THREE.Mesh {
+    return this.pool.pop() ?? this.makeProjMesh();
   }
 
   private updateCamera(dt: number) {

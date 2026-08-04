@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
+import * as THREE from 'three';
 import { MatchSim } from '../src/gameplay';
 import { createWeapon } from '../src/weapons';
+import { throwGrenade } from '../src/grenades';
 
 function makeSim(botCount = 3, seed = 12345): MatchSim {
   return new MatchSim({ seed, botCount, time: 0 });
@@ -11,6 +13,27 @@ function runFor(sim: MatchSim, seconds: number, input?: Parameters<MatchSim['upd
   for (let i = 0; i < steps; i++) {
     sim.update(1 / 20, input);
   }
+}
+
+function fullInput(over: Partial<Parameters<MatchSim['update']>[1]> = {}) {
+  return {
+    forward: false,
+    backward: false,
+    left: false,
+    right: false,
+    sprint: false,
+    crouch: false,
+    jump: false,
+    aim: false,
+    fire: false,
+    reload: false,
+    weapon1: false,
+    weapon2: false,
+    weapon3: false,
+    mouseX: 0,
+    mouseY: 0,
+    ...over,
+  };
 }
 
 describe('MatchSim', () => {
@@ -279,5 +302,92 @@ describe('MatchSim', () => {
     runFor(sim, 0.5);
     expect(Math.abs(player.player.position.x)).toBeLessThanOrEqual(480);
     expect(Math.abs(player.player.position.z)).toBeLessThanOrEqual(480);
+  });
+});
+
+describe('grenade gameplay (#26)', () => {
+  it('grenade explosion damages the thrower (self-damage)', () => {
+    const sim = makeSim(1);
+    sim.startMatch();
+    runFor(sim, 9);
+    const player = sim.units.get('player')!;
+    player.player.position.set(0, 0.9, 0);
+    throwGrenade(
+      sim.grenades,
+      'player',
+      new THREE.Vector3(0, 0.15, 0),
+      new THREE.Vector3(0, 0, -1),
+      0,
+      0.1,
+      0
+    );
+    runFor(sim, 1);
+    expect(player.health).toBeLessThan(100);
+  });
+
+  it('grenade explosion knocks back units in radius', () => {
+    const sim = makeSim(1);
+    sim.startMatch();
+    runFor(sim, 9);
+    const player = sim.units.get('player')!;
+    const bot = sim.units.get('bot_1')!;
+    bot.health = 1000;
+    bot.player.position.set(3, 0.9, 0);
+    player.player.position.set(0, 0.9, 0);
+    const origin = new THREE.Vector3(0, 0.15, 0);
+    const botDistBefore = bot.player.position.distanceTo(origin);
+    throwGrenade(sim.grenades, 'player', origin.clone(), new THREE.Vector3(0, 0, -1), 0, 0.1, 0);
+    runFor(sim, 1);
+    const botDistAfter = bot.player.position.distanceTo(origin);
+    expect(botDistAfter).toBeGreaterThan(botDistBefore);
+  });
+});
+
+describe('melee gameplay (#27)', () => {
+  it('melee swing hits a nearby bot and deals melee damage', () => {
+    const sim = makeSim(1);
+    sim.startMatch();
+    runFor(sim, 9);
+    const player = sim.units.get('player')!;
+    const bot = sim.units.get('bot_1')!;
+    bot.isBot = false;
+    bot.health = 100;
+    bot.player.position.set(0, 0.9, -1.2);
+    player.player.position.set(0, 0.9, 0);
+    player.meleeMode = true;
+    runFor(sim, 0.6, fullInput({ fire: true }));
+    expect(bot.health).toBeLessThan(100);
+  });
+});
+
+describe('zone gameplay (#28)', () => {
+  it('zone kills attribute death to the zone', () => {
+    const sim = makeSim(1);
+    sim.startMatch();
+    runFor(sim, 9);
+    sim.applyDamage('zone', 'bot_1', 1000, 'zone');
+    expect(sim.units.get('bot_1')!.alive).toBe(false);
+    expect(sim.match.lastKill?.cause).toBe('zone');
+    expect(sim.match.lastKill?.killerId).toBe('zone');
+  });
+
+  it('zone alone can end a match', () => {
+    const sim = makeSim(3);
+    sim.startMatch();
+    runFor(sim, 9);
+    for (const [id] of sim.units) {
+      if (id !== 'player') sim.applyDamage('zone', id, 1000, 'zone');
+    }
+    expect(sim.match.phase).toBe('ended');
+    expect(sim.match.winnerId).toBe('player');
+  });
+
+  it('emits zone-incoming before a shrink', () => {
+    const sim = makeSim(1);
+    sim.startMatch();
+    runFor(sim, 9);
+    sim.zone.phaseTime = sim.zone.phases[0].duration - 4;
+    sim.update(1 / 20);
+    expect(sim.events.some((e) => e.type === 'zone-incoming')).toBe(true);
   });
 });

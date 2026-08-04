@@ -37,6 +37,15 @@ describe('grenade projectiles', () => {
     expect(s.explosions.length).toBe(1);
   });
 
+  it('does not explode before the fuse elapses', () => {
+    const s = createGrenadeSystem();
+    throwGrenade(s, 'p1', new THREE.Vector3(0, 1.5, 0), new THREE.Vector3(0, 0, -1), 10, 5);
+    const ex = updateGrenades(s, 1, 0);
+    expect(ex.length).toBe(0);
+    expect(s.projectiles.length).toBe(1);
+    expect(s.explosions.length).toBe(0);
+  });
+
   it('explodes after max bounces', () => {
     const s = createGrenadeSystem();
     throwGrenade(s, 'p1', new THREE.Vector3(0, 5, 0), new THREE.Vector3(0, -1, 0), 1, 10);

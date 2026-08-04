@@ -14,6 +14,7 @@ describe('robot model', () => {
     expect(anim.actions.run).toBeDefined();
     expect(anim.actions.jump).toBeDefined();
     expect(anim.actions.crouch).toBeDefined();
+    expect(anim.actions.melee).toBeDefined();
   });
 
   it('starts in idle animation', () => {
@@ -27,6 +28,12 @@ describe('robot model', () => {
     expect(anim.current).toBe('walk');
     transitionAnim(anim, 'run');
     expect(anim.current).toBe('run');
+  });
+
+  it('transitions to melee swing animation', () => {
+    const { anim } = createRobotModel();
+    transitionAnim(anim, 'melee');
+    expect(anim.current).toBe('melee');
   });
 
   it('ignores transition to same animation', () => {

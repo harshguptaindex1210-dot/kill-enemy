@@ -123,6 +123,22 @@ function createAnimState(target: THREE.Object3D): RobotAnimState {
       loop: false,
       tracks: [{ prop: '.scale[y]', times: [0, 0.15], values: [1, 0.65] }],
     },
+    melee: {
+      duration: 0.25,
+      loop: false,
+      tracks: [
+        {
+          prop: '.rotation[y]',
+          times: [0, 0.1, 0.25],
+          values: [0, Math.PI / 2, 0],
+        },
+        {
+          prop: '.position[y]',
+          times: [0, 0.1, 0.25],
+          values: [0, 0.1, 0],
+        },
+      ],
+    },
   };
 
   for (const [name, def] of Object.entries(defs)) {
