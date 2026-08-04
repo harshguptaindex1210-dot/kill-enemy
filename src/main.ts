@@ -3,6 +3,7 @@ import { showLobby } from './lobby';
 import { AudioManager } from './audio';
 import { loadSettings, saveSettings, type Settings } from './settings';
 import { defaultStats, recordMatchOnce, createWriteId, type PlayerStats } from './persistence';
+import { showAd } from './ad';
 
 const STATS_KEY = 'robot_arena_stats_v1';
 
@@ -68,18 +69,30 @@ function init() {
           stats = next;
           saveStats(stats);
           if (stats.level > levelBefore) audio.play('levelup');
+          // After match finishes, results screen is shown by game.ts.
+          // Ad will be shown when user clicks "Return to Lobby" or "Play Again".
         },
         onLobby() {
-          game?.dispose();
-          game = null;
-          showLobbyUI();
+          showAdThenLobby();
         },
         onPlayAgain() {
-          launchMatch();
+          showAdThenLaunch();
         },
       },
     });
     game.start();
+  }
+
+  async function showAdThenLobby() {
+    game?.dispose();
+    game = null;
+    await showAd({ skipAfterMs: 5000, online: false }); // Local: 5s skip
+    showLobbyUI();
+  }
+
+  async function showAdThenLaunch() {
+    await showAd({ skipAfterMs: 5000, online: false }); // Local: 5s skip
+    launchMatch();
   }
 
   function applyQuality(quality: 'low' | 'medium') {
