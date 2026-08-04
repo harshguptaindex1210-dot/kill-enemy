@@ -412,6 +412,9 @@ export class MatchGame {
           this.audio.play('explosion');
           this.spawnExplosion(e.position as THREE.Vector3);
           break;
+        case 'bounce':
+          this.audio.play('bounce');
+          break;
         case 'hit': {
           const attacker = String(e.attackerId);
           const victim = String(e.victimId);

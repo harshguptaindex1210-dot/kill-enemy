@@ -28,6 +28,17 @@ describe('grenade projectiles', () => {
     expect(p.position.y).toBeGreaterThanOrEqual(0);
   });
 
+  it('reports bounced positions for SFX', () => {
+    const s = createGrenadeSystem();
+    throwGrenade(s, 'p1', new THREE.Vector3(0, 1.5, 0), new THREE.Vector3(0, 0, -1), 10, 10);
+    updateGrenades(s, 1, 0);
+    expect(s.bounced.length).toBeGreaterThanOrEqual(1);
+    expect(s.bounced[0].y).toBeGreaterThanOrEqual(0);
+    const recorded = s.bounced.length;
+    updateGrenades(s, 0.02, 0);
+    expect(s.bounced.length).toBeLessThanOrEqual(recorded);
+  });
+
   it('explodes when fuse elapses', () => {
     const s = createGrenadeSystem();
     throwGrenade(s, 'p1', new THREE.Vector3(0, 1.5, 0), new THREE.Vector3(0, 0, -1), 0, 0.5);

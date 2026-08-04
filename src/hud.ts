@@ -9,7 +9,7 @@ export function createHUD(): { update: (data: HUDData) => void; remove: () => vo
       <span id="hud-alive">👥 0 Alive</span>
       <span id="hud-phase" style="color:#8af;">LOBBY</span>
       <span id="hud-timer">⏲ 0:00</span>
-      <span id="hud-zone" style="color:#8af;">⏱ 0:00</span>
+      <span id="hud-zone" style="color:#8af;">⏱ Zone in 0:00</span>
       <span id="hud-storm" style="display:none;color:#f44;">⚠️ STORM</span>
     </div>
     <div id="hud-prompt" style="position:absolute;bottom:160px;left:50%;transform:translateX(-50%);display:none;background:rgba(0,0,0,0.6);padding:6px 14px;border-radius:4px;color:#fff;font-size:14px;"></div>
@@ -51,7 +51,7 @@ export function createHUD(): { update: (data: HUDData) => void; remove: () => vo
       document.getElementById('hud-alive')!.textContent = `👥 ${data.alive} Alive`;
       document.getElementById('hud-phase')!.textContent = data.phaseLabel;
       document.getElementById('hud-timer')!.textContent = `⏲ ${data.matchTimer}`;
-      document.getElementById('hud-zone')!.textContent = `⏱ ${data.zoneTimer}`;
+      document.getElementById('hud-zone')!.textContent = `⏱ Zone in ${data.zoneTimer}`;
       document.getElementById('hud-health-bar')!.style.width =
         `${Math.max(0, Math.min(100, data.health))}%`;
       document.getElementById('hud-health-num')!.textContent = `${Math.round(data.health)}`;

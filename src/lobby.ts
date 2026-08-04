@@ -88,6 +88,19 @@ export function showLobby(
               settings.minimapSize
             )
           )}
+          ${row(
+            'Volume',
+            select(
+              'sel-volume',
+              [
+                ['0', 'Mute'],
+                ['0.3', 'Quiet'],
+                ['0.7', 'Normal'],
+                ['1', 'Loud'],
+              ],
+              String(settings.volume)
+            )
+          )}
         </div>
       </div>
     </div>
@@ -103,7 +116,8 @@ export function showLobby(
   const wire = (id: string, field: keyof Settings) => {
     document.getElementById(id)?.addEventListener('change', (e) => {
       const target = e.target as HTMLSelectElement;
-      const value = field === 'sensitivity' ? parseFloat(target.value) : target.value;
+      const value =
+        field === 'sensitivity' || field === 'volume' ? parseFloat(target.value) : target.value;
       callbacks.onSettingsChange({ [field]: value } as Partial<Settings>);
     });
   };
@@ -111,4 +125,5 @@ export function showLobby(
   wire('sel-sensitivity', 'sensitivity');
   wire('sel-camera', 'cameraMode');
   wire('sel-minimap', 'minimapSize');
+  wire('sel-volume', 'volume');
 }

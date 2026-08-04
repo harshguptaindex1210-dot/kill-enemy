@@ -21,6 +21,7 @@ export interface GrenadeSystem {
   projectiles: GrenadeProjectile[];
   explosions: Explosion[];
   nextId: number;
+  bounced: THREE.Vector3[];
 }
 
 const GRAVITY = -20;
@@ -29,7 +30,7 @@ const MAX_BOUNCES = 2;
 const GRENADE_RADIUS = 0.15;
 
 export function createGrenadeSystem(): GrenadeSystem {
-  return { projectiles: [], explosions: [], nextId: 1 };
+  return { projectiles: [], explosions: [], nextId: 1, bounced: [] };
 }
 
 export function throwGrenade(
@@ -70,6 +71,7 @@ export function updateGrenades(
 ): Explosion[] {
   const exploded: Explosion[] = [];
   const remaining: GrenadeProjectile[] = [];
+  system.bounced.length = 0;
 
   for (const p of system.projectiles) {
     p.fuseRemaining -= dt;
@@ -90,6 +92,7 @@ export function updateGrenades(
       p.position.y = groundY + GRENADE_RADIUS;
       p.velocity.y = Math.abs(p.velocity.y) * BOUNCE_RESTITUTION;
       p.bounces++;
+      system.bounced.push(p.position.clone());
     }
 
     remaining.push(p);

@@ -57,6 +57,7 @@ export interface SimEvent {
     | 'kill'
     | 'explosion'
     | 'shot'
+    | 'bounce'
     | 'hit'
     | 'pickup'
     | 'airdrop'
@@ -622,6 +623,9 @@ export class MatchSim {
 
   private updateGrenadeSim(dt: number) {
     const explosions = updateGrenades(this.grenades, dt, GROUND_Y, this.time);
+    for (const pos of this.grenades.bounced) {
+      this.events.push({ type: 'bounce', time: this.time, position: pos });
+    }
     for (const ex of explosions) {
       this.events.push({ type: 'explosion', time: this.time, position: ex.position });
       for (const unit of this.units.values()) {
