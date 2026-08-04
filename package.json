@@ -14,6 +14,8 @@
     "format": "prettier --write \"src/**/*.{ts,tsx,json,css,md}\" \"tests/**/*.ts\"",
     "typecheck": "tsc --noEmit",
     "sim:game": "tsx scripts/simulate-game.ts",
+    "sim:nakama": "tsx scripts/nakama-sim.ts",
+    "luac:check": "node scripts/luac-check.js",
     "smoke": "node scripts/smoke.mjs",
     "bench:render": "npm run bench:render:low && npm run bench:render:med",
     "bench:render:low": "node scripts/bench-render.js low",
