@@ -17,6 +17,7 @@
     "sim:nakama": "tsx scripts/nakama-sim.ts",
     "luac:check": "node scripts/luac-check.js",
     "smoke": "node scripts/smoke.mjs",
+    "gate": "npm run typecheck && npm run lint && npm test && npm run build && npm run sim:game && npm run smoke",
     "bench:render": "npm run bench:render:low && npm run bench:render:med",
     "bench:render:low": "node scripts/bench-render.js low",
     "bench:render:med": "node scripts/bench-render.js medium"

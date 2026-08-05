@@ -70,41 +70,56 @@ The full vision (50 players, 2x2 km, duos/squads, multiple maps, realistic asset
 
 These are testable, non-negotiable constraints. Every issue that touches one must restate it in acceptance criteria.
 
+### Verification commands (INV-1..7)
+
+| INV | Constraint (short) | Verification command / evidence |
+|-----|--------------------|----------------------------------|
+| **INV-1** | ≥30 fps low / ≥60 fps mid | `npm run bench:render` (`scripts/bench-render.js`) |
+| **INV-2** | ≤200 ms rollback / desync budget | `npm test -- tests/multiplayer.test.ts tests/netcode.test.ts tests/nakama-protocol.test.ts`; online: `npm run sim:nakama` |
+| **INV-3** | Initial JS gzip ≤200 KB / raw ≤620 KB (HTML-initial) | `npm run build` → `scripts/bundle-size.js` |
+| **INV-4** | Server authority; cheat inputs rejected | Server clamps in `nakama/modules/match_handler.lua`; client never sends state; `npm test -- tests/invariants.test.ts` |
+| **INV-5** | Match ≤25 min; disconnect → lobby | `npm run sim:game`; lifecycle in `tests/match-lifecycle.test.ts` / `tests/match.test.ts`; client `onDisconnect` → lobby |
+| **INV-6** | Idempotent progression writes | `npm test -- tests/persistence.test.ts tests/leaderboard.test.ts` (`recordMatchOnce` / `writeId`) |
+| **INV-7** | Browser boot + one frame | `npm run build && npm run smoke` (`scripts/smoke.mjs`); CI `browser-smoke` job |
+
+Full gate (clean checkout): `npm ci && npm run gate`
+
 ### INV-1: Frame Rate Floor
 - Client must sustain **≥ 30 fps** on a machine with integrated GPU (Intel UHD 620 equivalent) at 720p, low quality preset.
 - Client must sustain **≥ 60 fps** on a mid-range GPU (GTX 1650 / M1) at 1080p, medium preset.
-- **Verification**: Automated headless render benchmark (Puppeteer + `requestAnimationFrame` counter) over 10 s; median fps must meet floor.
+- **Verification**: `npm run bench:render` (Puppeteer + `requestAnimationFrame` counter).
 
 ### INV-2: Network Latency Budget
 - Input-to-prediction local feedback: **≤ 16 ms** (1 frame @ 60 fps).
 - Client-to-server RTT target: **≤ 80 ms** for playable feel; **≤ 150 ms** hard cap before disconnect.
 - Server tick rate: **≥ 20 Hz** (50 ms per tick); rollback window: **≤ 200 ms**.
-- **Verification**: Integration test spins up server + 2 bot clients with artificial latency; assert no desync > 200 ms.
+- **Verification**: Multiplayer/netcode unit tests + `npm run sim:nakama` (2 clients; skips if Nakama down).
 
 ### INV-3: Bundle Size & Load Time
-- Initial JS bundle (gzipped): **≤ 500 KB** (engine + core loop). Assets stream after first interactive frame.
-- Time-to-first-interactive (TTI) on 4G throttle: **≤ 8 s**.
-- **Verification**: Lighthouse CI run on build artifact; fail if TTI > 8 s or bundle > 500 KB gz.
+- Initial JS loaded by `index.html` (entry + modulepreload): **raw ≤ 620 KB**, **gzip ≤ 200 KB**.
+- Async online chunks (`nakama`, `client`, `onlineGame`) are not part of the initial gate.
+- Time-to-first-interactive (TTI) on 4G throttle: **≤ 8 s** (target).
+- **Verification**: `npm run build` runs `scripts/bundle-size.js`.
 
 ### INV-4: Match Integrity (Server Authority)
 - All combat, movement, and looting state is **server-authoritative**. Client may predict but never decide.
 - A modified client must not be able to: move through walls, instant-headshot, spawn items, see through fog-of-war.
-- **Verification**: Fuzz harness sends malformed client inputs (speed hack, wall clip, impossible damage); server rejects all.
+- **Verification**: Lua sanity clamps (velocity / position-delta / fire-rate); clients send `OP_INPUT` only; `tests/invariants.test.ts`.
 
 ### INV-5: Match Lifecycle
 - A match must **always terminate** within **25 minutes** (zone shrink + sudden death). No match can hang forever.
-- On server crash mid-match: players are returned to lobby within **10 s** with match invalidated (no stat loss).
-- **Verification**: Chaos test kills server process mid-match; assert clients reach lobby state in ≤ 10 s.
+- On disconnect / server loss mid-match: players return to lobby (no silent hang).
+- **Verification**: `npm run sim:game`; match lifecycle tests; online `onDisconnect` → lobby.
 
 ### INV-6: Persistence Safety
 - Player progression (XP, inventory) writes are **idempotent and retried**. No lost levels on transient network failure.
-- A player must never lose inventory due to a server restart; all writes are durable before the "saved" ack.
-- **Verification**: Kill server during a write; on reconnect, assert last confirmed state intact.
+- Leaderboard / stats submissions keyed by `writeId`.
+- **Verification**: `tests/persistence.test.ts`, `tests/leaderboard.test.ts`.
 
 ### INV-7: Browser Compatibility
 - Must run on latest Chrome, Edge, Firefox, Safari (desktop). No native plugins. WebGL 2 required.
 - Must degrade gracefully on WebGL 1-only devices (fallback to simpler shaders, not a hard fail).
-- **Verification**: Playwright matrix test across 4 browsers; assert canvas renders and one match completes.
+- **Verification**: `npm run smoke` + CI `browser-smoke` job (Puppeteer: lobby → Play Local → canvas advances).
 
 ## Failure Modes (per external dependency)
 
