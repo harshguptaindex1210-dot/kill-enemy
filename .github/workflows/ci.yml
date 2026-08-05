@@ -57,7 +57,5 @@ jobs:
         run: npm run build
 
       - name: Browser smoke test (vite preview + puppeteer)
+        # Uses the same default Puppeteer cache as the install step above.
         run: node scripts/smoke.mjs
-        env:
-          # Prefer puppeteer's downloaded Chrome on CI runners.
-          PUPPETEER_CACHE_DIR: ${{ runner.temp }}/puppeteer
