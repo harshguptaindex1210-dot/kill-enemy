@@ -86,7 +86,8 @@ export function showLobby(
     <h1 style="font-size:46px;margin:0 0 6px;letter-spacing:4px;text-transform:uppercase;color:#4af;">ROBOT ARENA</h1>
     <p style="color:#889;margin:0 0 26px;font-size:13px;">Battle Royale — Robot Apocalypse</p>
     <div style="display:flex;flex-direction:column;align-items:center;gap:10px;margin-bottom:20px;">
-      <button id="btn-online" style="padding:13px 42px;font-size:17px;background:#4af;color:#000;border:none;border-radius:4px;cursor:pointer;font-weight:bold;">${queue.active ? queue.message : 'Play Online'}</button>
+      <button id="btn-online" style="padding:13px 42px;font-size:17px;background:#4af;color:#000;border:none;border-radius:4px;cursor:pointer;font-weight:bold;">${queue.active ? 'Searching for match...' : 'Play Online'}</button>
+      ${queue.message && !queue.active ? `<p style="color:#fa0;font-size:12px;margin:0;">${escapeHtml(queue.message)}</p>` : ''}
       <div style="display:flex;gap:10px;align-items:center;">
         <button id="btn-local" style="padding:8px 20px;font-size:13px;background:#444;color:#fff;border:none;border-radius:4px;cursor:pointer;">Play Local</button>
         <button id="btn-cancel-queue" style="padding:8px 20px;font-size:13px;background:#a33;color:#fff;border:none;border-radius:4px;cursor:pointer;display:${queue.active ? 'inline-block' : 'none'};">Cancel</button>

@@ -206,7 +206,36 @@ function init() {
     } catch {
       queueActive = false;
       queueTicket = null;
-      showLobbyUI();
+      // Nakama down → fall back to lobby with a clear status (still Play Local).
+      showLobby(
+        {
+          level: stats.level,
+          xp: stats.xp,
+          wins: stats.wins,
+          kills: stats.kills,
+          matches: stats.matches,
+        },
+        settings,
+        {
+          onPlayLocal() {
+            launchMatch();
+          },
+          onPlayOnline() {
+            void startOnlineQueue();
+          },
+          onCancelQueue() {
+            void cancelQueue();
+          },
+          onSettingsChange(changes) {
+            settings = { ...settings, ...changes };
+            saveSettings(settings);
+            applyQuality(settings.quality);
+            audio.setVolume(settings.volume);
+          },
+        },
+        { history: loadLocalHistory(), leaderboard: [] },
+        { active: false, message: 'Online unavailable — try Play Local' }
+      );
     }
   }
 

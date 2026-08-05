@@ -455,11 +455,43 @@ local function match_init(context, params)
   for i = 1, bot_count do
     local bid = string.format("bot_%d", i)
     local sx, sy, sz = spawn_point(i, bot_count + 1, rng)
-    state.players[bid] = make_player(bid, sx, sy, sz)
+    local bot = make_player(bid, sx, sy, sz)
+    bot.is_bot = true
+    state.players[bid] = bot
     state.alive_count = state.alive_count + 1
   end
 
-  return state, TICK_MS, "battle-royale"
+  -- Third return value is the match label (mode encoded for lobby/debug).
+  return state, TICK_MS, state.label
+end
+
+local function player_count(state)
+  local n = 0
+  for _ in pairs(state.players) do n = n + 1 end
+  return n
+end
+
+-- Top up with bots so the lobby always reaches 10 (handles no-shows).
+local function fill_bots_to_cap(state)
+  local cap = 10
+  local n = player_count(state)
+  local next_id = state.bot_count or 0
+  local rng = seeded_rng(state.map_seed + n + 17)
+  while n < cap do
+    next_id = next_id + 1
+    local bid = string.format("bot_%d", next_id)
+    if state.players[bid] then
+      break
+    end
+    local sx, sy, sz = spawn_point(n, cap, rng)
+    local bot = make_player(bid, sx, sy, sz)
+    bot.is_bot = true
+    state.players[bid] = bot
+    state.alive_count = state.alive_count + 1
+    n = n + 1
+  end
+  state.bot_count = next_id
+  state.open = n < cap and state.match_phase ~= "ended"
 end
 
 local function match_join_attempt(context, dispatcher, tick, state, presence, metadata)
@@ -507,7 +539,12 @@ local function match_loop(context, dispatcher, tick, state, messages)
 
   -- phase transitions (mirrors match.ts)
   if state.match_phase == "countdown" then
+    -- After 2s of countdown, lock remaining slots with bots (cap 10).
+    if state.time_ms - state.phase_start_ms >= 2000 then
+      fill_bots_to_cap(state)
+    end
     if state.time_ms - state.phase_start_ms >= 5000 then
+      fill_bots_to_cap(state)
       state.match_phase = "dropping"
       state.phase_start_ms = state.time_ms
     end
@@ -515,6 +552,17 @@ local function match_loop(context, dispatcher, tick, state, messages)
     if state.time_ms - state.phase_start_ms >= 3000 then
       state.match_phase = "playing"
       state.phase_start_ms = state.time_ms
+    end
+  end
+
+  -- Bot AI only outside playing (playing path below already steps bots once).
+  if state.match_phase ~= "playing" and state.match_phase ~= "ended" then
+    for uid, p in pairs(state.players) do
+      if p.alive and (p.is_bot or string.sub(uid, 1, 4) == "bot_") then
+        local input = bot_input(state, p)
+        apply_input(p, input, TICK_DT)
+        push_history(p)
+      end
     end
   end
 
@@ -539,7 +587,7 @@ local function match_loop(context, dispatcher, tick, state, messages)
     for uid, p in pairs(state.players) do
       if p.alive then
         push_history(p)
-        local is_bot = string.sub(uid, 1, 4) == "bot_"
+        local is_bot = p.is_bot or string.sub(uid, 1, 4) == "bot_"
         local input = is_bot and bot_input(state, p) or (state.pending_inputs[uid] or {})
         apply_input(p, input, TICK_DT)
         try_fire(state, p, input)
@@ -590,9 +638,11 @@ end
 -- matchmaker hook: create authoritative match when players matched (#40).
 -- Fill with server-side bots so lobbies cap at 10 total.
 local function matchmaker_matched(context, matched_users)
-  nk.logger_info(string.format("matchmaker matched %d users", #matched_users))
-  local humans = math.min(#matched_users, 10)
+  local humans = #matched_users
+  if humans < 1 then humans = 1 end
+  if humans > 10 then humans = 10 end
   local bots = 10 - humans
+  nk.logger_info(string.format("matchmaker matched %d humans → %d bots", humans, bots))
   local seed = math.floor(nk.time() % 100000)
   local match_id = nk.match_create("battle_royale", {
     map_seed = seed,
@@ -620,6 +670,11 @@ local function rpc_create_match(context, payload)
   if payload and payload ~= "" then
     local ok, decoded = pcall(nk.json_decode, payload)
     if ok and decoded then params = decoded end
+  end
+  params.mode = params.mode or "online"
+  -- Default online creates fill to 10 assuming one human caller.
+  if params.bot_count == nil then
+    params.bot_count = 9
   end
   local match_id = nk.match_create("battle_royale", params)
   return nk.json_encode({ match_id = match_id })

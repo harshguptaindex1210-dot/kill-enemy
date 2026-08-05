@@ -1,5 +1,6 @@
 import { Client, Session } from '@heroiclabs/nakama-js';
 import type { Socket } from '@heroiclabs/nakama-js';
+import { MATCHMAKER_MAX, MATCHMAKER_MIN, MATCHMAKER_QUERY } from './matchmaking';
 
 let client: Client | null = null;
 let session: Session | null = null;
@@ -84,10 +85,11 @@ export async function sendMatchInput(s: Socket, matchId: string, data: string) {
 
 /**
  * Joins the matchmaking queue for an online match (#40). Returns the ticket so
- * the client can cancel via removeFromMatchmaker.
+ * the client can cancel via removeFromMatchmaker. Min 1 so a solo player is
+ * matched immediately and the server fills the rest with bots (cap 10).
  */
 export async function addToMatchmaker(s: Socket): Promise<string> {
-  const matched = await s.addMatchmaker('*', 2, 10);
+  const matched = await s.addMatchmaker(MATCHMAKER_QUERY, MATCHMAKER_MIN, MATCHMAKER_MAX);
   return matched.ticket;
 }
 
