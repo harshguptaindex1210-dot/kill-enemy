@@ -81,8 +81,35 @@ These are testable, non-negotiable constraints. Every issue that touches one mus
 | **INV-5** | Match ≤25 min; disconnect → lobby | `npm run sim:game`; lifecycle in `tests/match-lifecycle.test.ts` / `tests/match.test.ts`; client `onDisconnect` → lobby |
 | **INV-6** | Idempotent progression writes | `npm test -- tests/persistence.test.ts tests/leaderboard.test.ts` (`recordMatchOnce` / `writeId`) |
 | **INV-7** | Browser boot + one frame | `npm run build && npm run smoke` (`scripts/smoke.mjs`); CI `browser-smoke` job |
+| **INV-W1** | Local held mesh matches active loadout | `npm test -- tests/held-weapons.test.ts` |
+| **INV-W2** | No held meshes on bots/remotes from this effort | same test file asserts non-local rigs stay unequipped |
 
 Full gate (clean checkout): `npm ci && npm run gate`
+
+## Current Effort — Held Weapons + Mid-Match Lag (2026-08-05)
+
+Locked after grill (`CONTEXT/docs/prd/HELD-WEAPONS-LAG.md`):
+
+| # | Decision | Choice |
+|---|----------|--------|
+| W1 | Held visuals | Blockout meshes (not cosmetics/unlocks) |
+| W2 | Who sees them | Local player only |
+| W3 | FPS camera | Same world mesh; no separate viewmodel |
+| W4 | Melee | Attach for local; slots 1/2 vs 3 swap visibility |
+| W5 | Grenade-in-slot | Small held nade mesh |
+| W6 | Rifle vs pistol | Distinct blockout shapes |
+| W7 | Lag symptom | Mid-match hitching under load (Local + Online) |
+| W8 | Lag approach | Measure hotspots, then fix until INV-1; no forced low default |
+
+### INV-W1: Local Held-Weapon Visibility
+- Local player, **alive**, **not in a vehicle**: the active loadout shows the correct held mesh (rifle / pistol / grenade / melee).
+- Slot change (1 / 2 / 3) updates which mesh is visible by the next applied-input frame.
+- **Failure**: unknown/null weapon → no throw; held group hidden. Vehicle enter or death → held mesh hidden.
+- **Verification**: `npm test -- tests/held-weapons.test.ts`.
+
+### INV-W2: Local-Only Draw Budget
+- Bot and remote player rigs must **not** receive held-weapon meshes from this effort.
+- **Verification**: held-weapons tests assert non-local units remain unequipped.
 
 ### INV-1: Frame Rate Floor
 - Client must sustain **≥ 30 fps** on a machine with integrated GPU (Intel UHD 620 equivalent) at 720p, low quality preset.

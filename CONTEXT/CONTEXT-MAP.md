@@ -15,10 +15,13 @@ Where things live. Load `CONTEXT/CONTEXT.md` first.
 
 | Path | Purpose |
 |------|---------|
-| `CONTEXT/CONTEXT.md` | Decisions, INV-1..7 + verification table |
+| `CONTEXT/CONTEXT.md` | Decisions, INV-1..7 + INV-W1/W2 + verification table |
 | `CONTEXT/docs/protocol.md` | Wire protocol (op-codes, quantization) |
 | `CONTEXT/docs/DEPLOY.md` | Mirror pointer — prefer root `DEPLOY.md` |
 | `CONTEXT/docs/prd.md` | Production-grade PRD |
+| `CONTEXT/docs/prd/HELD-WEAPONS-LAG.md` | Spec: local held weapons + mid-match lag |
+| `CONTEXT/docs/prd/tickets-held-weapons-lag.md` | Local ticket index (#44 Agent Ready, #45 Planned) |
+| `CONTEXT/docs/prd/issues/` | Per-ticket bodies for local tracker |
 | `CONTEXT/handoffs/` | Per-effort handoffs (newest first) |
 
 ## Source (`src/`)
