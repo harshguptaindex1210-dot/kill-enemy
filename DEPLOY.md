@@ -67,7 +67,7 @@ Score ranking: better placement → higher Nakama score (`1000 - placement`).
 
 ```bash
 npm run typecheck && npm run lint && npm test && npm run build
-npm run sim:nakama          # skips cleanly if Docker Nakama is down
+npm run sim:nakama          # requires the Docker stack above; CI runs this automatically
 npm run smoke               # after build
 ```
 

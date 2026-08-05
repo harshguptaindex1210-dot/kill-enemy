@@ -75,7 +75,7 @@ These are testable, non-negotiable constraints. Every issue that touches one mus
 | INV | Constraint (short) | Verification command / evidence |
 |-----|--------------------|----------------------------------|
 | **INV-1** | ≥30 fps low / ≥60 fps mid | `npm run bench:render` (`scripts/bench-render.js`) |
-| **INV-2** | ≤200 ms rollback / desync budget | `npm test -- tests/multiplayer.test.ts tests/netcode.test.ts tests/nakama-protocol.test.ts`; online: `npm run sim:nakama` |
+| **INV-2** | ≤200 ms rollback / desync budget | `npm test -- tests/multiplayer.test.ts tests/netcode.test.ts tests/nakama-protocol.test.ts`; `npm run sim:nakama` is mandatory in CI's `nakama-integration` job |
 | **INV-3** | Initial JS gzip ≤200 KB / raw ≤620 KB (HTML-initial) | `npm run build` → `scripts/bundle-size.js` |
 | **INV-4** | Server authority; cheat inputs rejected | Server clamps in `nakama/modules/match_handler.lua`; client never sends state; `npm test -- tests/invariants.test.ts` |
 | **INV-5** | Match ≤25 min; disconnect → lobby | `npm run sim:game`; lifecycle in `tests/match-lifecycle.test.ts` / `tests/match.test.ts`; client `onDisconnect` → lobby |
@@ -93,7 +93,7 @@ Full gate (clean checkout): `npm ci && npm run gate`
 - Input-to-prediction local feedback: **≤ 16 ms** (1 frame @ 60 fps).
 - Client-to-server RTT target: **≤ 80 ms** for playable feel; **≤ 150 ms** hard cap before disconnect.
 - Server tick rate: **≥ 20 Hz** (50 ms per tick); rollback window: **≤ 200 ms**.
-- **Verification**: Multiplayer/netcode unit tests + `npm run sim:nakama` (2 clients; skips if Nakama down).
+- **Verification**: Multiplayer/netcode unit tests + `npm run sim:nakama` (2 live clients). CI starts Docker Nakama and requires this check in `nakama-integration`; a developer run skips only when no local server is available.
 
 ### INV-3: Bundle Size & Load Time
 - Initial JS loaded by `index.html` (entry + modulepreload): **raw ≤ 620 KB**, **gzip ≤ 200 KB**.

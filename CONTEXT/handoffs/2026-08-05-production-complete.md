@@ -14,7 +14,7 @@ The game supports:
 - Zone, loot, airdrops, vehicles, melee, grenades, audio, feedback, settings
 - Rollback/interpolation online path; lazy-loaded to protect INV-3
 - Seasonal leaderboard + local match history
-- CI: typecheck, lint, test, build, browser smoke
+- CI: typecheck, lint, test, build, browser smoke, and mandatory two-client Nakama integration
 
 ## Verification (ran for this handoff)
 
@@ -30,6 +30,12 @@ npm run smoke          # after build
 Or: `npm run gate`.
 
 Documented commands for INV-1..7 live in `CONTEXT/CONTEXT.md` (verification table).
+
+## Post-handoff verification update
+
+The original local gate could not run `sim:nakama` without Docker. CI now starts the
+Docker Nakama stack and requires `npm run sim:nakama` in the `nakama-integration`
+job, so the #39 live two-client path is no longer an unverified optional check.
 
 ## Docs delivered (#43)
 

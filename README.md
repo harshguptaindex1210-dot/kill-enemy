@@ -40,7 +40,7 @@ Controls, items, zone, vehicles: [GAMEPLAY.md](./GAMEPLAY.md).
 | `npm run lint` | ESLint |
 | `npm run smoke` | Puppeteer smoke (`npm run build` first) |
 | `npm run sim:game` | Headless full-match simulation |
-| `npm run sim:nakama` | 2-client Nakama sim (needs Docker) |
+| `npm run sim:nakama` | 2-client Nakama sim (requires a running Docker stack; enforced by CI) |
 | `npm run luac:check` | Lua syntax / structure check |
 | `npm run gate` | Final gate: typecheck + lint + test + build + sim + smoke |
 | `npm run bench:render` | Headless FPS benchmark (low + medium) |
