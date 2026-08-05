@@ -2,6 +2,7 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig({
+  base: '/shooter-game/',
   server: {
     port: 5173,
     host: true,

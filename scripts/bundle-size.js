@@ -18,7 +18,7 @@ if (!existsSync(htmlPath)) {
 
 const html = readFileSync(htmlPath, 'utf8');
 const refs = new Set();
-for (const m of html.matchAll(/(?:src|href)="(\/assets\/[^"]+\.js)"/g)) {
+for (const m of html.matchAll(/(?:src|href)="([^"]+\/assets\/[^"]+\.js)"/g)) {
   refs.add(basename(m[1]));
 }
 
