@@ -16,30 +16,30 @@ export interface BotProfile {
 export const BOT_PROFILES: Record<BotDifficulty, BotProfile> = {
   easy: {
     difficulty: 'easy',
-    aimError: 0.3,
-    reactionMs: 900,
-    fireIntervalMs: 1800,
+    aimError: 0.42,
+    reactionMs: 1400,
+    fireIntervalMs: 4500,
     strafe: false,
     moveSpeed: 5,
-    preferredRange: 20,
+    preferredRange: 22,
   },
   medium: {
     difficulty: 'medium',
-    aimError: 0.15,
-    reactionMs: 500,
-    fireIntervalMs: 900,
+    aimError: 0.28,
+    reactionMs: 900,
+    fireIntervalMs: 3800,
     strafe: true,
-    moveSpeed: 6,
-    preferredRange: 15,
+    moveSpeed: 5.5,
+    preferredRange: 18,
   },
   hard: {
     difficulty: 'hard',
-    aimError: 0.06,
-    reactionMs: 250,
-    fireIntervalMs: 450,
+    aimError: 0.18,
+    reactionMs: 650,
+    fireIntervalMs: 3000,
     strafe: true,
-    moveSpeed: 6.5,
-    preferredRange: 12,
+    moveSpeed: 6,
+    preferredRange: 15,
   },
 };
 
@@ -83,7 +83,7 @@ export interface BotContext {
 }
 
 const SENSITIVITY = 0.002;
-const SIGHT_RANGE = 70;
+const SIGHT_RANGE = 140;
 const ZONE_MARGIN = 25;
 const LOOT_RANGE = 40;
 const ROAM_RANGE = 80;
@@ -128,6 +128,7 @@ export function decideBotInput(ctx: BotContext): PlayerInput {
   let strafeDir = 0;
   let fire = false;
   let reload = false;
+  let skill = false;
 
   const toPoint = (pt: THREE.Vector3): number => {
     targetYaw = angleTo(pos, pt);
@@ -155,10 +156,16 @@ export function decideBotInput(ctx: BotContext): PlayerInput {
     const pitchErr = Math.abs(wrapAngle(targetPitch - ctx.pitch));
     const reactionDone = ctx.time - brain.lastGoalChange >= p.reactionMs;
     const cooldownDone = ctx.time - brain.lastShotTime >= p.fireIntervalMs;
-    if (reactionDone && cooldownDone && yawErr < p.aimError * 1.5 && pitchErr < 0.25) {
-      if (ctx.weaponReady && Math.random() < 0.9) {
+    if (
+      reactionDone &&
+      cooldownDone &&
+      yawErr < Math.max(0.28, p.aimError * 2.2) &&
+      pitchErr < 0.4
+    ) {
+      if (ctx.weaponReady && Math.random() < 0.55) {
         fire = true;
         brain.lastShotTime = ctx.time;
+        if (Math.random() < 0.2) skill = true;
       } else if (ctx.needsReload) {
         reload = true;
       }
@@ -195,6 +202,7 @@ export function decideBotInput(ctx: BotContext): PlayerInput {
     aim: goal === 'combat',
     fire,
     reload,
+    skill,
     weapon1: false,
     weapon2: false,
     weapon3: false,

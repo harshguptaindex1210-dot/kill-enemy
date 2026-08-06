@@ -46,7 +46,14 @@ export function getSession(): Session | null {
 
 /** Connects a realtime socket for match play. */
 export async function connectSocket(s: Session): Promise<Socket> {
-  if (socket) return socket;
+  if (socket && (socket as { isOpen?: boolean }).isOpen) return socket;
+  if (socket) {
+    // Stale socket - clean up
+    try {
+      socket.disconnect(false);
+    } catch {}
+    socket = null;
+  }
   socket = getClient().createSocket(false, false);
   await socket.connect(s, false);
   return socket;

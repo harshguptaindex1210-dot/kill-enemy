@@ -6,26 +6,34 @@ export interface RobotAnimState {
   current: string;
 }
 
-export function createRobotModel(): { group: THREE.Group; anim: RobotAnimState } {
+/** Titanfall-style robot; `teamColor` tints chassis + accents (default human blue). */
+export function createRobotModel(teamColor = 0x3366cc): {
+  group: THREE.Group;
+  anim: RobotAnimState;
+} {
   const group = new THREE.Group();
+  const base = new THREE.Color(teamColor);
+  const body = base.clone().multiplyScalar(0.55);
+  const accent = base.clone().lerp(new THREE.Color(0xffffff), 0.35);
+  const optic = base.clone().lerp(new THREE.Color(0x00ffff), 0.55);
 
   const bodyMat = new THREE.MeshStandardMaterial({
-    color: 0x556677,
+    color: body,
     metalness: 0.7,
     roughness: 0.3,
   });
   const accentMat = new THREE.MeshStandardMaterial({
-    color: 0x88aacc,
+    color: accent,
     metalness: 0.8,
     roughness: 0.2,
   });
   const opticMat = new THREE.MeshStandardMaterial({
-    color: 0x00ccff,
-    emissive: 0x00ccff,
-    emissiveIntensity: 0.5,
+    color: optic,
+    emissive: optic,
+    emissiveIntensity: 0.65,
   });
   const darkMat = new THREE.MeshStandardMaterial({
-    color: 0x333344,
+    color: 0x222233,
     metalness: 0.6,
     roughness: 0.4,
   });

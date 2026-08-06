@@ -1,0 +1,19 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  // Nvidia NIM free tier shares a global worker pool (hard cap 32).
+  // ResourceExhausted / 502 "Worker local total request limit reached (X/32)"
+  // is provider congestion — not a Shooter Game bug.
+  // Cap local parallelism so this project does not stack requests into that pool.
+  "provider": {
+    "nvidia": {
+      "options": {
+        "maxConcurrency": 1
+      }
+    },
+    "omniroute": {
+      "options": {
+        "maxConcurrency": 1
+      }
+    }
+  }
+}

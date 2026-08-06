@@ -28,7 +28,7 @@ const LOOT_TIERS: Record<string, LootDef[]> = {
   ],
   Factory: [
     { type: 'weapon', subtype: 'grenade', amount: 1 },
-    { type: 'armor', subtype: 'vest', amount: 50 },
+    { type: 'armor', subtype: 'vest', amount: 75 },
     { type: 'ammo', subtype: 'pistol', amount: 15 },
   ],
   Docks: [
@@ -38,7 +38,7 @@ const LOOT_TIERS: Record<string, LootDef[]> = {
   ],
   Hilltop: [
     { type: 'weapon', subtype: 'rifle', amount: 1 },
-    { type: 'armor', subtype: 'vest', amount: 30 },
+    { type: 'armor', subtype: 'vest', amount: 50 },
     { type: 'heal', subtype: 'medkit', amount: 25 },
   ],
 };

@@ -15,11 +15,19 @@ import {
   type MinimapData,
 } from './hud';
 import { createVehicle } from './vehicle';
+import { SKILL_DEFS, type ChassisId } from './cosmetics';
 import type { AudioManager } from './audio';
 import type { Settings } from './settings';
 import { formatPlacement, formatTimer, formatCompassBearing } from './feedback';
 import { calculateXP } from './match';
 import { recordMatchResult } from './net/leaderboard';
+import {
+  attachHeldWeaponKit,
+  createHeldWeaponKit,
+  resolveHeldKind,
+  syncHeldWeaponKit,
+  type HeldWeaponKit,
+} from './heldWeapons';
 
 export interface MatchSummary {
   won: boolean;
@@ -35,12 +43,21 @@ export interface MatchGameCallbacks {
   onPlayAgain: () => void;
 }
 
+export interface MatchCosmetics {
+  chassisColor: number;
+  chassisId?: ChassisId;
+  rifleColor: number;
+  pistolColor: number;
+  displayName?: string;
+}
+
 export interface MatchGameOptions {
   canvas: HTMLCanvasElement;
   settings: Settings;
   audio: AudioManager;
   botCount?: number;
   seed?: number;
+  cosmetics?: MatchCosmetics;
   callbacks: MatchGameCallbacks;
 }
 
@@ -48,9 +65,14 @@ interface UnitRig {
   group: THREE.Group;
   anim: RobotAnimState;
   dead: boolean;
+  held: HeldWeaponKit;
 }
 
-const ROBOT_GROUP_Y_OFFSET = -0.65;
+/** Local BR is always you + 9 bots = 10 players. */
+export const LOCAL_MATCH_BOTS = 9;
+export const LOCAL_MATCH_PLAYERS = LOCAL_MATCH_BOTS + 1;
+
+const ROBOT_GROUP_Y_OFFSET = -0.9;
 const INTERACT_RANGE_LOOT = 2.5;
 const INTERACT_RANGE_VEHICLE = 4;
 const INTERACT_RANGE_AIRDROP = 4;
@@ -186,7 +208,8 @@ export class MatchGame {
 
     this.sim = new MatchSim({
       seed: opts.seed,
-      botCount: opts.botCount ?? 9,
+      botCount: opts.botCount ?? LOCAL_MATCH_BOTS,
+      humanChassisId: opts.cosmetics?.chassisId,
       time: 0,
     });
     this.humanId = this.sim.humanId;
@@ -273,29 +296,44 @@ export class MatchGame {
   }
 
   private buildRigs() {
+    const cos = this.opts.cosmetics;
     for (const unit of this.sim.units.values()) {
-      const model = createRobotModel();
-      const color = unit.color;
+      const tint = !unit.isBot && cos ? cos.chassisColor : unit.color;
+      const model = createRobotModel(tint);
+      const color = tint;
       const mark = new THREE.Mesh(
-        new THREE.BoxGeometry(0.3, 0.18, 0.04),
-        new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.5 })
+        new THREE.BoxGeometry(0.35, 0.22, 0.06),
+        new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.85 })
       );
-      mark.position.set(0, 1.35, 0.26);
+      mark.position.set(0, 1.85, 0);
+      mark.name = 'teamMark';
       model.group.add(mark);
 
-      const rifle = new THREE.Mesh(
-        new THREE.BoxGeometry(0.07, 0.12, 0.85),
-        new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.5, roughness: 0.4 })
+      const held = createHeldWeaponKit(
+        unit.isBot
+          ? unit.color
+          : {
+              rifle: cos?.rifleColor ?? 0xffcc33,
+              pistol: cos?.pistolColor ?? 0xff8844,
+            }
       );
-      rifle.position.set(0.55, 0.95, -0.15);
-      rifle.rotation.x = Math.PI / 2;
-      model.group.add(rifle);
+      attachHeldWeaponKit(model.group, held);
+      syncHeldWeaponKit(
+        held,
+        resolveHeldKind({
+          alive: unit.alive,
+          inVehicle: unit.inVehicleId !== null,
+          meleeMode: unit.meleeMode,
+          weaponType: unit.weapons[unit.inventory.weaponIndex]?.def.type ?? null,
+        })
+      );
 
       model.group.position.copy(unit.player.position);
       model.group.position.y = unit.player.position.y + ROBOT_GROUP_Y_OFFSET;
       model.group.rotation.y = unit.player.yaw;
+      model.group.scale.setScalar(1.12);
       this.scene.add(model.group);
-      this.rigs.set(unit.id, { group: model.group, anim: model.anim, dead: false });
+      this.rigs.set(unit.id, { group: model.group, anim: model.anim, dead: false, held });
     }
   }
 
@@ -310,8 +348,8 @@ export class MatchGame {
               ? 0x4444ff
               : 0x44ff44;
       const mesh = new THREE.Mesh(
-        new THREE.BoxGeometry(0.4, 0.2, 0.4),
-        new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.3 })
+        new THREE.BoxGeometry(0.7, 0.45, 0.7),
+        new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.7 })
       );
       mesh.position.copy(spawn.position);
       this.scene.add(mesh);
@@ -575,12 +613,16 @@ export class MatchGame {
   private muzzleFlash(unitId: string) {
     const unit = this.sim.units.get(unitId);
     if (!unit || !unit.alive) return;
-    const origin = new THREE.Vector3(0, unit.player.getEyeHeight(), 0);
-    const dir = new THREE.Vector3(
-      -Math.sin(unit.player.yaw),
-      -Math.sin(unit.player.pitch),
-      -Math.cos(unit.player.yaw)
+    const origin = new THREE.Vector3(
+      unit.player.position.x,
+      unit.player.getEyeHeight(),
+      unit.player.position.z
     );
+    const dir = new THREE.Vector3(
+      -Math.sin(unit.player.yaw) * Math.cos(unit.player.pitch),
+      -Math.sin(unit.player.pitch),
+      -Math.cos(unit.player.yaw) * Math.cos(unit.player.pitch)
+    ).normalize();
     const muzzle = origin.addScaledVector(dir, 1.1);
 
     const light = new THREE.PointLight(0xffff44, 4, 16);
@@ -674,6 +716,7 @@ export class MatchGame {
         rig.group.position.y = unit.player.position.y + ROBOT_GROUP_Y_OFFSET;
         rig.group.rotation.y = unit.player.yaw;
         const state = unit.player.state;
+        const moving = Math.hypot(unit.player.velocity.x, unit.player.velocity.z) > 0.4;
         const anim = unit.melee.swinging
           ? 'melee'
           : state === 'sprint'
@@ -682,16 +725,30 @@ export class MatchGame {
               ? 'crouch'
               : state === 'jump'
                 ? 'jump'
-                : 'idle';
+                : moving
+                  ? 'walk'
+                  : 'idle';
         transitionAnim(rig.anim, anim);
       }
+      syncHeldWeaponKit(
+        rig.held,
+        resolveHeldKind({
+          alive: true,
+          inVehicle: unit.inVehicleId !== null,
+          meleeMode: unit.meleeMode,
+          weaponType: unit.weapons[unit.inventory.weaponIndex]?.def.type ?? null,
+        })
+      );
       updateRobotAnim(rig.anim, dt);
     } else if (!rig.dead) {
       rig.dead = true;
       rig.group.rotation.x = -Math.PI / 2;
-      const mark = rig.group.children[0] as THREE.Mesh;
-      const mat = mark.material as THREE.MeshStandardMaterial;
-      mat.emissiveIntensity = 0;
+      syncHeldWeaponKit(rig.held, 'none');
+      const mark = rig.group.getObjectByName('teamMark') as THREE.Mesh | undefined;
+      if (mark) {
+        const mat = mark.material as THREE.MeshStandardMaterial;
+        mat.emissiveIntensity = 0;
+      }
     }
   }
 
@@ -822,7 +879,7 @@ export class MatchGame {
         : 'FISTS';
     const ammo = weapon ? weapon.ammo : 0;
     const reserve = weapon ? (human.inventory.ammo[weapon.def.type] ?? 0) : 0;
-    const zoneTimeMs = this.zoneSys.phaseTotalDuration - this.zoneSys.phaseTime;
+    const zoneTimeMs = this.sim.zone.phaseTotalDuration - this.sim.zone.phaseTime;
 
     let healProgress = 0;
     if (human.healing) {
@@ -830,6 +887,12 @@ export class MatchGame {
       const elapsed = dur - (human.healing.until - this.sim.time);
       healProgress = Math.max(0, Math.min(1, elapsed / dur));
     }
+
+    const skillDef = SKILL_DEFS[human.skill];
+    const skillCd = skillDef ? skillDef.cooldownMs : 10000;
+    const skillElapsed = this.sim.time - human.lastSkillTime;
+    const skillReady = skillElapsed >= skillCd;
+    const skillCdSec = Math.ceil((skillCd - skillElapsed) / 1000);
 
     const data: HUDData = {
       kills: this.sim.match.players[this.humanId].kills,
@@ -846,10 +909,13 @@ export class MatchGame {
       phaseLabel: this.phaseLabel(),
       zoneTimer: formatTimer(zoneTimeMs * 1000),
       healProgress,
-      inStorm: human.alive && this.zoneSys.isOutsideZone(human.player.position),
+      inStorm: human.alive && this.sim.zone.isOutsideZone(human.player.position),
       justHit: human.lastDamageTime > 0 && this.sim.time - human.lastDamageTime < 150,
       prompt: human.alive ? computeInteractionPrompt(this.sim, this.humanId) : '',
       bearing: formatCompassBearing(human.player.yaw),
+      skillName: skillDef ? skillDef.name : 'Skill [F]',
+      skillCooldownText: skillReady ? 'READY' : `${skillCdSec}s`,
+      skillReady,
     };
     this.hud.update(data);
   }
@@ -874,9 +940,9 @@ export class MatchGame {
       px: human.player.position.x,
       pz: human.player.position.z,
       pyaw: human.player.yaw,
-      sx: this.zoneSys.center.x,
-      sz: this.zoneSys.center.z,
-      sr: this.zoneSys.innerRadius,
+      sx: this.sim.zone.center.x,
+      sz: this.sim.zone.center.z,
+      sr: this.sim.zone.innerRadius,
       buildings: [
         { x: 300, z: 0 },
         { x: 0, z: 300 },

@@ -10,7 +10,9 @@ export function createInputManager(canvas: HTMLCanvasElement): InputManager {
   let mouseX = 0;
   let mouseY = 0;
   let firePressed = false;
+  let aimPressed = false;
   let reloadOnce = false;
+  let skillOnce = false;
   let w1 = false,
     w2 = false,
     w3 = false;
@@ -18,6 +20,7 @@ export function createInputManager(canvas: HTMLCanvasElement): InputManager {
   window.addEventListener('keydown', (e) => {
     keys.add(e.code);
     if (e.code === 'KeyR') reloadOnce = true;
+    if (e.code === 'KeyF') skillOnce = true;
     if (e.code === 'Digit1') w1 = true;
     if (e.code === 'Digit2') w2 = true;
     if (e.code === 'Digit3') w3 = true;
@@ -30,15 +33,18 @@ export function createInputManager(canvas: HTMLCanvasElement): InputManager {
   });
   window.addEventListener('mousedown', (e) => {
     if (e.button === 0 && document.pointerLockElement) firePressed = true;
+    if (e.button === 2 && document.pointerLockElement) aimPressed = true;
   });
   window.addEventListener('mouseup', (e) => {
     if (e.button === 0) firePressed = false;
+    if (e.button === 2) aimPressed = false;
   });
 
   document.addEventListener('pointerlockchange', () => {
     if (!document.pointerLockElement) {
       keys.clear();
       firePressed = false;
+      aimPressed = false;
     }
   });
 
@@ -55,9 +61,10 @@ export function createInputManager(canvas: HTMLCanvasElement): InputManager {
       sprint: keys.has('ShiftLeft') || keys.has('ShiftRight'),
       crouch: keys.has('ControlLeft') || keys.has('ControlRight'),
       jump: keys.has('Space'),
-      aim: keys.has('MouseRight'),
+      aim: aimPressed,
       fire: firePressed,
       reload: reloadOnce,
+      skill: skillOnce,
       weapon1: w1,
       weapon2: w2,
       weapon3: w3,
@@ -67,6 +74,7 @@ export function createInputManager(canvas: HTMLCanvasElement): InputManager {
     mouseX = 0;
     mouseY = 0;
     reloadOnce = false;
+    skillOnce = false;
     w1 = false;
     w2 = false;
     w3 = false;

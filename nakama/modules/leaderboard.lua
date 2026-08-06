@@ -6,11 +6,12 @@ local nk = require("nakama")
 
 local LEADERBOARD_ID = "robot_arena_season_1"
 
--- Create (or keep) the seasonal leaderboard. Sort 0 = descending, operator
--- "best" so only the best placement per owner is kept. Reset 0 = never resets.
-local ok, err = pcall(nk.leaderboard_create, LEADERBOARD_ID, false, 0, "best", 0, "{}")
+-- Create (or keep) the seasonal leaderboard. Sort "desc" = descending, operator
+-- "best" so only the best placement per owner is kept. Reset "" = never resets.
+local ok, err = pcall(nk.leaderboard_create, LEADERBOARD_ID, true, "desc", "best", "", "{}")
 if not ok then
-  nk.logger_warn(string.format("leaderboard_create: %s", err))
+  nk.logger_error(string.format("leaderboard_create: %s", err))
+  error("leaderboard creation failed")
 end
 
 -- Idempotent submit: match result -> leaderboard record. Guards duplicate

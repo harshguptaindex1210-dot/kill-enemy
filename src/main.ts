@@ -1,10 +1,24 @@
 import { MatchGame } from './game';
-import { showLobby } from './lobby';
 import { AudioManager } from './audio';
 import { loadSettings, saveSettings, type Settings } from './settings';
 import { defaultStats, recordMatchOnce, createWriteId, type PlayerStats } from './persistence';
 import { showAd } from './ad';
 import { fetchLeaderboard, loadLocalHistory, recordMatchResult } from './net/leaderboard';
+import {
+  buyChassis,
+  buyGunSkin,
+  equipChassis,
+  equipGunSkin,
+  grantMatchCredits,
+  loadProfile,
+  matchCreditsReward,
+  saveProfile,
+  setProfileName,
+  syncLevelUnlocks,
+  type PlayerProfile,
+} from './profile';
+import { chassisById, gunColorFor } from './cosmetics';
+import type { ChassisId } from './cosmetics';
 import type { OnlineMatchGame } from './net/onlineGame';
 import type { MatchClient } from './net/client';
 import type { NakamaSocket } from './net/nakama';
@@ -48,6 +62,17 @@ function saveStats(stats: PlayerStats) {
   }
 }
 
+function matchCosmetics(profile: PlayerProfile) {
+  const chassis = chassisById(profile.chassisId);
+  return {
+    chassisColor: chassis?.color ?? 0x3366cc,
+    chassisId: profile.chassisId,
+    rifleColor: gunColorFor('rifle', profile.equippedRifleSkin),
+    pistolColor: gunColorFor('pistol', profile.equippedPistolSkin),
+    displayName: profile.name,
+  };
+}
+
 function init() {
   const maybeCanvas = document.querySelector<HTMLCanvasElement>('#game');
   if (!maybeCanvas) throw new Error('Canvas #game not found');
@@ -55,6 +80,9 @@ function init() {
 
   let settings: Settings = loadSettings();
   let stats: PlayerStats = loadStats();
+  let profile: PlayerProfile = syncLevelUnlocks(loadProfile(), stats.level);
+  saveProfile(profile);
+  let shopMessage = '';
   const audio = new AudioManager();
   audio.setVolume(settings.volume);
 
@@ -65,6 +93,35 @@ function init() {
   let queueTicket: string | null = null;
   let queueActive = false;
 
+  function persistProfile(next: PlayerProfile) {
+    profile = syncLevelUnlocks(next, stats.level);
+    saveProfile(profile);
+  }
+
+  function afterMatchRewards(summary: {
+    won: boolean;
+    kills: number;
+    damage: number;
+    xpGained: number;
+  }) {
+    const levelBefore = stats.level;
+    const writeId = createWriteId();
+    const { stats: next } = recordMatchOnce(
+      stats,
+      writeId,
+      summary.won,
+      summary.kills,
+      summary.damage,
+      summary.xpGained
+    );
+    stats = next;
+    saveStats(stats);
+    const credits = matchCreditsReward();
+    persistProfile(grantMatchCredits(profile, credits));
+    shopMessage = `+${credits} credits`;
+    if (stats.level > levelBefore) audio.play('levelup');
+  }
+
   function launchMatch() {
     game?.dispose();
     audio.resume();
@@ -73,21 +130,10 @@ function init() {
       settings,
       audio,
       botCount: 9,
+      cosmetics: matchCosmetics(profile),
       callbacks: {
         onFinished(summary) {
-          const levelBefore = stats.level;
-          const writeId = createWriteId();
-          const { stats: next } = recordMatchOnce(
-            stats,
-            writeId,
-            summary.won,
-            summary.kills,
-            summary.damage,
-            summary.xpGained
-          );
-          stats = next;
-          saveStats(stats);
-          if (stats.level > levelBefore) audio.play('levelup');
+          afterMatchRewards(summary);
         },
         onLobby() {
           showAdThenLobby();
@@ -130,6 +176,8 @@ function init() {
     const { OnlineMatchGame: OnlineGame } = await loadOnlineStack();
     onlineGame?.dispose();
     audio.resume();
+    const overlay = document.getElementById('lobby-overlay');
+    if (overlay) overlay.remove();
     onlineGame = new OnlineGame({
       canvas,
       settings,
@@ -137,31 +185,24 @@ function init() {
       client: onlineClient!,
       callbacks: {
         onFinished(summary) {
-          const levelBefore = stats.level;
-          const writeId = createWriteId();
           const xpGained =
             Math.max(10, (11 - summary.placement) * 10) +
             summary.kills * 25 +
             Math.round(summary.damage / 10);
-          const { stats: next } = recordMatchOnce(
-            stats,
-            writeId,
-            summary.won,
-            summary.kills,
-            summary.damage,
-            xpGained
-          );
-          stats = next;
-          saveStats(stats);
+          afterMatchRewards({
+            won: summary.won,
+            kills: summary.kills,
+            damage: summary.damage,
+            xpGained,
+          });
           void recordMatchResult({
-            matchId: onlineClient?.matchIdString ?? `online_${writeId}`,
+            matchId: onlineClient?.matchIdString ?? `online_${createWriteId()}`,
             placement: summary.placement,
             kills: summary.kills,
             damage: summary.damage,
             won: summary.won,
             mode: 'online',
           });
-          if (stats.level > levelBefore) audio.play('levelup');
         },
         onLobby() {
           showAdThenLobby();
@@ -178,7 +219,6 @@ function init() {
     onlineClient = new Client('online', {
       onSnapshot: () => {},
       onDisconnect: () => {
-        // INV-5: reconnection failure returns to lobby cleanly.
         showAdThenLobby();
       },
     });
@@ -206,36 +246,7 @@ function init() {
     } catch {
       queueActive = false;
       queueTicket = null;
-      // Nakama down → fall back to lobby with a clear status (still Play Local).
-      showLobby(
-        {
-          level: stats.level,
-          xp: stats.xp,
-          wins: stats.wins,
-          kills: stats.kills,
-          matches: stats.matches,
-        },
-        settings,
-        {
-          onPlayLocal() {
-            launchMatch();
-          },
-          onPlayOnline() {
-            void startOnlineQueue();
-          },
-          onCancelQueue() {
-            void cancelQueue();
-          },
-          onSettingsChange(changes) {
-            settings = { ...settings, ...changes };
-            saveSettings(settings);
-            applyQuality(settings.quality);
-            audio.setVolume(settings.volume);
-          },
-        },
-        { history: loadLocalHistory(), leaderboard: [] },
-        { active: false, message: 'Online unavailable — try Play Local' }
-      );
+      showLobbyUI('Online unavailable — try Play Local');
     }
   }
 
@@ -247,12 +258,12 @@ function init() {
     onlineClient?.dispose();
     onlineClient = null;
     await resetQueue();
-    await showAd({ skipAfterMs: 5000, online: false }); // Local: 5s skip
+    await showAd({ skipAfterMs: 5000, online: false });
     showLobbyUI();
   }
 
   async function showAdThenLaunch() {
-    await showAd({ skipAfterMs: 5000, online: false }); // Local: 5s skip
+    await showAd({ skipAfterMs: 5000, online: false });
     launchMatch();
   }
 
@@ -260,8 +271,76 @@ function init() {
     document.documentElement.dataset.quality = quality;
   }
 
-  async function showLobbyUI() {
-    const [history, leaderboard] = await Promise.all([loadLocalHistory(), fetchLeaderboard()]);
+  function lobbyCallbacks() {
+    return {
+      onPlayLocal() {
+        shopMessage = '';
+        launchMatch();
+      },
+      onPlayOnline() {
+        void startOnlineQueue();
+      },
+      onCancelQueue() {
+        void cancelQueue();
+      },
+      onSettingsChange(changes: Partial<Settings>) {
+        settings = { ...settings, ...changes };
+        saveSettings(settings);
+        applyQuality(settings.quality);
+        audio.setVolume(settings.volume);
+      },
+      onProfileChange(next: PlayerProfile) {
+        persistProfile(next);
+        showLobbyUI();
+      },
+      onRename(name: string) {
+        persistProfile(setProfileName(profile, name));
+        shopMessage = 'Name saved';
+        showLobbyUI();
+      },
+      onEquipChassis(id: string) {
+        const next = equipChassis(profile, id as ChassisId);
+        if (next) {
+          persistProfile(next);
+          shopMessage = 'Chassis equipped';
+        } else shopMessage = 'Chassis not owned';
+        showLobbyUI();
+      },
+      onEquipGunSkin(skinId: string) {
+        const next = equipGunSkin(profile, skinId);
+        if (next) {
+          persistProfile(next);
+          shopMessage = 'Skin equipped';
+        } else shopMessage = 'Skin not owned';
+        showLobbyUI();
+      },
+      onBuyGunSkin(skinId: string) {
+        const result = buyGunSkin(profile, skinId, stats.level);
+        if ('error' in result) shopMessage = result.error;
+        else {
+          persistProfile(result.profile);
+          shopMessage = 'Skin purchased';
+        }
+        showLobbyUI();
+      },
+      onBuyChassis(chassisId: string) {
+        const result = buyChassis(profile, chassisId as ChassisId, stats.level);
+        if ('error' in result) shopMessage = result.error;
+        else {
+          persistProfile(result.profile);
+          shopMessage = 'Chassis purchased';
+        }
+        showLobbyUI();
+      },
+    };
+  }
+
+  async function showLobbyUI(forcedQueueMessage?: string) {
+    const [{ showLobby }, history, leaderboard] = await Promise.all([
+      import('./lobby'),
+      loadLocalHistory(),
+      fetchLeaderboard(),
+    ]);
     showLobby(
       {
         level: stats.level,
@@ -271,25 +350,14 @@ function init() {
         matches: stats.matches,
       },
       settings,
-      {
-        onPlayLocal() {
-          launchMatch();
-        },
-        onPlayOnline() {
-          void startOnlineQueue();
-        },
-        onCancelQueue() {
-          void cancelQueue();
-        },
-        onSettingsChange(changes) {
-          settings = { ...settings, ...changes };
-          saveSettings(settings);
-          applyQuality(settings.quality);
-          audio.setVolume(settings.volume);
-        },
-      },
+      profile,
+      lobbyCallbacks(),
       { history, leaderboard },
-      { active: queueActive, message: 'Searching for match...' }
+      {
+        active: queueActive,
+        message: forcedQueueMessage ?? (queueActive ? 'Searching for match...' : ''),
+      },
+      shopMessage
     );
   }
 

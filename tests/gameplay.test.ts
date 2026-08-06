@@ -75,7 +75,8 @@ describe('MatchSim', () => {
     const bot = sim.units.get('bot_1')!;
     bot.armor = 50;
     sim.applyDamage('player', 'bot_1', 30, 'shot');
-    expect(bot.armor).toBe(20);
+    // Armor drains at 50% of blocked damage → 50 - 15 = 35
+    expect(bot.armor).toBe(35);
     expect(bot.health).toBe(100);
   });
 
@@ -101,7 +102,10 @@ describe('MatchSim', () => {
     sim.startMatch();
     runFor(sim, 9);
     const unit = sim.units.get('player')!;
+    const bot = sim.units.get('bot_1')!;
+    bot.alive = false;
     unit.player.position.set(0, 0.9, 0);
+    unit.health = 100;
     runFor(sim, 2);
     expect(unit.health).toBe(100);
   });
@@ -219,9 +223,12 @@ describe('MatchSim', () => {
     sim.startMatch();
     runFor(sim, 9);
     const player = sim.units.get('player')!;
+    const bot = sim.units.get('bot_1')!;
     player.health = 50;
     sim.useHealing('player', 'medkit');
+    bot.isBot = false; // full damage, not BOT_DAMAGE_SCALE
     sim.applyDamage('bot_1', 'player', 5, 'shot');
+    bot.alive = false; // stop further bot fire during wait
     expect(player.healing).toBeNull();
     runFor(sim, 5);
     expect(player.health).toBe(45);
@@ -362,6 +369,39 @@ describe('grenade gameplay (#26)', () => {
     runFor(sim, 1);
     const botDistAfter = bot.player.position.distanceTo(origin);
     expect(botDistAfter).toBeGreaterThan(botDistBefore);
+  });
+});
+
+describe('hitscan combat', () => {
+  it('player rifle fire damages a bot ahead even far from world origin', () => {
+    const sim = makeSim(1);
+    sim.startMatch();
+    runFor(sim, 9);
+    const player = sim.units.get('player')!;
+    const bot = sim.units.get('bot_1')!;
+    bot.isBot = false;
+    bot.botBrain = null;
+    bot.health = 100;
+    bot.armor = 0;
+    // yaw=0 aims -Z; place both far from (0,0) so a broken origin misses
+    player.player.position.set(120, 0.9, 120);
+    bot.player.position.set(120, 0.9, 108);
+    const before = bot.health;
+    runFor(sim, 1.0, fullInput({ fire: true }));
+    expect(bot.health).toBeLessThan(before);
+  });
+
+  it('bot shot damage applies (scaled) to the human player', () => {
+    const sim = makeSim(1, 99);
+    sim.startMatch();
+    runFor(sim, 9);
+    const player = sim.units.get('player')!;
+    player.health = 100;
+    player.armor = 0;
+    const before = player.health;
+    sim.applyDamage('bot_1', 'player', 20, 'shot');
+    expect(player.health).toBeLessThan(before);
+    expect(player.health).toBeGreaterThan(before - 20); // BOT_DAMAGE_SCALE < 1
   });
 });
 

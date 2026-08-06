@@ -19,30 +19,30 @@ export interface WeaponDef {
 export const WEAPON_DEFS: Record<WeaponType, WeaponDef> = {
   rifle: {
     type: 'rifle',
-    damage: 25,
-    fireRate: 0.1,
+    damage: 12,
+    fireRate: 2.2,
     magSize: 30,
-    reloadTime: 2,
-    spread: 0.02,
-    recoil: 0.03,
+    reloadTime: 2.4,
+    spread: 0.03,
+    recoil: 0.05,
     range: 500,
     isProjectile: false,
   },
   pistol: {
     type: 'pistol',
-    damage: 18,
-    fireRate: 0.25,
+    damage: 10,
+    fireRate: 2.5,
     magSize: 15,
-    reloadTime: 1.5,
-    spread: 0.04,
-    recoil: 0.05,
+    reloadTime: 1.8,
+    spread: 0.05,
+    recoil: 0.06,
     range: 300,
     isProjectile: false,
   },
   grenade: {
     type: 'grenade',
-    damage: 100,
-    fireRate: 0.8,
+    damage: 80,
+    fireRate: 3.0,
     magSize: 1,
     reloadTime: 3,
     spread: 0.1,
@@ -68,7 +68,7 @@ export function createWeapon(type: WeaponType): WeaponState {
   return {
     def,
     ammo: def.magSize,
-    lastFireTime: -def.fireRate,
+    lastFireTime: -def.fireRate * 1000,
     reloading: false,
     reloadStart: 0,
     recoilAccum: 0,
@@ -93,7 +93,8 @@ export function fireWeapon(
   const results: FireResult[] = [];
 
   if (weapon.reloading) return results;
-  if (time - weapon.lastFireTime < weapon.def.fireRate) return results;
+  // Match time is milliseconds; fireRate is seconds between shots.
+  if (time - weapon.lastFireTime < weapon.def.fireRate * 1000) return results;
   if (weapon.ammo <= 0) return results;
 
   weapon.lastFireTime = time;
@@ -165,9 +166,9 @@ export function reloadWeapon(weapon: WeaponState, time: number): boolean {
   return true;
 }
 
-export function updateReload(weapon: WeaponState, time: number) {
+export function updateReload(weapon: WeaponState, timeMs: number) {
   if (!weapon.reloading) return;
-  if (time - weapon.reloadStart >= weapon.def.reloadTime) {
+  if (timeMs - weapon.reloadStart >= weapon.def.reloadTime * 1000) {
     weapon.ammo = weapon.def.magSize;
     weapon.reloading = false;
     weapon.recoilAccum = 0;
@@ -194,8 +195,15 @@ function findClosestHit(
     const proj = toTarget.dot(dir);
     if (proj < 0 || proj > maxDist) continue;
     const closestPt = origin.clone().add(dir.clone().multiplyScalar(proj));
-    const dist = closestPt.distanceTo(t.position);
-    if (dist <= t.capsuleRadius && proj < closestDist) {
+    // Capsule: horizontal radius + vertical extent (not a sphere around center).
+    const dx = closestPt.x - t.position.x;
+    const dz = closestPt.z - t.position.z;
+    const horiz = Math.hypot(dx, dz);
+    if (horiz > t.capsuleRadius) continue;
+    const halfH = t.capsuleHeight / 2;
+    const dy = closestPt.y - t.position.y;
+    if (dy < -halfH - t.capsuleRadius || dy > halfH + t.capsuleRadius) continue;
+    if (proj < closestDist) {
       closestDist = proj;
       closest = t;
     }

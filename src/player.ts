@@ -14,6 +14,7 @@ export interface PlayerInput {
   aim: boolean;
   fire: boolean;
   reload: boolean;
+  skill?: boolean;
   weapon1: boolean;
   weapon2: boolean;
   weapon3: boolean;
@@ -31,7 +32,7 @@ export interface PlayerBundle {
   health: number;
   yaw: number;
   pitch: number;
-  update: (input: PlayerInput, dt: number, groundY: number) => void;
+  update: (input: PlayerInput, dt: number, groundY: number, speedMult?: number) => void;
   getEyeHeight: () => number;
 }
 
@@ -91,9 +92,9 @@ export function createPlayer(startPos: THREE.Vector3 = new THREE.Vector3(0, 0.9,
     return WALK_SPEED;
   }
 
-  bundle.update = (input: PlayerInput, dt: number, groundY: number) => {
+  bundle.update = (input: PlayerInput, dt: number, groundY: number, speedMult: number = 1.0) => {
     const height = getHeight();
-    const speed = getSpeed();
+    const speed = getSpeed() * speedMult;
 
     if (input.crouch && onGround) {
       if (!crouchToggle) {

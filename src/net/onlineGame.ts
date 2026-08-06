@@ -13,6 +13,13 @@ import { REWIND_MS, type WireSnapshot } from './protocol';
 
 const ROBOT_GROUP_Y_OFFSET = -0.65;
 const LATENCY_ID = 'net-latency';
+const REMOTE_TINTS = [0xcc4444, 0x44cc66, 0xcc8844, 0xcc44aa, 0x44cccc, 0xaa66ff, 0xff6644];
+
+function remoteTint(id: string): number {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
+  return REMOTE_TINTS[h % REMOTE_TINTS.length]!;
+}
 
 export interface OnlineGameCallbacks {
   onFinished: (summary: { won: boolean; kills: number; damage: number; placement: number }) => void;
@@ -172,7 +179,8 @@ export class OnlineMatchGame {
   private syncRemoteRig(id: string, x: number, y: number, z: number, yaw: number, alive: boolean) {
     let rig = this.rigs.get(id);
     if (!rig) {
-      const model = createRobotModel();
+      const tint = id === this.client.selfId ? 0x3366cc : remoteTint(id);
+      const model = createRobotModel(tint);
       model.group.position.set(x, y + ROBOT_GROUP_Y_OFFSET, z);
       this.scene.add(model.group);
       rig = { group: model.group, anim: model.anim };

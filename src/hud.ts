@@ -30,6 +30,10 @@ export function createHUD(): { update: (data: HUDData) => void; remove: () => vo
         <div id="hud-ammo" style="font-size:11px;color:#aaa;">30 / 90</div>
         <div id="hud-reload" style="font-size:11px;color:#fa0;display:none;">RELOADING...</div>
       </div>
+      <div id="hud-skill" style="text-align:center;font-size:11px;background:rgba(0,240,255,0.15);border:1px solid rgba(0,240,255,0.4);padding:4px 8px;border-radius:4px;">
+        <div id="hud-skill-name" style="font-weight:bold;color:#00ffff;">⚡ Speed [F]</div>
+        <div id="hud-skill-status" style="font-size:10px;color:#00ff88;">READY</div>
+      </div>
       <div style="text-align:center;font-size:11px;color:#aaa;">
         <div>💣 <span id="hud-grenades">2</span></div>
         <div>💊 <span id="hud-heals">3</span></div>
@@ -64,6 +68,12 @@ export function createHUD(): { update: (data: HUDData) => void; remove: () => vo
       reloadEl.style.display = data.reloading ? 'block' : 'none';
       document.getElementById('hud-grenades')!.textContent = String(data.grenades);
       document.getElementById('hud-heals')!.textContent = String(data.heals);
+      if (data.skillName) {
+        document.getElementById('hud-skill-name')!.textContent = `⚡ ${data.skillName}`;
+        const statusEl = document.getElementById('hud-skill-status')!;
+        statusEl.textContent = data.skillCooldownText || 'READY';
+        statusEl.style.color = data.skillReady ? '#00ff88' : '#ffaa00';
+      }
       if (data.bearing) {
         document.querySelectorAll('#hud-compass span[data-dir]').forEach((s) => {
           const active = (s as HTMLElement).dataset.dir === data.bearing;
@@ -160,6 +170,9 @@ export interface HUDData {
   justHit: boolean;
   prompt: string;
   bearing?: string;
+  skillName?: string;
+  skillCooldownText?: string;
+  skillReady?: boolean;
 }
 
 export function createMinimap(): { update: (data: MinimapData) => void; remove: () => void } {

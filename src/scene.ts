@@ -19,8 +19,8 @@ export function createScene(
   const renderer = createRenderer(canvas, quality);
 
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x557799);
-  scene.fog = new THREE.Fog(0x557799, 300, 700);
+  scene.background = new THREE.Color(0x6a9ec4);
+  scene.fog = new THREE.Fog(0x6a9ec4, 280, 720);
 
   const camera = new THREE.PerspectiveCamera(75, canvas.width / canvas.height, 0.1, 2000);
   camera.position.set(0, 50, 100);
@@ -33,10 +33,10 @@ export function createScene(
   controls.maxDistance = 300;
   controls.maxPolarAngle = Math.PI / 2.1;
 
-  const ambientLight = new THREE.AmbientLight(0x8888cc, 0.8);
+  const ambientLight = new THREE.AmbientLight(0xa8c4ff, 0.75);
   scene.add(ambientLight);
 
-  const dirLight = new THREE.DirectionalLight(0xffdd99, 1.8);
+  const dirLight = new THREE.DirectionalLight(0xffe0a8, 1.9);
   dirLight.position.set(150, 200, 100);
   if (quality === 'medium') {
     dirLight.castShadow = true;
@@ -49,15 +49,15 @@ export function createScene(
   }
   scene.add(dirLight);
 
-  const hemiLight = new THREE.HemisphereLight(0x87ceeb, 0x1a1a2e, 0.5);
+  const hemiLight = new THREE.HemisphereLight(0x9ed7ff, 0x3a5a28, 0.55);
   scene.add(hemiLight);
 
   // Ground — textured grid
   const groundGeo = new THREE.PlaneGeometry(1000, 1000);
   const groundMat = new THREE.MeshStandardMaterial({
-    color: 0x556644,
-    roughness: 0.8,
-    metalness: 0.1,
+    color: 0x5a8a3a,
+    roughness: 0.85,
+    metalness: 0.05,
     flatShading: true,
   });
   const ground = new THREE.Mesh(groundGeo, groundMat);
@@ -66,7 +66,7 @@ export function createScene(
   scene.add(ground);
 
   // Grid helper
-  const gridHelper = new THREE.GridHelper(1000, 40, 0x334433, 0x223322);
+  const gridHelper = new THREE.GridHelper(1000, 40, 0x3d6b2e, 0x2a4a22);
   scene.add(gridHelper);
 
   // Road circles connecting POIs
@@ -74,7 +74,7 @@ export function createScene(
     const angle = (i / 4) * Math.PI * 2;
     const x = Math.cos(angle) * 300;
     const z = Math.sin(angle) * 300;
-    const roadMat = new THREE.MeshStandardMaterial({ color: 0x333344, roughness: 0.9 });
+    const roadMat = new THREE.MeshStandardMaterial({ color: 0x3a3a48, roughness: 0.9 });
     const road = new THREE.Mesh(new THREE.PlaneGeometry(4, 420), roadMat);
     road.rotation.x = -Math.PI / 2;
     road.position.set(x / 2, 0.05, z / 2);
@@ -84,8 +84,8 @@ export function createScene(
 
   // Vegetation scatter — simple cylinders
   if (quality === 'medium') {
-    const trunkMat = new THREE.MeshStandardMaterial({ color: 0x3a5a3a, roughness: 0.9 });
-    const leafMat = new THREE.MeshStandardMaterial({ color: 0x2a4a2a, roughness: 0.8 });
+    const trunkMat = new THREE.MeshStandardMaterial({ color: 0x6b4423, roughness: 0.9 });
+    const leafPalette = [0x2f8f3a, 0x3cb043, 0x228b22, 0x56a02c, 0x1e7a34];
     const trunkGeo = new THREE.CylinderGeometry(0.15, 0.25, 2, 4);
     const leafGeo = new THREE.SphereGeometry(0.8, 4, 4);
 
@@ -97,13 +97,17 @@ export function createScene(
 
       // Skip if near a POI
       const poiCoords: [number, number][] = [];
-      for (let i = 0; i < 4; i++) {
-        const a = (i / 4) * Math.PI * 2;
+      for (let j = 0; j < 4; j++) {
+        const a = (j / 4) * Math.PI * 2;
         poiCoords.push([Math.cos(a) * 300, Math.sin(a) * 300]);
       }
       const nearPoi = poiCoords.some(([px, pz]) => Math.abs(x - px) < 40 && Math.abs(z - pz) < 40);
       if (nearPoi) continue;
 
+      const leafMat = new THREE.MeshStandardMaterial({
+        color: leafPalette[i % leafPalette.length],
+        roughness: 0.8,
+      });
       const tree = new THREE.Group();
       const trunk = new THREE.Mesh(trunkGeo, trunkMat);
       trunk.position.y = 1;
@@ -117,10 +121,12 @@ export function createScene(
     }
   }
 
-  // POIs — detailed buildings
+  // POIs — detailed buildings with distinct district colors
   const pois: { name: string; group: THREE.Group; position: THREE.Vector3 }[] = [];
   const names = ['Town', 'Factory', 'Docks', 'Hilltop'];
-  const colors = [0x8b7355, 0x666677, 0x7a5a3a, 0x887755];
+  const colors = [0xc4a35a, 0x6a7a9a, 0xb87333, 0x8fbc8f];
+  const roofColors = [0x5c4033, 0x3d4555, 0x4a3728, 0x556b2f];
+  const accentColors = [0xd4a017, 0x708090, 0xcd853f, 0x6b8e23];
 
   for (let i = 0; i < names.length; i++) {
     const angle = (i / names.length) * Math.PI * 2;
@@ -131,11 +137,11 @@ export function createScene(
     group.userData.name = names[i];
 
     const wallMat = new THREE.MeshStandardMaterial({ color: colors[i], roughness: 0.7 });
-    const roofMat = new THREE.MeshStandardMaterial({ color: 0x444455, roughness: 0.8 });
+    const roofMat = new THREE.MeshStandardMaterial({ color: roofColors[i], roughness: 0.8 });
     const accentMat = new THREE.MeshStandardMaterial({
-      color: 0x555566,
-      roughness: 0.6,
-      metalness: 0.3,
+      color: accentColors[i],
+      roughness: 0.55,
+      metalness: 0.25,
     });
 
     // Main building
@@ -154,9 +160,9 @@ export function createScene(
 
     // Windows
     const winMat = new THREE.MeshStandardMaterial({
-      color: 0x88ccff,
-      emissive: 0x88ccff,
-      emissiveIntensity: 0.1,
+      color: 0xffe08a,
+      emissive: 0xffc04d,
+      emissiveIntensity: 0.35,
     });
     for (let w = 0; w < 4; w++) {
       const win = new THREE.Mesh(new THREE.BoxGeometry(2, 3, 0.1), winMat);
@@ -175,7 +181,7 @@ export function createScene(
     // Ground pad
     const pad = new THREE.Mesh(
       new THREE.BoxGeometry(50, 0.5, 40),
-      new THREE.MeshStandardMaterial({ color: 0x444455, roughness: 0.9 })
+      new THREE.MeshStandardMaterial({ color: 0x4a5568, roughness: 0.9 })
     );
     pad.position.y = -0.25;
     group.add(pad);

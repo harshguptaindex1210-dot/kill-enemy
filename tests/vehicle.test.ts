@@ -15,6 +15,12 @@ describe('vehicles', () => {
     expect(v.state.health).toBe(150);
   });
 
+  it('creates motorbike with high speed and low health', () => {
+    const v = createVehicle('motorbike', new THREE.Vector3(0, 0, 0));
+    expect(v.state.health).toBe(100);
+    expect(v.state.type).toBe('motorbike');
+  });
+
   it('moves forward with throttle', () => {
     const v = createVehicle('sedan', new THREE.Vector3(0, 0.5, 0));
     updateVehicle(v.state, 1, 0, 1 / 60, 0);

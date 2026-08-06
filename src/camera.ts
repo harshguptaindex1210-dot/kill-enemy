@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 
-const TPS_DISTANCE = 6;
-const TPS_HEIGHT = 2.5;
+const TPS_DISTANCE = 5.2;
+const TPS_HEIGHT = 2.2;
 const FPS_OFFSET = new THREE.Vector3(0, 0.3, 0);
-const SHOULDER_OFFSET = new THREE.Vector3(0.4, 0, 0);
+const SHOULDER_OFFSET = new THREE.Vector3(0.55, 0, 0);
 
 export function updateCamera(
   camera: THREE.PerspectiveCamera,

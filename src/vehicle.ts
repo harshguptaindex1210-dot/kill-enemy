@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-export type VehicleType = 'sedan' | 'buggy';
+export type VehicleType = 'sedan' | 'buggy' | 'motorbike';
 
 export interface VehicleState {
   type: VehicleType;
@@ -14,6 +14,7 @@ export interface VehicleState {
 const VEHICLE_DEFS = {
   sedan: { maxSpeed: 30, accel: 15, brake: 25, turnSpeed: 1.5, health: 200 },
   buggy: { maxSpeed: 40, accel: 20, brake: 20, turnSpeed: 2.0, health: 150 },
+  motorbike: { maxSpeed: 50, accel: 25, brake: 25, turnSpeed: 2.5, health: 100 },
 };
 
 export function createVehicle(
@@ -33,19 +34,54 @@ export function createVehicle(
   const group = new THREE.Group();
   group.position.copy(pos);
 
-  const bodyMat = new THREE.MeshStandardMaterial({ color: type === 'sedan' ? 0xcc4444 : 0x44cc44 });
-  const body = new THREE.Mesh(new THREE.BoxGeometry(2, 0.8, 4), bodyMat);
-  body.position.y = 0.5;
-  group.add(body);
+  const sedanColors = [0xe63946, 0x457b9d, 0xf4a261, 0x2a9d8f];
+  const buggyColors = [0x80b918, 0xffb703, 0xfb8500, 0x219ebc];
+  const bikeColors = [0x3a86ef, 0xff006e, 0x8338ec, 0xffbe0b];
+  const bodyColor =
+    type === 'sedan'
+      ? sedanColors[Math.abs(Math.floor(pos.x)) % sedanColors.length]!
+      : type === 'buggy'
+        ? buggyColors[Math.abs(Math.floor(pos.z)) % buggyColors.length]!
+        : bikeColors[Math.abs(Math.floor(pos.x + pos.z)) % bikeColors.length]!;
 
-  const wheelMat = new THREE.MeshStandardMaterial({ color: 0x222222 });
-  for (let i = 0; i < 4; i++) {
-    const wx = (i % 2 === 0 ? -1 : 1) * 1.1;
-    const wz = i < 2 ? -1.3 : 1.3;
-    const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.2, 8), wheelMat);
-    wheel.rotation.z = Math.PI / 2;
-    wheel.position.set(wx, 0.3, wz * 1.5);
-    group.add(wheel);
+  const bodyMat = new THREE.MeshStandardMaterial({
+    color: bodyColor,
+    metalness: 0.5,
+    roughness: 0.3,
+  });
+
+  if (type === 'motorbike') {
+    const body = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.7, 2.2), bodyMat);
+    body.position.y = 0.6;
+    group.add(body);
+
+    const handleMat = new THREE.MeshStandardMaterial({ color: 0xcccccc, metalness: 0.8 });
+    const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.9, 8), handleMat);
+    handle.rotation.z = Math.PI / 2;
+    handle.position.set(0, 0.9, 0.6);
+    group.add(handle);
+
+    const wheelMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
+    for (const wz of [0.8, -0.8]) {
+      const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 0.15, 8), wheelMat);
+      wheel.rotation.z = Math.PI / 2;
+      wheel.position.set(0, 0.35, wz);
+      group.add(wheel);
+    }
+  } else {
+    const body = new THREE.Mesh(new THREE.BoxGeometry(2, 0.8, 4), bodyMat);
+    body.position.y = 0.5;
+    group.add(body);
+
+    const wheelMat = new THREE.MeshStandardMaterial({ color: 0x222222 });
+    for (let i = 0; i < 4; i++) {
+      const wx = (i % 2 === 0 ? -1 : 1) * 1.1;
+      const wz = i < 2 ? -1.3 : 1.3;
+      const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.2, 8), wheelMat);
+      wheel.rotation.z = Math.PI / 2;
+      wheel.position.set(wx, 0.3, wz * 1.5);
+      group.add(wheel);
+    }
   }
 
   return { state, mesh: group };

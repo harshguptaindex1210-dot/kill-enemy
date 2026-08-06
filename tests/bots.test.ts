@@ -137,9 +137,11 @@ describe('bot AI', () => {
     expect(sawLeft && sawRight).toBe(true);
   });
 
-  it('hard profile is more accurate than easy', () => {
+  it('hard profile is more accurate / faster than easy', () => {
     expect(BOT_PROFILES.hard.aimError).toBeLessThan(BOT_PROFILES.easy.aimError);
     expect(BOT_PROFILES.hard.fireIntervalMs).toBeLessThan(BOT_PROFILES.easy.fireIntervalMs);
+    expect(BOT_PROFILES.easy.fireIntervalMs).toBeGreaterThanOrEqual(3000);
+    expect(BOT_PROFILES.hard.fireIntervalMs).toBeGreaterThanOrEqual(1600);
   });
 
   it('pickDifficulty is seeded-deterministic', () => {

@@ -14,7 +14,14 @@ import {
 import { LocalServer } from './localServer';
 import { InputBatcher, InterpolationBuffer, type InterpolatedEntity } from './interpolation';
 import { RollbackEngine, type InputFrame } from '../netcode';
-import { TICK_MS, encodeInput, type WireInput, type WireSnapshot } from './protocol';
+import {
+  TICK_MS,
+  encodeInput,
+  decodeSnapshot,
+  type WireInput,
+  type WireSnapshot,
+} from './protocol';
+import { OP_SNAPSHOT } from './protocol';
 import type { SimEvent } from '../gameplay';
 
 export type MatchMode = 'local' | 'online';
@@ -85,6 +92,12 @@ export class MatchClient {
     this.rollback = new RollbackEngine(this.selfEntity, new THREE.Vector3(0, 0.9, 0));
     this.socket = await connectSocket(this.session);
     onSocketDisconnect(this.socket, () => this.handleDisconnect());
+    this.socket.onmatchdata = (m) => {
+      if (m.op_code === OP_SNAPSHOT) {
+        const snap = decodeSnapshot(m.data);
+        this.handleSnapshot(snap);
+      }
+    };
   }
 
   /** Local: spawn the in-process server + start match. Online: create + join. */
@@ -119,12 +132,27 @@ export class MatchClient {
   private flushInputs() {
     const frames = this.pending.flush();
     if (frames.length === 0) return;
-    const latest = { ...frames[frames.length - 1], seq: ++this.seq };
-    this.rollback.applyInput(this.toPredictionInput(latest), 1 / 20, 0);
+    // Merge frames: sum mouse deltas, take latest button/key state
+    let merged = frames[frames.length - 1];
+    if (frames.length > 1) {
+      let sumMouseX = 0;
+      let sumMouseY = 0;
+      for (const f of frames) {
+        sumMouseX += f.mouseX ?? 0;
+        sumMouseY += f.mouseY ?? 0;
+      }
+      merged = {
+        ...merged,
+        mouseX: sumMouseX,
+        mouseY: sumMouseY,
+      };
+    }
+    const input = { ...merged, seq: ++this.seq };
+    this.rollback.applyInput(this.toPredictionInput(input), 1 / 20, 0);
     if (this.mode === 'local') {
-      this.local?.sendInput(latest);
+      this.local?.sendInput(input);
     } else if (this.socket) {
-      void sendMatchInput(this.socket, this.matchId, encodeInput(latest));
+      void sendMatchInput(this.socket, this.matchId, encodeInput(input));
     }
   }
 

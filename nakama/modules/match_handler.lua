@@ -24,12 +24,13 @@ local LOOT_RESPAWN_MS   = 30000
 -- INV-4 sanity clamps
 local MAX_VEL           = 15
 local MAX_POS_DELTA     = 2.0
-local MIN_FIRE_MS       = 80         -- rifle 0.1s floor
+local MIN_FIRE_MS       = 800        -- rifle ~0.85s floor (paced combat)
 
-local RIFLE_DMG         = 25
+local RIFLE_DMG         = 12
 local RIFLE_RANGE       = 500
-local RIFLE_FIRE_MS     = 100
+local RIFLE_FIRE_MS     = 850
 local RIFLE_MAG         = 30
+local ARMOR_DRAIN       = 0.5
 
 local OP_INPUT          = 1
 local OP_SNAPSHOT       = 2
@@ -362,7 +363,7 @@ local function try_fire(state, shooter, input)
         local dmg = RIFLE_DMG
         if target.armor > 0 then
           local absorbed = math.min(target.armor, dmg)
-          target.armor = target.armor - absorbed
+          target.armor = math.max(0, target.armor - absorbed * ARMOR_DRAIN)
           dmg = dmg - absorbed
         end
         target.health = target.health - dmg
@@ -593,7 +594,7 @@ local function match_loop(context, dispatcher, tick, state, messages)
         try_fire(state, p, input)
         try_pickup_loot(state, p)
 
-        if outside_zone(state, p.x, p.z) then
+        if outside_zone(state, p.x, p.z) and p.alive then
           local dmg = zone_dps(state) * TICK_DT
           p.health = p.health - dmg
           if p.health <= 0 then

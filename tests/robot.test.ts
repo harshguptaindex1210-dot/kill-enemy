@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { Mesh, MeshStandardMaterial } from 'three';
 import { createRobotModel, transitionAnim, updateRobotAnim } from '../src/robot';
 
 describe('robot model', () => {
@@ -45,5 +46,14 @@ describe('robot model', () => {
   it('updates mixer on tick', () => {
     const { anim } = createRobotModel();
     expect(() => updateRobotAnim(anim, 0.016)).not.toThrow();
+  });
+
+  it('tints chassis from team color', () => {
+    const { group } = createRobotModel(0xff0000);
+    const torso = group.children[0];
+    expect(torso).toBeInstanceOf(Mesh);
+    const mat = (torso as Mesh).material as MeshStandardMaterial;
+    expect(mat.color.r).toBeGreaterThan(mat.color.g);
+    expect(mat.color.r).toBeGreaterThan(mat.color.b);
   });
 });

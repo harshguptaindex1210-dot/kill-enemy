@@ -49,6 +49,7 @@ import {
   type AirdropSystem,
 } from './airdrop';
 import { createVehicle, updateVehicle, type VehicleState, type VehicleType } from './vehicle';
+import { SKILL_DEFS, chassisById, type ChassisId, type SkillType } from './cosmetics';
 
 export type DamageCause = 'shot' | 'melee' | 'grenade' | 'zone' | 'vehicle';
 
@@ -64,7 +65,8 @@ export interface SimEvent {
     | 'airdropDespawned'
     | 'heal'
     | 'step'
-    | 'zone-incoming';
+    | 'zone-incoming'
+    | 'skill';
   time: number;
   [key: string]: unknown;
 }
@@ -91,6 +93,10 @@ export interface SimUnit {
   color: number;
   lastStepTime: number;
   lastThrowTime: number;
+  skill: SkillType;
+  lastSkillTime: number;
+  speedBoostUntil: number;
+  overcharged: boolean;
 }
 
 export interface SimVehicle {
@@ -104,6 +110,7 @@ export interface MatchSimConfig {
   seed?: number;
   humanId?: string;
   humanName?: string;
+  humanChassisId?: ChassisId;
   botCount?: number;
   botDifficulty?: 'mix' | BotDifficulty;
   time?: number;
@@ -119,6 +126,14 @@ const GROUND_Y = 0;
 const LOOT_RESPAWN_MS = 30000;
 const GRENADE_THROW_COOLDOWN_MS = 800;
 const GRENADE_KNOCKBACK = 6;
+/** Armor loses half of blocked damage so vests last through paced fights. */
+const ARMOR_DRAIN = 0.5;
+/** Bot shots/melee deal less damage so the player isn't melted by 9 bots. */
+const BOT_DAMAGE_SCALE = 0.45;
+/** Distinct bot chassis tints so the arena reads as multi-faction, not all-red. */
+const BOT_COLORS = [
+  0xcc4444, 0x44cc66, 0xcc8844, 0xcc44aa, 0x44cccc, 0xcccc44, 0xaa66ff, 0xff6644, 0x66aaff,
+];
 
 const DEFAULT_OBSTACLES = [
   { x: 300, z: 0, r: 45 },
@@ -183,6 +198,7 @@ export class MatchSim {
   time: number;
   seed: number;
   order: string[];
+  public readonly config: MatchSimConfig;
   private obstacles: { x: number; z: number; r: number }[];
   private rng: () => number;
   private spawnPoints: THREE.Vector3[] = [];
@@ -190,6 +206,7 @@ export class MatchSim {
   private humanInput: PlayerInput | undefined;
 
   constructor(config: MatchSimConfig = {}) {
+    this.config = config;
     this.seed = config.seed ?? Math.floor(Math.random() * 100000);
     this.rng = rngFor(this.seed);
     this.time = config.time ?? 0;
@@ -227,12 +244,13 @@ export class MatchSim {
   private buildSpawnPoints(count: number): THREE.Vector3[] {
     const pts: THREE.Vector3[] = [];
     const spread = Math.min(count, 10);
+    // Tight ring so 10 players can find each other (was 300–400m — outside bot sight).
     for (let i = 0; i < count; i++) {
-      const a = (i / spread) * Math.PI * 2 + this.rng() * 0.2;
-      const radius = 300 + (i % 3) * 50;
+      const a = (i / spread) * Math.PI * 2 + this.rng() * 0.15;
+      const radius = 55 + (i % 3) * 18;
       const p = new THREE.Vector3(Math.cos(a) * radius, 0.9, Math.sin(a) * radius);
       if (this.obstacles.some((o) => Math.hypot(p.x - o.x, p.z - o.z) < o.r + 5)) {
-        p.set(420, 0.9, 0);
+        p.set(40 + i * 8, 0.9, 40);
       }
       pts.push(p);
     }
@@ -251,6 +269,10 @@ export class MatchSim {
     const meleeType: MeleeType = index % 3 === 0 ? 'knife' : index % 3 === 1 ? 'pan' : 'bat';
     const inventory = createInventory();
     inventory.weapons[0] = 'rifle';
+    const chassis = !isBot ? chassisById(this.config?.humanChassisId ?? 'blue') : null;
+    const skill: SkillType = !isBot
+      ? (chassis?.skill ?? 'speed')
+      : (['speed', 'shield', 'overcharge'][index % 3] as SkillType);
     return {
       id,
       name,
@@ -270,9 +292,13 @@ export class MatchSim {
       lastDamageTime: -100000,
       inVehicleId: null,
       spawnPos: spawn,
-      color: isBot ? 0xcc4444 : 0x3366cc,
+      color: isBot ? BOT_COLORS[index % BOT_COLORS.length]! : (chassis?.color ?? 0x3366cc),
       lastStepTime: 0,
       lastThrowTime: -10000,
+      skill,
+      lastSkillTime: -100000,
+      speedBoostUntil: 0,
+      overcharged: false,
     };
   }
 
@@ -282,6 +308,10 @@ export class MatchSim {
       ['buggy', new THREE.Vector3(-260, 0, 260)],
       ['sedan', new THREE.Vector3(260, 0, -260)],
       ['buggy', new THREE.Vector3(-260, 0, -260)],
+      ['motorbike', new THREE.Vector3(80, 0, 60)],
+      ['motorbike', new THREE.Vector3(-80, 0, 60)],
+      ['motorbike', new THREE.Vector3(60, 0, -80)],
+      ['motorbike', new THREE.Vector3(-60, 0, -80)],
     ];
     spots.forEach(([type, pos], i) => {
       const { state } = createVehicle(type, pos.clone());
@@ -358,7 +388,9 @@ export class MatchSim {
     let bestDist = Infinity;
     for (const other of this.units.values()) {
       if (other.id === unit.id || !other.alive) continue;
-      const d = other.player.position.distanceTo(unit.player.position);
+      let d = other.player.position.distanceTo(unit.player.position);
+      // Prefer hunting the human so local matches feel contested.
+      if (!other.isBot) d *= 0.55;
       if (d < bestDist) {
         bestDist = d;
         best = other;
@@ -392,6 +424,7 @@ export class MatchSim {
     if (input.weapon1) this.selectSlot(unit, 0);
     if (input.weapon2) this.selectSlot(unit, 1);
     if (input.weapon3) unit.meleeMode = true;
+    if (input.skill) this.triggerSkill(unit.id);
 
     const weapon = this.currentWeapon(unit);
     if (weapon) {
@@ -420,7 +453,8 @@ export class MatchSim {
       return;
     }
 
-    bundle.update(input, dt, GROUND_Y);
+    const speedMult = now < unit.speedBoostUntil ? 1.4 : 1.0;
+    bundle.update(input, dt, GROUND_Y, speedMult);
     clampPos(bundle.position);
     this.resolveObstacles(unit);
     bundle.health = unit.health;
@@ -463,13 +497,21 @@ export class MatchSim {
     }
   }
 
+  private aimOrigin(unit: SimUnit): THREE.Vector3 {
+    return new THREE.Vector3(
+      unit.player.position.x,
+      unit.player.getEyeHeight(),
+      unit.player.position.z
+    );
+  }
+
   private tryFire(unit: SimUnit) {
     const weapon = this.currentWeapon(unit);
     if (!weapon) return;
     const now = this.time;
     if (weapon.reloading || weapon.ammo <= 0) return;
 
-    const origin = new THREE.Vector3(0, unit.player.getEyeHeight(), 0);
+    const origin = this.aimOrigin(unit);
     const dir = this.aimDirection(unit);
     const targets = this.aliveUnits
       .filter((t) => t.id !== unit.id)
@@ -477,9 +519,13 @@ export class MatchSim {
         id: t.id,
         position: t.player.position,
         capsuleHeight: CAPSULE_HEIGHT,
-        capsuleRadius: CAPSULE_RADIUS,
+        // Forgiving hitscan radius so paced shots still connect in TPS.
+        capsuleRadius: Math.max(CAPSULE_RADIUS, 1.15),
       }));
+    const beforeFire = weapon.lastFireTime;
     const results = fireWeapon(weapon, origin, dir, targets, now);
+    // Rate-limited frames must not emit shot SFX / tracers.
+    if (weapon.lastFireTime === beforeFire) return;
     this.events.push({ type: 'shot', time: now, unitId: unit.id, weapon: weapon.def.type });
     for (const r of results) {
       if (r.hit && r.entityId) {
@@ -501,32 +547,63 @@ export class MatchSim {
     if (unit.grenadeCount <= 0) return false;
     unit.lastThrowTime = this.time;
     unit.grenadeCount--;
-    const origin = new THREE.Vector3(0, unit.player.getEyeHeight(), 0);
+    const origin = this.aimOrigin(unit);
     throwGrenade(this.grenades, unit.id, origin, this.aimDirection(unit), 18, 2, GROUND_Y);
     this.events.push({ type: 'shot', time: this.time, unitId, grenade: true });
     return true;
   }
 
   private aimDirection(unit: SimUnit): THREE.Vector3 {
-    return new THREE.Vector3(
-      -Math.sin(unit.player.yaw),
+    const dir = new THREE.Vector3(
+      -Math.sin(unit.player.yaw) * Math.cos(unit.player.pitch),
       -Math.sin(unit.player.pitch),
-      -Math.cos(unit.player.yaw)
+      -Math.cos(unit.player.yaw) * Math.cos(unit.player.pitch)
     );
+    return dir.normalize();
+  }
+
+  triggerSkill(unitId: string): boolean {
+    const unit = this.units.get(unitId);
+    if (!unit || !unit.alive) return false;
+    const def = SKILL_DEFS[unit.skill];
+    if (!def) return false;
+    if (this.time - unit.lastSkillTime < def.cooldownMs) return false;
+
+    unit.lastSkillTime = this.time;
+    if (unit.skill === 'speed') {
+      unit.speedBoostUntil = this.time + 4000;
+    } else if (unit.skill === 'shield') {
+      unit.armor = Math.min(100, unit.armor + 30);
+    } else if (unit.skill === 'overcharge') {
+      unit.overcharged = true;
+    }
+    this.events.push({ type: 'skill', time: this.time, unitId: unit.id, skill: unit.skill });
+    return true;
   }
 
   applyDamage(attackerId: string, victimId: string, raw: number, cause: DamageCause): boolean {
     const victim = this.units.get(victimId);
     if (!victim || !victim.alive) return false;
 
-    const absorbed = Math.min(victim.armor, raw);
-    victim.armor -= absorbed;
-    victim.health = Math.max(0, victim.health - (raw - absorbed));
+    const attacker = this.units.get(attackerId);
+    let finalRaw = raw;
+    if (attacker && attacker.overcharged && cause === 'shot') {
+      finalRaw *= 1.5;
+      attacker.overcharged = false;
+    }
+    const scaled =
+      attacker?.isBot && (cause === 'shot' || cause === 'melee' || cause === 'grenade')
+        ? finalRaw * BOT_DAMAGE_SCALE
+        : finalRaw;
+
+    const absorbed = Math.min(victim.armor, scaled);
+    victim.armor = Math.max(0, victim.armor - absorbed * ARMOR_DRAIN);
+    victim.health = Math.max(0, victim.health - (scaled - absorbed));
     victim.lastDamageTime = this.time;
     if (victim.healing) victim.healing = null;
 
     if (attackerId !== victimId) {
-      registerDamage(this.match, attackerId, Math.round(raw));
+      registerDamage(this.match, attackerId, Math.round(scaled));
     }
 
     const isKill = victim.health <= 0;
@@ -535,7 +612,7 @@ export class MatchSim {
       time: this.time,
       attackerId,
       victimId,
-      damage: Math.round(raw),
+      damage: Math.round(scaled),
       kill: isKill,
     });
 
@@ -660,11 +737,7 @@ export class MatchSim {
         updateVehicle(v.state, input.throttle, input.steer, dt, GROUND_Y);
         // Sync unit position with vehicle
         occupant.player.position.copy(v.state.position);
-        // Note: vehicle mesh rotation is synced in game.ts; player yaw not needed for vehicle control
-        const dmg = this.zone.damagePerSec * dt;
-        if (dmg > 0 && this.zone.isOutsideZone(v.state.position)) {
-          this.applyDamage('zone', occupant.id, dmg, 'zone');
-        }
+        // Zone damage is applied in updateZone for all units including occupants
         if (v.state.health <= 0) {
           this.eject(occupant);
         }

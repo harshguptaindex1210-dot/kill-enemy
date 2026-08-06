@@ -22,7 +22,7 @@ describe('weapons', () => {
           capsuleRadius: target.capsuleRadius,
         },
       ],
-      1
+      1000
     );
     expect(results.length).toBeGreaterThan(0);
     if (results[0].hit) {
@@ -35,16 +35,16 @@ describe('weapons', () => {
     const w = createWeapon('pistol');
     const origin = new THREE.Vector3(0, 1.6, 0);
     const dir = new THREE.Vector3(0, 0, -1);
-    fireWeapon(w, origin, dir, [], 1);
+    fireWeapon(w, origin, dir, [], 1000);
     expect(w.ammo).toBe(WEAPON_DEFS.pistol.magSize - 1);
   });
 
   it('reloads weapon after trigger', () => {
     const w = createWeapon('rifle');
     w.ammo = 0;
-    expect(reloadWeapon(w, 1)).toBe(true);
+    expect(reloadWeapon(w, 1000)).toBe(true);
     expect(w.reloading).toBe(true);
-    updateReload(w, 1 + WEAPON_DEFS.rifle.reloadTime + 0.01);
+    updateReload(w, 1000 + WEAPON_DEFS.rifle.reloadTime * 1000 + 10);
     expect(w.reloading).toBe(false);
     expect(w.ammo).toBe(WEAPON_DEFS.rifle.magSize);
   });
@@ -64,7 +64,7 @@ describe('weapons', () => {
         { id: target1.id, position: target1.position, capsuleHeight: 1.8, capsuleRadius: 0.4 },
         { id: target2.id, position: target2.position, capsuleHeight: 1.8, capsuleRadius: 0.4 },
       ],
-      1
+      1000
     );
     expect(results.length).toBeGreaterThanOrEqual(2);
   });
@@ -82,14 +82,15 @@ describe('weapons', () => {
         capsuleRadius: target.capsuleRadius,
       },
     ];
+    const gap = WEAPON_DEFS.rifle.fireRate * 1000;
 
     const r1 = fireWeapon(w, origin, dir, tdata, 0);
     expect(r1.length).toBe(1);
 
-    const r2 = fireWeapon(w, origin, dir, tdata, 0.05);
+    const r2 = fireWeapon(w, origin, dir, tdata, gap * 0.5);
     expect(r2.length).toBe(0);
 
-    const r3 = fireWeapon(w, origin, dir, tdata, 0.15);
+    const r3 = fireWeapon(w, origin, dir, tdata, gap + 10);
     expect(r3.length).toBe(1);
   });
 });
