@@ -26,7 +26,7 @@
   justify-content: flex-start;
   padding: 20px 14px 48px;
   padding-left: max(14px, env(safe-area-inset-left));
-  padding-right: max(14px, calc(300px + env(safe-area-inset-right)));
+  padding-right: max(14px, env(safe-area-inset-right));
   padding-bottom: max(48px, env(safe-area-inset-bottom));
   color: #eef3f8;
   font-family: 'Exo 2', 'Segoe UI', sans-serif;
