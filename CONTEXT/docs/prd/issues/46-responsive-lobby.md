@@ -1,6 +1,6 @@
 # 46 — Responsive lobby layout (phone + laptop)
 
-**Status:** Agent Ready  
+**Status:** Debugger Ready  
 **Blocked by:** None — can start immediately  
 **Spec:** `CONTEXT/docs/prd/RESPONSIVE-LOBBY.md`
 

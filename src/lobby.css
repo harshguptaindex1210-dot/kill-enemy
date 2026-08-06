@@ -1,0 +1,386 @@
+/* ROBOT ARENA lobby — responsive polish (#46) */
+
+.lobby-overlay {
+  --lobby-bg0: #070712;
+  --lobby-bg1: #12122a;
+  --lobby-accent: #44aaff;
+  --lobby-muted: #8899aa;
+  --lobby-panel: rgba(255, 255, 255, 0.055);
+  --lobby-max: 1080px;
+  --lobby-pad: 20px;
+
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  overflow: auto;
+  overflow-x: hidden;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 24px 14px 40px;
+  padding-left: max(14px, env(safe-area-inset-left));
+  padding-right: max(14px, env(safe-area-inset-right));
+  padding-bottom: max(40px, env(safe-area-inset-bottom));
+  background:
+    radial-gradient(1200px 600px at 50% -10%, #1a2448 0%, transparent 55%),
+    linear-gradient(160deg, var(--lobby-bg0), var(--lobby-bg1));
+  font-family: 'Segoe UI', 'Trebuchet MS', sans-serif;
+  color: #fff;
+  -webkit-font-smoothing: antialiased;
+}
+
+.lobby-overlay *,
+.lobby-overlay *::before,
+.lobby-overlay *::after {
+  box-sizing: border-box;
+}
+
+.lobby-shell {
+  width: 100%;
+  max-width: var(--lobby-max);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 14px;
+}
+
+.lobby-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+  padding: 8px 4px 6px;
+}
+
+.lobby-hero h1 {
+  margin: 0;
+  font-size: clamp(1.75rem, 6vw, 2.75rem);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--lobby-accent);
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+.lobby-hero .lobby-tagline {
+  margin: 0;
+  color: var(--lobby-muted);
+  font-size: 0.8125rem;
+}
+
+.lobby-play {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+  width: 100%;
+  max-width: 320px;
+}
+
+.lobby-btn {
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 700;
+  font-family: inherit;
+}
+
+.lobby-btn-primary {
+  width: 100%;
+  padding: 14px 28px;
+  font-size: 1.05rem;
+  background: var(--lobby-accent);
+  color: #000;
+  min-height: 48px;
+}
+
+.lobby-btn-primary:hover {
+  filter: brightness(1.08);
+}
+
+.lobby-btn-secondary {
+  padding: 10px 18px;
+  font-size: 0.875rem;
+  background: #3a3a4a;
+  color: #fff;
+  min-height: 44px;
+}
+
+.lobby-btn-danger {
+  padding: 10px 18px;
+  font-size: 0.875rem;
+  background: #a33333;
+  color: #fff;
+  min-height: 44px;
+}
+
+.lobby-play-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  align-items: center;
+}
+
+.lobby-queue-msg {
+  margin: 0;
+  color: #ffaa00;
+  font-size: 0.75rem;
+}
+
+.lobby-shop-msg {
+  margin: 0;
+  color: #ffaa00;
+  font-size: 0.75rem;
+  text-align: center;
+}
+
+.lobby-panel {
+  background: var(--lobby-panel);
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-size: 0.8125rem;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.lobby-panel-title {
+  color: #88aaff;
+  display: block;
+  text-align: center;
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
+.lobby-panels {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.lobby-panels > .lobby-panel {
+  width: 100%;
+  min-width: 0;
+}
+
+.lobby-name-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.lobby-name-row input {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 10px;
+  border-radius: 4px;
+  border: 1px solid #445;
+  background: #111;
+  color: #fff;
+  font-size: 0.875rem;
+}
+
+.lobby-stats {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 16px;
+}
+
+.lobby-stats .muted {
+  color: var(--lobby-muted);
+}
+
+.lobby-loadout-head {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.lobby-loadout-guns {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 6px 12px;
+  border-radius: 6px;
+  width: 100%;
+}
+
+.lobby-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: var(--lobby-muted);
+}
+
+.lobby-settings label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.lobby-settings select {
+  max-width: 50%;
+  background: #111;
+  color: #fff;
+  border: 1px solid #445;
+  border-radius: 4px;
+  padding: 4px 6px;
+}
+
+.lobby-section {
+  width: 100%;
+}
+
+.lobby-section-hint {
+  color: var(--lobby-muted);
+  font-size: 0.6875rem;
+  margin: 0 0 10px;
+  text-align: center;
+}
+
+.lobby-shop-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  width: 100%;
+}
+
+.lobby-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 10px;
+  border-radius: 8px;
+  min-width: 0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  text-align: center;
+}
+
+.lobby-card.is-equipped {
+  border-color: var(--lobby-accent);
+}
+
+.lobby-card-name {
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.lobby-card-meta {
+  font-size: 0.625rem;
+  color: #00ffff;
+  background: rgba(0, 240, 255, 0.1);
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+.lobby-card-weapon {
+  font-size: 0.625rem;
+  color: var(--lobby-muted);
+  text-transform: uppercase;
+}
+
+.lobby-card button {
+  padding: 6px 10px;
+  background: var(--lobby-accent);
+  color: #000;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  min-height: 32px;
+}
+
+.lobby-card button.buy {
+  background: #ffaa00;
+}
+
+.lobby-activity {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.lobby-activity > .lobby-panel {
+  flex: 1;
+  min-width: 0;
+}
+
+.lobby-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.lobby-list-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.lobby-board-row {
+  display: grid;
+  grid-template-columns: 24px minmax(80px, 1fr) auto auto;
+  gap: 8px;
+}
+
+/* Phone-narrow: single column shop when very tight */
+@media (max-width: 360px) {
+  .lobby-shop-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Laptop / wide: multi-column panels, keep shop wrapping */
+@media (min-width: 1024px) {
+  .lobby-overlay {
+    --lobby-pad: 28px;
+    padding: 28px 20px 48px;
+  }
+
+  .lobby-hero h1 {
+    letter-spacing: 0.22em;
+  }
+
+  .lobby-panels {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: stretch;
+    gap: 14px;
+  }
+
+  .lobby-panels > .lobby-panel {
+    flex: 1 1 240px;
+    max-width: 340px;
+  }
+
+  .lobby-shop-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .lobby-activity {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .lobby-play {
+    max-width: 360px;
+  }
+
+  .lobby-btn-primary {
+    font-size: 1.1rem;
+  }
+}

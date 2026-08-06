@@ -1,0 +1,95 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { showLobby, type LobbyCallbacks } from '../src/lobby';
+import { defaultProfile } from '../src/profile';
+import { defaultSettings } from '../src/settings';
+
+function callbacks(): LobbyCallbacks {
+  return {
+    onPlayLocal: vi.fn(),
+    onPlayOnline: vi.fn(),
+    onCancelQueue: vi.fn(),
+    onSettingsChange: vi.fn(),
+    onProfileChange: vi.fn(),
+    onBuyGunSkin: vi.fn(),
+    onBuyChassis: vi.fn(),
+    onEquipChassis: vi.fn(),
+    onEquipGunSkin: vi.fn(),
+    onRename: vi.fn(),
+  };
+}
+
+describe('lobby responsive layout (#46)', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  it('mounts overlay with responsive classes and a hero first-fold', () => {
+    showLobby(
+      { level: 1, xp: 0, wins: 0, kills: 0, matches: 0 },
+      defaultSettings(),
+      defaultProfile(),
+      callbacks()
+    );
+
+    const overlay = document.getElementById('lobby-overlay');
+    expect(overlay).toBeTruthy();
+    expect(overlay!.classList.contains('lobby-overlay')).toBe(true);
+
+    const hero = document.getElementById('lobby-hero');
+    expect(hero).toBeTruthy();
+    expect(hero!.querySelector('h1')?.textContent).toMatch(/ROBOT ARENA/i);
+    expect(hero!.querySelector('#btn-online')).toBeTruthy();
+    expect(hero!.querySelector('#btn-local')).toBeTruthy();
+
+    // Character / settings / shop live outside the first fold.
+    expect(hero!.querySelector('#inp-name')).toBeNull();
+    expect(document.getElementById('inp-name')).toBeTruthy();
+    expect(document.querySelector('.lobby-panels')).toBeTruthy();
+    expect(document.querySelectorAll('.lobby-shop-grid').length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('keeps Cancel inside the hero while queueing', () => {
+    showLobby(
+      { level: 1, xp: 0, wins: 0, kills: 0, matches: 0 },
+      defaultSettings(),
+      defaultProfile(),
+      callbacks(),
+      { history: [], leaderboard: [] },
+      { active: true, message: 'Searching…' }
+    );
+
+    const hero = document.getElementById('lobby-hero')!;
+    const cancel = hero.querySelector('#btn-cancel-queue') as HTMLButtonElement;
+    expect(cancel).toBeTruthy();
+    expect(cancel.style.display).not.toBe('none');
+  });
+
+  it('escapes profile name so markup cannot break out of the name input', () => {
+    const profile = { ...defaultProfile(), name: '"><img src=x onerror=alert(1)>' };
+    showLobby(
+      { level: 1, xp: 0, wins: 0, kills: 0, matches: 0 },
+      defaultSettings(),
+      profile,
+      callbacks()
+    );
+    expect(document.querySelector('#lobby-overlay img')).toBeNull();
+    expect(document.getElementById('inp-name')).toBeTruthy();
+    expect(document.querySelector('#lobby-overlay script')).toBeNull();
+  });
+
+  it('ships stylesheet rules for phone wrap and laptop multi-column', () => {
+    const css = readFileSync(resolve(__dirname, '../src/lobby.css'), 'utf8');
+    expect(css).toMatch(/\.lobby-overlay/);
+    expect(css).toMatch(/\.lobby-hero/);
+    expect(css).toMatch(/\.lobby-shop-grid/);
+    expect(css).toMatch(/@media\s*\(\s*min-width:\s*1024px\s*\)/);
+    expect(css).toMatch(/\.lobby-panels/);
+    // Laptop keeps a multi-column panels row (not permanent single stack).
+    const laptopBlock = css.split(/@media\s*\(\s*min-width:\s*1024px\s*\)/)[1] ?? '';
+    expect(laptopBlock).toMatch(
+      /lobby-panels[^}]*flex-direction:\s*row|lobby-panels[^}]*grid-template-columns/s
+    );
+  });
+});

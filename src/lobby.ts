@@ -2,6 +2,7 @@ import type { Settings } from './settings';
 import type { LeaderboardEntry, MatchRecord } from './net/leaderboard';
 import type { PlayerProfile } from './profile';
 import { CHASSIS_PRESETS, GUN_SKINS, SKILL_DEFS, chassisById, gunSkinById } from './cosmetics';
+import './lobby.css';
 
 export interface LobbyCallbacks {
   onPlayLocal: () => void;
@@ -108,8 +109,6 @@ export function showLobby(
 
   const overlay = document.createElement('div');
   overlay.id = 'lobby-overlay';
-  overlay.style.cssText =
-    'position:fixed;inset:0;overflow:auto;background:linear-gradient(135deg,#0a0a1a,#1a1a3a);display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:28px 12px 40px;z-index:9998;font-family:sans-serif;color:#fff;';
 
   const select = (id: string, opts: [string, string][], cur: string) =>
     `<select id="${id}">${opts.map(([v, l]) => `<option value="${v}"${v === cur ? ' selected' : ''}>${l}</option>`).join('')}</select>`;
@@ -119,23 +118,23 @@ export function showLobby(
 
   const historyMarkup =
     activity.history.length === 0
-      ? '<span style="color:#889;">No matches played yet</span>'
+      ? '<span class="muted">No matches played yet</span>'
       : activity.history
           .slice(0, 5)
           .map(
             (match) =>
-              `<div style="display:flex;justify-content:space-between;gap:16px;"><span>${placementLabel(match.placement)} · ${match.kills} K</span><span style="color:${match.won ? '#4f4' : '#889'};">${match.won ? 'WIN' : 'LOSS'}</span></div>`
+              `<div class="lobby-list-row"><span>${placementLabel(match.placement)} · ${match.kills} K</span><span style="color:${match.won ? '#4f4' : '#889'};">${match.won ? 'WIN' : 'LOSS'}</span></div>`
           )
           .join('');
 
   const leaderboardMarkup =
     activity.leaderboard.length === 0
-      ? '<span style="color:#889;">Connect online to load rankings</span>'
+      ? '<span class="muted">Connect online to load rankings</span>'
       : activity.leaderboard
           .slice(0, 10)
           .map(
             (entry, index) =>
-              `<div style="display:grid;grid-template-columns:24px minmax(80px,1fr) auto auto;gap:8px;"><span>${index + 1}</span><span>${escapeHtml(entry.username)}</span><span>${placementLabel(entry.placement)}</span><span>${entry.kills} K</span></div>`
+              `<div class="lobby-board-row"><span>${index + 1}</span><span>${escapeHtml(entry.username)}</span><span>${placementLabel(entry.placement)}</span><span>${entry.kills} K</span></div>`
           )
           .join('');
 
@@ -145,17 +144,16 @@ export function showLobby(
     const equipped = profile.chassisId === c.id;
     let action = '';
     if (equipped) action = '<span style="color:#4f4;">Equipped</span>';
-    else if (owned)
-      action = `<button data-equip-chassis="${c.id}" style="padding:4px 10px;background:#4af;color:#000;border:none;border-radius:3px;cursor:pointer;font-size:11px;">Equip</button>`;
+    else if (owned) action = `<button data-equip-chassis="${c.id}">Equip</button>`;
     else if (locked) action = `<span style="color:#a66;">Lv ${c.unlockLevel}</span>`;
     else if (c.unlock === 'buy')
-      action = `<button data-buy-chassis="${c.id}" style="padding:4px 10px;background:#fa0;color:#000;border:none;border-radius:3px;cursor:pointer;font-size:11px;">Buy ${c.price}</button>`;
-    else action = `<span style="color:#889;">Locked</span>`;
+      action = `<button class="buy" data-buy-chassis="${c.id}">Buy ${c.price}</button>`;
+    else action = '<span class="muted">Locked</span>';
     const skillDef = SKILL_DEFS[c.skill];
-    return `<div style="display:flex;flex-direction:column;gap:6px;align-items:center;background:rgba(0,0,0,0.3);padding:10px;border-radius:6px;min-width:110px;border:1px solid ${equipped ? '#4af' : 'rgba(255,255,255,0.1)'};">
+    return `<div class="lobby-card${equipped ? ' is-equipped' : ''}">
       ${renderRobotSvg(c.color)}
-      <span style="font-size:12px;font-weight:bold;">${escapeHtml(c.name)}</span>
-      <span style="font-size:10px;color:#00ffff;background:rgba(0,240,255,0.1);padding:2px 6px;border-radius:3px;">⚡ ${escapeHtml(skillDef.name)}</span>
+      <span class="lobby-card-name">${escapeHtml(c.name)}</span>
+      <span class="lobby-card-meta">⚡ ${escapeHtml(skillDef.name)}</span>
       ${action}
     </div>`;
   }).join('');
@@ -168,16 +166,15 @@ export function showLobby(
       (s.weapon === 'pistol' && profile.equippedPistolSkin === s.id);
     let action = '';
     if (equipped) action = '<span style="color:#4f4;">Equipped</span>';
-    else if (owned)
-      action = `<button data-equip-skin="${s.id}" style="padding:4px 10px;background:#4af;color:#000;border:none;border-radius:3px;cursor:pointer;font-size:11px;">Equip</button>`;
+    else if (owned) action = `<button data-equip-skin="${s.id}">Equip</button>`;
     else if (locked) action = `<span style="color:#a66;">Lv ${s.unlockLevel}</span>`;
     else if (s.unlock === 'buy')
-      action = `<button data-buy-skin="${s.id}" style="padding:4px 10px;background:#fa0;color:#000;border:none;border-radius:3px;cursor:pointer;font-size:11px;">Buy ${s.price}</button>`;
-    else action = `<span style="color:#889;">Reach Lv ${s.unlockLevel}</span>`;
-    return `<div style="display:flex;flex-direction:column;gap:6px;align-items:center;background:rgba(0,0,0,0.3);padding:10px;border-radius:6px;min-width:120px;border:1px solid ${equipped ? '#4af' : 'rgba(255,255,255,0.1)'};">
+      action = `<button class="buy" data-buy-skin="${s.id}">Buy ${s.price}</button>`;
+    else action = `<span class="muted">Reach Lv ${s.unlockLevel}</span>`;
+    return `<div class="lobby-card${equipped ? ' is-equipped' : ''}">
       ${renderGunSvg(s.weapon, s.color)}
-      <span style="font-size:11px;font-weight:bold;text-align:center;">${escapeHtml(s.name)}</span>
-      <span style="font-size:10px;color:#889;text-transform:uppercase;">${s.weapon}</span>
+      <span class="lobby-card-name">${escapeHtml(s.name)}</span>
+      <span class="lobby-card-weapon">${s.weapon}</span>
       ${action}
     </div>`;
   }).join('');
@@ -187,137 +184,142 @@ export function showLobby(
   const equippedRifle = gunSkinById(profile.equippedRifleSkin);
   const equippedPistol = gunSkinById(profile.equippedPistolSkin);
 
+  overlay.className = 'lobby-overlay';
   overlay.innerHTML = `
-    <h1 style="font-size:46px;margin:0 0 6px;letter-spacing:4px;text-transform:uppercase;color:#4af;">ROBOT ARENA</h1>
-    <p style="color:#889;margin:0 0 18px;font-size:13px;">Battle Royale — 10 players — Robot Apocalypse</p>
-    <div style="display:flex;flex-direction:column;align-items:center;gap:10px;margin-bottom:18px;">
-      <button id="btn-online" style="padding:13px 42px;font-size:17px;background:#4af;color:#000;border:none;border-radius:4px;cursor:pointer;font-weight:bold;">${queue.active ? 'Searching for match...' : 'Play Online'}</button>
-      ${queue.message && !queue.active ? `<p style="color:#fa0;font-size:12px;margin:0;">${escapeHtml(queue.message)}</p>` : ''}
-      <div style="display:flex;gap:10px;align-items:center;">
-        <button id="btn-local" style="padding:8px 20px;font-size:13px;background:#444;color:#fff;border:none;border-radius:4px;cursor:pointer;">Play Local</button>
-        <button id="btn-cancel-queue" style="padding:8px 20px;font-size:13px;background:#a33;color:#fff;border:none;border-radius:4px;cursor:pointer;display:${queue.active ? 'inline-block' : 'none'};">Cancel</button>
-      </div>
-    </div>
-    ${shopMessage ? `<p id="shop-msg" style="color:#fa0;font-size:12px;margin:0 0 12px;">${escapeHtml(shopMessage)}</p>` : ''}
-    <div style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center;max-width:960px;width:100%;">
-      <div style="background:rgba(255,255,255,0.05);padding:12px 18px;border-radius:8px;font-size:13px;min-width:220px;">
-        <b style="color:#8af;display:block;text-align:center;font-size:11px;margin-bottom:8px;">CHARACTER</b>
-        <div style="display:flex;gap:8px;margin-bottom:10px;">
-          <input id="inp-name" maxlength="16" value="${escapeHtml(profile.name)}" style="flex:1;padding:6px 8px;border-radius:4px;border:1px solid #445;background:#111;color:#fff;" />
-          <button id="btn-rename" style="padding:6px 12px;background:#4af;color:#000;border:none;border-radius:4px;cursor:pointer;font-size:12px;">Save</button>
-        </div>
-        <div style="display:grid;grid-template-columns:auto auto;gap:3px 16px;">
-          <span style="color:#889;">Level</span><span>${stats.level}</span>
-          <span style="color:#889;">XP</span><span>${stats.xp}</span>
-          <span style="color:#889;">Credits</span><span style="color:#fa0;">${profile.credits}</span>
-          <span style="color:#889;">Wins</span><span style="color:#4f4;">${stats.wins}</span>
-          <span style="color:#889;">Kills</span><span style="color:#f44;">${stats.kills}</span>
-          <span style="color:#889;">Matches</span><span>${stats.matches}</span>
-        </div>
-      </div>
-      <div style="background:rgba(255,255,255,0.05);padding:12px 18px;border-radius:8px;font-size:13px;min-width:240px;display:flex;flex-direction:column;align-items:center;">
-        <b style="color:#8af;display:block;text-align:center;font-size:11px;margin-bottom:8px;">EQUIPPED LOADOUT</b>
-        <div style="display:flex;gap:12px;align-items:center;margin-bottom:8px;">
-          ${renderRobotSvg(equippedChassis?.color ?? 0x3366cc)}
-          <div>
-            <div style="font-weight:bold;color:#fff;">${escapeHtml(equippedChassis?.name ?? 'Blue Pilot')}</div>
-            <div style="font-size:11px;color:#00ffff;">⚡ ${escapeHtml(equippedSkill?.name ?? 'Speed Boost [F]')}</div>
-            <div style="font-size:10px;color:#889;">${escapeHtml(equippedSkill?.description ?? '')}</div>
+    <div class="lobby-shell">
+      <header id="lobby-hero" class="lobby-hero">
+        <h1>ROBOT ARENA</h1>
+        <p class="lobby-tagline">Battle Royale — 10 players — Robot Apocalypse</p>
+        <div class="lobby-play">
+          <button id="btn-online" class="lobby-btn lobby-btn-primary" type="button">${queue.active ? 'Searching for match...' : 'Play Online'}</button>
+          ${queue.message && !queue.active ? `<p class="lobby-queue-msg">${escapeHtml(queue.message)}</p>` : ''}
+          <div class="lobby-play-row">
+            <button id="btn-local" class="lobby-btn lobby-btn-secondary" type="button">Play Local</button>
+            <button id="btn-cancel-queue" class="lobby-btn lobby-btn-danger" type="button" style="display:${queue.active ? 'inline-block' : 'none'};">Cancel</button>
           </div>
         </div>
-        <div style="display:flex;gap:8px;justify-content:center;background:rgba(0,0,0,0.25);padding:6px 12px;border-radius:6px;width:100%;">
-          <div style="text-align:center;">
-            ${renderGunSvg('rifle', equippedRifle?.color ?? 0xffcc33)}
-            <div style="font-size:10px;color:#aaa;">${escapeHtml(equippedRifle?.name ?? 'Rifle')}</div>
+      </header>
+      ${shopMessage ? `<p id="shop-msg" class="lobby-shop-msg">${escapeHtml(shopMessage)}</p>` : ''}
+      <div class="lobby-panels">
+        <section class="lobby-panel">
+          <b class="lobby-panel-title">Character</b>
+          <div class="lobby-name-row">
+            <input id="inp-name" maxlength="16" value="${escapeHtml(profile.name)}" />
+            <button id="btn-rename" class="lobby-btn lobby-btn-primary" type="button" style="width:auto;padding:8px 14px;min-height:40px;font-size:0.75rem;">Save</button>
           </div>
-          <div style="text-align:center;">
-            ${renderGunSvg('pistol', equippedPistol?.color ?? 0xff8844)}
-            <div style="font-size:10px;color:#aaa;">${escapeHtml(equippedPistol?.name ?? 'Pistol')}</div>
+          <div class="lobby-stats">
+            <span class="muted">Level</span><span>${stats.level}</span>
+            <span class="muted">XP</span><span>${stats.xp}</span>
+            <span class="muted">Credits</span><span style="color:#fa0;">${profile.credits}</span>
+            <span class="muted">Wins</span><span style="color:#4f4;">${stats.wins}</span>
+            <span class="muted">Kills</span><span style="color:#f44;">${stats.kills}</span>
+            <span class="muted">Matches</span><span>${stats.matches}</span>
           </div>
-        </div>
+        </section>
+        <section class="lobby-panel" style="display:flex;flex-direction:column;align-items:center;">
+          <b class="lobby-panel-title">Equipped Loadout</b>
+          <div class="lobby-loadout-head">
+            ${renderRobotSvg(equippedChassis?.color ?? 0x3366cc)}
+            <div>
+              <div style="font-weight:bold;">${escapeHtml(equippedChassis?.name ?? 'Blue Pilot')}</div>
+              <div style="font-size:0.6875rem;color:#00ffff;">⚡ ${escapeHtml(equippedSkill?.name ?? 'Speed Boost [F]')}</div>
+              <div style="font-size:0.625rem;color:var(--lobby-muted);">${escapeHtml(equippedSkill?.description ?? '')}</div>
+            </div>
+          </div>
+          <div class="lobby-loadout-guns">
+            <div style="text-align:center;">
+              ${renderGunSvg('rifle', equippedRifle?.color ?? 0xffcc33)}
+              <div style="font-size:0.625rem;color:#aaa;">${escapeHtml(equippedRifle?.name ?? 'Rifle')}</div>
+            </div>
+            <div style="text-align:center;">
+              ${renderGunSvg('pistol', equippedPistol?.color ?? 0xff8844)}
+              <div style="font-size:0.625rem;color:#aaa;">${escapeHtml(equippedPistol?.name ?? 'Pistol')}</div>
+            </div>
+          </div>
+        </section>
+        <section class="lobby-panel">
+          <b class="lobby-panel-title">Settings</b>
+          <div class="lobby-settings">
+            ${row(
+              'Quality',
+              select(
+                'sel-quality',
+                [
+                  ['low', 'Low'],
+                  ['medium', 'Medium'],
+                ],
+                settings.quality
+              )
+            )}
+            ${row(
+              'Sensitivity',
+              select(
+                'sel-sensitivity',
+                [
+                  ['0.5', 'Slow'],
+                  ['1', 'Normal'],
+                  ['1.5', 'Fast'],
+                  ['2', 'Very Fast'],
+                ],
+                String(settings.sensitivity)
+              )
+            )}
+            ${row(
+              'Camera',
+              select(
+                'sel-camera',
+                [
+                  ['tps', 'Third Person'],
+                  ['fps', 'First Person'],
+                ],
+                settings.cameraMode
+              )
+            )}
+            ${row(
+              'Minimap',
+              select(
+                'sel-minimap',
+                [
+                  ['small', 'Small'],
+                  ['large', 'Large'],
+                ],
+                settings.minimapSize
+              )
+            )}
+            ${row(
+              'Volume',
+              select(
+                'sel-volume',
+                [
+                  ['0', 'Mute'],
+                  ['0.3', 'Quiet'],
+                  ['0.7', 'Normal'],
+                  ['1', 'Loud'],
+                ],
+                String(settings.volume)
+              )
+            )}
+          </div>
+        </section>
       </div>
-      <div style="background:rgba(255,255,255,0.05);padding:10px 18px;border-radius:8px;font-size:13px;">
-        <b style="color:#8af;display:block;text-align:center;font-size:11px;margin-bottom:6px;">SETTINGS</b>
-        <div style="display:flex;flex-direction:column;gap:7px;color:#889;">
-          ${row(
-            'Quality',
-            select(
-              'sel-quality',
-              [
-                ['low', 'Low'],
-                ['medium', 'Medium'],
-              ],
-              settings.quality
-            )
-          )}
-          ${row(
-            'Sensitivity',
-            select(
-              'sel-sensitivity',
-              [
-                ['0.5', 'Slow'],
-                ['1', 'Normal'],
-                ['1.5', 'Fast'],
-                ['2', 'Very Fast'],
-              ],
-              String(settings.sensitivity)
-            )
-          )}
-          ${row(
-            'Camera',
-            select(
-              'sel-camera',
-              [
-                ['tps', 'Third Person'],
-                ['fps', 'First Person'],
-              ],
-              settings.cameraMode
-            )
-          )}
-          ${row(
-            'Minimap',
-            select(
-              'sel-minimap',
-              [
-                ['small', 'Small'],
-                ['large', 'Large'],
-              ],
-              settings.minimapSize
-            )
-          )}
-          ${row(
-            'Volume',
-            select(
-              'sel-volume',
-              [
-                ['0', 'Mute'],
-                ['0.3', 'Quiet'],
-                ['0.7', 'Normal'],
-                ['1', 'Loud'],
-              ],
-              String(settings.volume)
-            )
-          )}
-        </div>
-      </div>
-    </div>
-    <div style="margin-top:16px;background:rgba(255,255,255,0.05);padding:12px 18px;border-radius:8px;max-width:960px;width:100%;">
-      <b style="color:#8af;display:block;font-size:11px;margin-bottom:10px;">CHASSIS</b>
-      <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;">${chassisCards}</div>
-    </div>
-    <div style="margin-top:12px;background:rgba(255,255,255,0.05);padding:12px 18px;border-radius:8px;max-width:960px;width:100%;">
-      <b style="color:#8af;display:block;font-size:11px;margin-bottom:6px;">GUN SKINS / SHOP</b>
-      <p style="color:#889;font-size:11px;margin:0 0 10px;text-align:center;">Level-locked skins cannot be bought early. Free skins unlock automatically at level.</p>
-      <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;">${skinCards}</div>
-    </div>
-    <div style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin-top:14px;max-width:960px;width:100%;">
-      <div style="background:rgba(255,255,255,0.05);padding:10px 18px;border-radius:8px;font-size:13px;min-width:220px;flex:1;">
-        <b style="color:#8af;display:block;font-size:11px;margin-bottom:6px;">RECENT MATCHES</b>
-        <div style="display:flex;flex-direction:column;gap:5px;">${historyMarkup}</div>
-      </div>
-      <div style="background:rgba(255,255,255,0.05);padding:10px 18px;border-radius:8px;font-size:13px;min-width:260px;flex:1;">
-        <b style="color:#8af;display:block;font-size:11px;margin-bottom:6px;">SEASON LEADERBOARD</b>
-        <div style="display:flex;flex-direction:column;gap:5px;">${leaderboardMarkup}</div>
+      <section class="lobby-panel lobby-section">
+        <b class="lobby-panel-title">Chassis</b>
+        <div class="lobby-shop-grid">${chassisCards}</div>
+      </section>
+      <section class="lobby-panel lobby-section">
+        <b class="lobby-panel-title">Gun Skins / Shop</b>
+        <p class="lobby-section-hint">Level-locked skins cannot be bought early. Free skins unlock automatically at level.</p>
+        <div class="lobby-shop-grid">${skinCards}</div>
+      </section>
+      <div class="lobby-activity">
+        <section class="lobby-panel">
+          <b class="lobby-panel-title">Recent Matches</b>
+          <div class="lobby-list">${historyMarkup}</div>
+        </section>
+        <section class="lobby-panel">
+          <b class="lobby-panel-title">Season Leaderboard</b>
+          <div class="lobby-list">${leaderboardMarkup}</div>
+        </section>
       </div>
     </div>
   `;
