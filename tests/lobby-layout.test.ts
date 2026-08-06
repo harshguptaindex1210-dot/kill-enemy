@@ -102,12 +102,11 @@ describe('lobby responsive layout (#46)', () => {
     expect(css).toMatch(/\.lobby-instructions/);
     expect(css).toMatch(/\.lobby-hero/);
     expect(css).toMatch(/\.lobby-shop-grid/);
+    expect(css).toMatch(/@media\s*\(\s*min-width:\s*900px\s*\)/);
     expect(css).toMatch(/@media\s*\(\s*min-width:\s*1024px\s*\)/);
     expect(css).toMatch(/\.lobby-panels/);
-    const laptopBlock = css.split(/@media\s*\(\s*min-width:\s*1024px\s*\)/)[1] ?? '';
-    expect(laptopBlock).toMatch(
-      /lobby-panels[^}]*flex-direction:\s*row|lobby-panels[^}]*grid-template-columns/s
-    );
+    const desktopBlock = css.split(/@media\s*\(\s*min-width:\s*900px\s*\)/)[1] ?? '';
+    expect(desktopBlock).toMatch(/\.lobby-instructions[^}]*position:\s*fixed/s);
   });
 
   it('replaces a previous overlay instead of stacking duplicates', () => {

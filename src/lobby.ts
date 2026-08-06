@@ -352,6 +352,12 @@ export function showLobby(
   `;
 
   document.body.appendChild(overlay);
+  overlay.scrollTop = 0;
+  try {
+    window.scrollTo(0, 0);
+  } catch {
+    /* jsdom */
+  }
 
   document.getElementById('btn-online')?.addEventListener('click', () => {
     if (queue.active) return;

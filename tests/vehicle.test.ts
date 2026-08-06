@@ -28,11 +28,12 @@ describe('vehicles', () => {
     expect(v.state.position.z).toBeGreaterThan(0);
   });
 
-  it('steers when turning', () => {
+  it('steers left when steer input is negative', () => {
     const v = createVehicle('sedan', new THREE.Vector3(0, 0.5, 0));
-    updateVehicle(v.state, 1, 1, 1 / 60, 0);
-    const rotAfter = v.state.rotation;
-    expect(Math.abs(rotAfter)).toBeGreaterThan(0);
+    v.state.speed = 20;
+    const rotBefore = v.state.rotation;
+    updateVehicle(v.state, 1, -1, 1 / 60, 0);
+    expect(v.state.rotation).toBeGreaterThan(rotBefore);
   });
 
   it('finds nearby unoccupied vehicle', () => {

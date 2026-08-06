@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { MatchSim } from '../src/gameplay';
 import { createWeapon } from '../src/weapons';
 import { throwGrenade } from '../src/grenades';
+import { MAP_BOUND } from '../src/constants';
 
 function makeSim(botCount = 3, seed = 12345): MatchSim {
   return new MatchSim({ seed, botCount, time: 0 });
@@ -111,7 +112,7 @@ describe('MatchSim', () => {
   });
 
   it('pickup collects loot and respawns it later', () => {
-    const sim = makeSim(1);
+    const sim = makeSim(0);
     sim.startMatch();
     runFor(sim, 9);
     const player = sim.units.get('player')!;
@@ -132,7 +133,7 @@ describe('MatchSim', () => {
     runFor(sim, 9);
     const spawn = sim.loot[0];
     spawn.collected = false;
-    spawn.position.set(250, 0.5, 250);
+    spawn.position.set(MAP_BOUND + 10, 0.5, MAP_BOUND + 10);
     runFor(sim, 1);
     expect(spawn.collected).toBe(true);
     sim.lootRespawns.push({ id: spawn.id, until: sim.time + 1000 });
@@ -307,8 +308,8 @@ describe('MatchSim', () => {
     const player = sim.units.get('player')!;
     player.player.position.set(5000, 0.9, 5000);
     runFor(sim, 0.5);
-    expect(Math.abs(player.player.position.x)).toBeLessThanOrEqual(280);
-    expect(Math.abs(player.player.position.z)).toBeLessThanOrEqual(280);
+    expect(Math.abs(player.player.position.x)).toBeLessThanOrEqual(MAP_BOUND);
+    expect(Math.abs(player.player.position.z)).toBeLessThanOrEqual(MAP_BOUND);
   });
 });
 
@@ -361,6 +362,8 @@ describe('grenade gameplay (#26)', () => {
     const player = sim.units.get('player')!;
     const bot = sim.units.get('bot_1')!;
     bot.health = 1000;
+    bot.isBot = false;
+    bot.botBrain = null;
     bot.player.position.set(3, 0.9, 0);
     player.player.position.set(0, 0.9, 0);
     const origin = new THREE.Vector3(0, 0.15, 0);

@@ -289,11 +289,12 @@ export class MatchSim {
   }
 
   private spawnVehicles() {
+    const edge = MAP_BOUND - 20;
     const spots: [VehicleType, THREE.Vector3][] = [
-      ['sedan', new THREE.Vector3(260, 0, 260)],
-      ['buggy', new THREE.Vector3(-260, 0, 260)],
-      ['sedan', new THREE.Vector3(260, 0, -260)],
-      ['buggy', new THREE.Vector3(-260, 0, -260)],
+      ['sedan', new THREE.Vector3(edge, 0, edge)],
+      ['buggy', new THREE.Vector3(-edge, 0, edge)],
+      ['sedan', new THREE.Vector3(edge, 0, -edge)],
+      ['buggy', new THREE.Vector3(-edge, 0, -edge)],
       ['motorbike', new THREE.Vector3(80, 0, 60)],
       ['motorbike', new THREE.Vector3(-80, 0, 60)],
       ['motorbike', new THREE.Vector3(60, 0, -80)],

@@ -61,7 +61,7 @@
   position: relative;
   z-index: 1;
   width: 100%;
-  max-width: calc(var(--lobby-max) + 320px);
+  max-width: var(--lobby-max);
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -485,29 +485,26 @@
   }
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 900px) {
   .lobby-overlay {
     padding: 32px 24px 56px;
-  }
-
-  .lobby-layout {
-    flex-direction: row;
-    align-items: flex-start;
-    justify-content: center;
-    gap: 18px;
-  }
-
-  .lobby-shell {
-    flex: 1 1 0;
-    min-width: 0;
+    padding-right: max(24px, calc(300px + env(safe-area-inset-right)));
   }
 
   .lobby-instructions {
-    flex: 0 0 280px;
-    max-width: 280px;
-    position: sticky;
-    top: 24px;
-    align-self: flex-start;
+    position: fixed;
+    right: max(20px, env(safe-area-inset-right));
+    top: max(20px, env(safe-area-inset-top));
+    width: 280px;
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
+    z-index: 3;
+    flex: none;
+  }
+
+  .lobby-shell {
+    width: 100%;
+    max-width: var(--lobby-max);
   }
 
   .lobby-hero {
@@ -546,5 +543,28 @@
 
   .lobby-btn-primary {
     font-size: 1.12rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .lobby-layout {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 18px;
+    max-width: calc(var(--lobby-max) + 320px);
+  }
+
+  .lobby-shell {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .lobby-instructions {
+    position: sticky;
+    top: 24px;
+    right: auto;
+    align-self: flex-start;
+    max-height: calc(100vh - 48px);
   }
 }

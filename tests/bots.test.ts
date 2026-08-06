@@ -45,6 +45,16 @@ describe('bot AI', () => {
     expect(input.backward).toBe(false);
   });
 
+  it('keeps pushing forward at melee range instead of backing up', () => {
+    const c = ctx({
+      brain: createBotBrain('hard'),
+      enemy: { position: new THREE.Vector3(0, 0, -3) },
+    });
+    const input = decideBotInput(c);
+    expect(input.forward).toBe(true);
+    expect(input.backward).toBe(false);
+  });
+
   it('does not fire before reaction time', () => {
     const c = ctx({
       brain: createBotBrain('hard'),

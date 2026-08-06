@@ -1,15 +1,15 @@
 import * as THREE from 'three';
 
 /** Half-width of the square play area (meters from center). */
-export const MAP_BOUND = 280;
+export const MAP_BOUND = 200;
 
 /** Full ground plane width/depth in meters. */
 export const MAP_SIZE = MAP_BOUND * 2;
 
 /** Distance from map center to each POI cluster. */
-export const POI_RADIUS = 175;
+export const POI_RADIUS = 125;
 
-export const ZONE_PHASE_RADII = [230, 175, 115, 58, 18] as const;
+export const ZONE_PHASE_RADII = [164, 125, 82, 41, 13] as const;
 
 export const ZONE_PHASE_DPS = [1, 2, 4, 8, 16] as const;
 

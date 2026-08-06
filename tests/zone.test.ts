@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import * as THREE from 'three';
 import { ZoneSystem, ZoneLogic } from '../src/zone';
+import { ZONE_PHASE_RADII } from '../src/constants';
 
 describe('zone system', () => {
   it('initializes with 5 phases', () => {
@@ -39,7 +40,7 @@ describe('zone shrink + warning', () => {
     const start = z.currentSafeRadius;
     z.update(30);
     expect(z.currentSafeRadius).toBeLessThan(start);
-    expect(z.currentSafeRadius).toBeCloseTo(230, 0);
+    expect(z.currentSafeRadius).toBeCloseTo(ZONE_PHASE_RADII[0], 0);
   });
 
   it('safe radius keeps shrinking across phases', () => {
@@ -49,7 +50,7 @@ describe('zone shrink + warning', () => {
     const r0 = z.currentSafeRadius;
     z.update(30);
     expect(z.currentSafeRadius).toBeLessThan(r0);
-    expect(z.currentSafeRadius).toBeCloseTo(175, 0);
+    expect(z.currentSafeRadius).toBeCloseTo(ZONE_PHASE_RADII[1], 0);
   });
 
   it('zoneIncoming fires once per phase before a shrink', () => {

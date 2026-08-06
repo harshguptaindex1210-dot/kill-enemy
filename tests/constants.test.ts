@@ -3,7 +3,7 @@ import { MAP_BOUND, MAP_SIZE, POI_RADIUS, ZONE_PHASE_RADII } from '../src/consta
 
 describe('map constants (#50)', () => {
   it('keeps the play area within the requested smaller bound', () => {
-    expect(MAP_BOUND).toBeLessThanOrEqual(300);
+    expect(MAP_BOUND).toBeLessThanOrEqual(280);
     expect(MAP_SIZE).toBe(MAP_BOUND * 2);
   });
 
