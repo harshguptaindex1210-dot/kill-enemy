@@ -39,7 +39,7 @@ local function rpc_submit_score(context, payload)
     return nk.json_encode({ submitted = true, duplicate = true })
   end
 
-  nk.storage_write({
+  local dedupe_ok, _ = pcall(nk.storage_write, {
     {
       collection = "leaderboard_dedupe",
       key = data.writeId,
@@ -47,8 +47,12 @@ local function rpc_submit_score(context, payload)
       value = { placement = placement, kills = kills, damage = damage },
       permission_read = 0,
       permission_write = 0,
+      version = "",
     },
   })
+  if not dedupe_ok then
+    return nk.json_encode({ submitted = true, duplicate = true })
+  end
 
   -- Nakama's descending "best" board keeps higher scores. Placement 1 must
   -- therefore rank ahead of placement 10.

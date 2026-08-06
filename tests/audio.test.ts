@@ -125,4 +125,14 @@ describe('AudioManager (#32)', () => {
     audio.setMuted(false);
     expect(audio.isMuted()).toBe(false);
   });
+
+  it('does not throw when levelup timers fire after dispose', async () => {
+    vi.useFakeTimers();
+    const audio = new AudioManager();
+    audio.resume();
+    audio.play('levelup');
+    audio.dispose();
+    expect(() => vi.advanceTimersByTime(500)).not.toThrow();
+    vi.useRealTimers();
+  });
 });

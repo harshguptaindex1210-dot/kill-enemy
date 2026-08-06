@@ -118,7 +118,8 @@ describe('weapons', () => {
 
   it('classifies upward-aimed shots as head hits', () => {
     const w = createWeapon('rifle');
-    const target = createDamageable('dummy', new THREE.Vector3(0, 0.9, -10));
+    w.def = { ...w.def, spread: 0 };
+    const target = createDamageable('dummy', new THREE.Vector3(0, 0.9, -5));
     const origin = new THREE.Vector3(0, 1.5, 0);
     const dir = new THREE.Vector3(0, 0, -1);
     const results = fireWeapon(

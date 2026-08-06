@@ -19,6 +19,7 @@ export class AudioManager {
   private volume = 0.7;
   private muted = false;
   private zoneWarningUntil = 0;
+  private levelupTimers: ReturnType<typeof setTimeout>[] = [];
 
   constructor() {}
 
@@ -39,6 +40,8 @@ export class AudioManager {
   }
 
   dispose() {
+    for (const t of this.levelupTimers) clearTimeout(t);
+    this.levelupTimers = [];
     if (this.ctx) {
       this.ctx.close().catch(() => undefined);
       this.ctx = null;
@@ -75,6 +78,7 @@ export class AudioManager {
     gain: number = 0.3,
     freqEnd?: number
   ) {
+    if (ctx.state === 'closed') return;
     const osc = ctx.createOscillator();
     const g = ctx.createGain();
     osc.type = type;
@@ -151,7 +155,12 @@ export class AudioManager {
         break;
       case 'levelup':
         [660, 880, 1100, 1320].forEach((f, i) =>
-          setTimeout(() => this.tone(ctx, f, 0.18, 'triangle', 0.25), i * 120)
+          this.levelupTimers.push(
+            setTimeout(() => {
+              const active = this.ensure();
+              if (active) this.tone(active, f, 0.18, 'triangle', 0.25);
+            }, i * 120)
+          )
         );
         break;
       case 'ui':

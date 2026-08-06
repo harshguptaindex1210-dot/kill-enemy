@@ -89,6 +89,31 @@ describe('netcode', () => {
     );
     expect(e.tick).toBe(1);
   });
+
+  it('caps unacked input buffer when acks stall', () => {
+    const e = new RollbackEngine('p1', new THREE.Vector3(0, 0.9, 0));
+    const frame = {
+      forward: false,
+      backward: false,
+      left: false,
+      right: false,
+      sprint: false,
+      jump: false,
+      aim: false,
+      mouseX: 0,
+      mouseY: 0,
+      fire: false,
+      reload: false,
+      weapon1: false,
+      weapon2: false,
+      weapon3: false,
+    };
+    for (let i = 1; i <= 150; i++) {
+      e.applyInput({ ...frame, seq: i }, 1 / 20, 0);
+    }
+    expect(e.tick).toBe(150);
+    expect(e.inputs.length).toBeLessThanOrEqual(120);
+  });
 });
 
 describe('input frame', () => {

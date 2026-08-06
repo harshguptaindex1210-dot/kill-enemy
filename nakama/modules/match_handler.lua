@@ -556,19 +556,8 @@ local function match_loop(context, dispatcher, tick, state, messages)
     end
   end
 
-  -- Bot AI only outside playing (playing path below already steps bots once).
-  if state.match_phase ~= "playing" and state.match_phase ~= "ended" then
-    for uid, p in pairs(state.players) do
-      if p.alive and (p.is_bot or string.sub(uid, 1, 4) == "bot_") then
-        local input = bot_input(state, p)
-        apply_input(p, input, TICK_DT)
-        push_history(p)
-      end
-    end
-  end
-
-  if state.match_phase == "playing" then
-    -- consume client inputs only (INV-4)
+  -- consume client inputs during all active phases (INV-4)
+  if state.match_phase ~= "ended" then
     for _, msg in ipairs(messages) do
       if msg.op_code == OP_INPUT then
         local ok, input = pcall(nk.json_decode, msg.data)
@@ -582,7 +571,22 @@ local function match_loop(context, dispatcher, tick, state, messages)
         end
       end
     end
+  end
 
+  -- Bot AI + human pre-play movement outside playing.
+  if state.match_phase ~= "playing" and state.match_phase ~= "ended" then
+    for uid, p in pairs(state.players) do
+      if p.alive then
+        local is_bot = p.is_bot or string.sub(uid, 1, 4) == "bot_"
+        local input = is_bot and bot_input(state, p) or (state.pending_inputs[uid] or {})
+        apply_input(p, input, TICK_DT)
+        push_history(p)
+      end
+    end
+    state.pending_inputs = {}
+  end
+
+  if state.match_phase == "playing" then
     update_zone(state, TICK_DT)
 
     for uid, p in pairs(state.players) do
@@ -677,6 +681,10 @@ local function rpc_create_match(context, payload)
   if params.bot_count == nil then
     params.bot_count = 9
   end
+  local bot_count = tonumber(params.bot_count) or 0
+  if bot_count < 0 then bot_count = 0 end
+  if bot_count > 10 then bot_count = 10 end
+  params.bot_count = bot_count
   local match_id = nk.match_create("battle_royale", params)
   return nk.json_encode({ match_id = match_id })
 end

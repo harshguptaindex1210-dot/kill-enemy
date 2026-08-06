@@ -33,6 +33,8 @@ export interface EntityState {
   health: number;
 }
 
+const MAX_UNACKED_INPUTS = 120;
+
 export class RollbackEngine {
   tick = 0;
   inputs: InputFrame[] = [];
@@ -63,6 +65,9 @@ export class RollbackEngine {
   /** Applies an input frame to the local prediction state (no server dependency). */
   applyInput(input: InputFrame, dt: number, groundY: number) {
     this.inputs.push(input);
+    if (this.inputs.length > MAX_UNACKED_INPUTS) {
+      this.inputs = this.inputs.slice(-MAX_UNACKED_INPUTS);
+    }
     this.yaw = wrapAngle(this.yaw - input.mouseX * this.mouseSensitivity);
     this.step(this.localState, input, dt, groundY, this.yaw);
     this.tick++;
