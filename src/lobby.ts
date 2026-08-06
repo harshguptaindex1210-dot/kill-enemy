@@ -191,7 +191,7 @@ export function showLobby(
     <div class="lobby-shell">
       <header id="lobby-hero" class="lobby-hero">
         <h1>ROBOT ARENA</h1>
-        <p class="lobby-tagline">Battle Royale — 10 players — Robot Apocalypse</p>
+        <p class="lobby-tagline">10-player battle royale · robot apocalypse · drop in and fight</p>
         <div class="lobby-play">
           <button id="btn-online" class="lobby-btn lobby-btn-primary" type="button">${queue.active ? 'Searching for match...' : 'Play Online'}</button>
           ${queue.message && !queue.active ? `<p class="lobby-queue-msg">${escapeHtml(queue.message)}</p>` : ''}
