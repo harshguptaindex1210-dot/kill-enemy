@@ -2,7 +2,7 @@
 
 **Date:** 2026-08-06  
 **Tracker:** local (`CONTEXT/docs/prd/issues/`) — GitHub Project unavailable (missing `project` scope)  
-**Live URL:** https://harshguptaindex1210-dot.github.io/shooter-game/
+**Live URL:** https://harshguptaindex1210-dot.github.io/kill-enemy/
 
 ## Problem Statement
 
