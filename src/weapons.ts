@@ -105,7 +105,11 @@ export function fireWeapon(
     const end = origin.clone().add(direction.clone().multiplyScalar(weapon.def.range));
     const closest = findClosestHit(origin, end, targets);
     if (closest) {
-      const dz = getDamageZone(origin, closest.position, closest.capsuleHeight);
+      const dz = getDamageZone(
+        rayHitHeight(origin, direction, closest.position),
+        closest.position,
+        closest.capsuleHeight
+      );
       results.push({
         hit: true,
         damage: dz.mult * weapon.def.damage,
@@ -146,7 +150,11 @@ export function fireWeapon(
   const end = origin.clone().add(spreadDir.clone().multiplyScalar(weapon.def.range));
   const closest = findClosestHit(origin, end, targets);
   if (closest) {
-    const dz = getDamageZone(origin, closest.position, closest.capsuleHeight);
+    const dz = getDamageZone(
+      rayHitHeight(origin, spreadDir, closest.position),
+      closest.position,
+      closest.capsuleHeight
+    );
     results.push({
       hit: true,
       damage: dz.mult * weapon.def.damage,
@@ -212,12 +220,24 @@ function findClosestHit(
   return closest;
 }
 
-function getDamageZone(
+/** Y coordinate where the aim ray crosses the target's horizontal plane. */
+function rayHitHeight(
   origin: THREE.Vector3,
+  direction: THREE.Vector3,
+  targetPos: THREE.Vector3
+): number {
+  const dir = direction.clone().normalize();
+  const toTarget = targetPos.clone().sub(origin);
+  const along = toTarget.dot(dir);
+  if (along <= 0) return origin.y;
+  return origin.y + dir.y * along;
+}
+
+function getDamageZone(
+  hitY: number,
   targetPos: THREE.Vector3,
   height: number
 ): { zone: 'head' | 'body' | 'limb'; mult: number } {
-  const hitY = origin.y;
   const baseY = targetPos.y - height / 2;
   const relY = hitY - baseY;
   const ratio = relY / height;
