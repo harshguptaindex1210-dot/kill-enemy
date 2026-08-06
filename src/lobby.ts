@@ -1,7 +1,7 @@
 import type { Settings } from './settings';
 import type { LeaderboardEntry, MatchRecord } from './net/leaderboard';
 import type { PlayerProfile } from './profile';
-import { CHASSIS_PRESETS, GUN_SKINS, SKILL_DEFS, chassisById, gunSkinById } from './cosmetics';
+import { CHASSIS_PRESETS, GUN_SKINS, CAR_SKINS, SKILL_DEFS, carSkinById, chassisById, gunSkinById } from './cosmetics';
 import './lobby.css';
 
 export interface LobbyCallbacks {
@@ -14,6 +14,8 @@ export interface LobbyCallbacks {
   onBuyChassis: (chassisId: string) => void;
   onEquipChassis: (chassisId: string) => void;
   onEquipGunSkin: (skinId: string) => void;
+  onBuyCarSkin: (skinId: string) => void;
+  onEquipCarSkin: (skinId: string) => void;
   onRename: (name: string) => void;
 }
 
@@ -103,6 +105,24 @@ function renderGunSvg(weapon: 'rifle' | 'pistol', colorNum: number): string {
       <path d="M26,19 C26,23 30,23 30,19" fill="none" stroke="#333" stroke-width="2" />
     </svg>`;
   }
+}
+
+function renderCarSvg(vehicle: 'sedan' | 'buggy', colorNum: number): string {
+  const hex = hexColor(colorNum);
+  if (vehicle === 'sedan') {
+    return `<svg width="72" height="34" viewBox="0 0 72 34" style="filter:drop-shadow(0 2px 4px rgba(0,0,0,0.6));">
+      <rect x="8" y="14" width="56" height="12" rx="3" fill="${hex}" stroke="#ffffff" stroke-width="0.75" />
+      <rect x="14" y="8" width="28" height="8" rx="2" fill="${hex}" opacity="0.85" />
+      <circle cx="18" cy="28" r="5" fill="#111" />
+      <circle cx="54" cy="28" r="5" fill="#111" />
+    </svg>`;
+  }
+  return `<svg width="72" height="34" viewBox="0 0 72 34" style="filter:drop-shadow(0 2px 4px rgba(0,0,0,0.6));">
+    <rect x="10" y="16" width="48" height="10" rx="2" fill="${hex}" stroke="#ffffff" stroke-width="0.75" />
+    <rect x="18" y="10" width="20" height="6" rx="1" fill="${hex}" opacity="0.9" />
+    <circle cx="20" cy="28" r="6" fill="#111" />
+    <circle cx="52" cy="28" r="6" fill="#111" />
+  </svg>`;
 }
 
 function renderRobotSvg(colorNum: number): string {
@@ -203,10 +223,33 @@ export function showLobby(
     </div>`;
   }).join('');
 
+  const carSkinCards = CAR_SKINS.map((s) => {
+    const owned = profile.ownedCarSkins.includes(s.id);
+    const locked = stats.level < s.unlockLevel;
+    const equipped =
+      (s.vehicle === 'sedan' && profile.equippedSedanSkin === s.id) ||
+      (s.vehicle === 'buggy' && profile.equippedBuggySkin === s.id);
+    let action = '';
+    if (equipped) action = '<span style="color:#4f4;">Equipped</span>';
+    else if (owned) action = `<button data-equip-car="${s.id}">Equip</button>`;
+    else if (locked) action = `<span style="color:#a66;">Lv ${s.unlockLevel}</span>`;
+    else if (s.unlock === 'buy')
+      action = `<button class="buy" data-buy-car="${s.id}">Buy ${s.price}</button>`;
+    else action = `<span class="muted">Reach Lv ${s.unlockLevel}</span>`;
+    return `<div class="lobby-card${equipped ? ' is-equipped' : ''}">
+      ${renderCarSvg(s.vehicle, s.color)}
+      <span class="lobby-card-name">${escapeHtml(s.name)}</span>
+      <span class="lobby-card-weapon">${s.vehicle}</span>
+      ${action}
+    </div>`;
+  }).join('');
+
   const equippedChassis = chassisById(profile.chassisId);
   const equippedSkill = equippedChassis ? SKILL_DEFS[equippedChassis.skill] : undefined;
   const equippedRifle = gunSkinById(profile.equippedRifleSkin);
   const equippedPistol = gunSkinById(profile.equippedPistolSkin);
+  const equippedSedan = carSkinById(profile.equippedSedanSkin);
+  const equippedBuggy = carSkinById(profile.equippedBuggySkin);
 
   overlay.className = 'lobby-overlay';
   overlay.innerHTML = `
@@ -260,6 +303,14 @@ export function showLobby(
             <div style="text-align:center;">
               ${renderGunSvg('pistol', equippedPistol?.color ?? 0xff8844)}
               <div style="font-size:0.625rem;color:#aaa;">${escapeHtml(equippedPistol?.name ?? 'Pistol')}</div>
+            </div>
+            <div style="text-align:center;">
+              ${renderCarSvg('sedan', equippedSedan?.color ?? 0x457b9d)}
+              <div style="font-size:0.625rem;color:#aaa;">${escapeHtml(equippedSedan?.name ?? 'Sedan')}</div>
+            </div>
+            <div style="text-align:center;">
+              ${renderCarSvg('buggy', equippedBuggy?.color ?? 0x80b918)}
+              <div style="font-size:0.625rem;color:#aaa;">${escapeHtml(equippedBuggy?.name ?? 'Buggy')}</div>
             </div>
           </div>
         </section>
@@ -337,6 +388,11 @@ export function showLobby(
         <p class="lobby-section-hint">Level-locked skins cannot be bought early. Free skins unlock automatically at level.</p>
         <div class="lobby-shop-grid">${skinCards}</div>
       </section>
+      <section class="lobby-panel lobby-section">
+        <b class="lobby-panel-title">Car Skins / Shop</b>
+        <p class="lobby-section-hint">Sedan and buggy recolors — material swap on blockout meshes.</p>
+        <div class="lobby-shop-grid">${carSkinCards}</div>
+      </section>
       <div class="lobby-activity">
         <section class="lobby-panel">
           <b class="lobby-panel-title">Recent Matches</b>
@@ -403,6 +459,18 @@ export function showLobby(
     el.addEventListener('click', () => {
       const id = (el as HTMLElement).dataset.buySkin;
       if (id) callbacks.onBuyGunSkin(id);
+    });
+  });
+  overlay.querySelectorAll('[data-equip-car]').forEach((el) => {
+    el.addEventListener('click', () => {
+      const id = (el as HTMLElement).dataset.equipCar;
+      if (id) callbacks.onEquipCarSkin(id);
+    });
+  });
+  overlay.querySelectorAll('[data-buy-car]').forEach((el) => {
+    el.addEventListener('click', () => {
+      const id = (el as HTMLElement).dataset.buyCar;
+      if (id) callbacks.onBuyCarSkin(id);
     });
   });
 

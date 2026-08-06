@@ -34,6 +34,9 @@ vi.mock('@heroiclabs/nakama-js', () => ({
     authenticateCustom: vi.fn().mockResolvedValue(mockGuestSession),
     authenticateEmail: vi.fn().mockResolvedValue(mockEmailSession),
     writeStorageObjects: vi.fn().mockResolvedValue([{ key: 'ok' }]),
+    readStorageObjects: vi.fn().mockResolvedValue({
+      objects: [{ value: { profile: { name: 'Remote', credits: 99, friends: ['f1'] } } }],
+    }),
   })),
   Session: { restore: vi.fn().mockReturnValue(mockRestoredSession) },
 }));
@@ -80,5 +83,30 @@ describe('nakama client', () => {
       'write_456'
     );
     expect(written).toBe(false);
+  });
+
+  it('loads and saves profile when authenticated', async () => {
+    const nakama = await import('../src/net/nakama');
+    await nakama.authenticateGuest();
+    const loaded = await nakama.loadProfileFromServer('u1');
+    expect(loaded?.credits).toBe(99);
+    const saved = await nakama.saveProfileToServer(
+      'u1',
+      {
+        name: 'Remote',
+        credits: 99,
+        chassisId: 'blue',
+        ownedChassis: ['blue'],
+        ownedGunSkins: ['rifle_default', 'pistol_default'],
+        ownedCarSkins: ['sedan_default', 'buggy_default'],
+        equippedRifleSkin: 'rifle_default',
+        equippedPistolSkin: 'pistol_default',
+        equippedSedanSkin: 'sedan_default',
+        equippedBuggySkin: 'buggy_default',
+        friends: ['f1'],
+      },
+      'profile_write_1'
+    );
+    expect(saved).toBe(true);
   });
 });

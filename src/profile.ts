@@ -1,14 +1,27 @@
 import type { StorageLike } from './settings';
-import { CHASSIS_PRESETS, GUN_SKINS, chassisById, gunSkinById, type ChassisId } from './cosmetics';
+import {
+  CAR_SKINS,
+  CHASSIS_PRESETS,
+  GUN_SKINS,
+  carSkinById,
+  chassisById,
+  gunSkinById,
+  type ChassisId,
+} from './cosmetics';
 
+/** Character profile — localStorage always; Nakama `player_profile` when signed in. */
 export interface PlayerProfile {
   name: string;
   credits: number;
   chassisId: ChassisId;
   ownedChassis: ChassisId[];
   ownedGunSkins: string[];
+  ownedCarSkins: string[];
   equippedRifleSkin: string;
   equippedPistolSkin: string;
+  equippedSedanSkin: string;
+  equippedBuggySkin: string;
+  friends: string[];
 }
 
 const PROFILE_KEY = 'robot_arena_profile_v1';
@@ -22,8 +35,12 @@ export function defaultProfile(): PlayerProfile {
     chassisId: 'blue',
     ownedChassis: ['blue'],
     ownedGunSkins: ['rifle_default', 'pistol_default'],
+    ownedCarSkins: ['sedan_default', 'buggy_default'],
     equippedRifleSkin: 'rifle_default',
     equippedPistolSkin: 'pistol_default',
+    equippedSedanSkin: 'sedan_default',
+    equippedBuggySkin: 'buggy_default',
+    friends: [],
   };
 }
 
@@ -47,6 +64,14 @@ export function sanitizeProfile(raw: unknown): PlayerProfile {
   const ownedGunSkins = Array.isArray(r.ownedGunSkins)
     ? r.ownedGunSkins.filter((id): id is string => typeof id === 'string' && !!gunSkinById(id))
     : d.ownedGunSkins;
+  const ownedCarSkins = Array.isArray(r.ownedCarSkins)
+    ? r.ownedCarSkins.filter((id): id is string => typeof id === 'string' && !!carSkinById(id))
+    : d.ownedCarSkins;
+  const friends = Array.isArray(r.friends)
+    ? r.friends
+        .filter((id): id is string => typeof id === 'string' && id.length > 0)
+        .slice(0, 50)
+    : d.friends;
   const chassisId =
     typeof r.chassisId === 'string' && chassisById(r.chassisId)
       ? (r.chassisId as ChassisId)
@@ -58,6 +83,7 @@ export function sanitizeProfile(raw: unknown): PlayerProfile {
     chassisId: ownedChassis.includes(chassisId) ? chassisId : 'blue',
     ownedChassis: ownedChassis.length ? Array.from(new Set(['blue', ...ownedChassis])) : ['blue'],
     ownedGunSkins: Array.from(new Set(['rifle_default', 'pistol_default', ...ownedGunSkins])),
+    ownedCarSkins: Array.from(new Set(['sedan_default', 'buggy_default', ...ownedCarSkins])),
     equippedRifleSkin:
       typeof r.equippedRifleSkin === 'string' &&
       gunSkinById(r.equippedRifleSkin)?.weapon === 'rifle'
@@ -68,6 +94,17 @@ export function sanitizeProfile(raw: unknown): PlayerProfile {
       gunSkinById(r.equippedPistolSkin)?.weapon === 'pistol'
         ? r.equippedPistolSkin
         : d.equippedPistolSkin,
+    equippedSedanSkin:
+      typeof r.equippedSedanSkin === 'string' &&
+      carSkinById(r.equippedSedanSkin)?.vehicle === 'sedan'
+        ? r.equippedSedanSkin
+        : d.equippedSedanSkin,
+    equippedBuggySkin:
+      typeof r.equippedBuggySkin === 'string' &&
+      carSkinById(r.equippedBuggySkin)?.vehicle === 'buggy'
+        ? r.equippedBuggySkin
+        : d.equippedBuggySkin,
+    friends,
   };
 }
 
@@ -94,6 +131,7 @@ export function syncLevelUnlocks(profile: PlayerProfile, level: number): PlayerP
     ...profile,
     ownedChassis: [...profile.ownedChassis],
     ownedGunSkins: [...profile.ownedGunSkins],
+    ownedCarSkins: [...profile.ownedCarSkins],
   };
   for (const c of CHASSIS_PRESETS) {
     if (c.unlock === 'free' && level >= c.unlockLevel && !next.ownedChassis.includes(c.id)) {
@@ -103,6 +141,11 @@ export function syncLevelUnlocks(profile: PlayerProfile, level: number): PlayerP
   for (const s of GUN_SKINS) {
     if (s.unlock === 'free' && level >= s.unlockLevel && !next.ownedGunSkins.includes(s.id)) {
       next.ownedGunSkins.push(s.id);
+    }
+  }
+  for (const s of CAR_SKINS) {
+    if (s.unlock === 'free' && level >= s.unlockLevel && !next.ownedCarSkins.includes(s.id)) {
+      next.ownedCarSkins.push(s.id);
     }
   }
   return next;
@@ -133,6 +176,36 @@ export function equipGunSkin(profile: PlayerProfile, skinId: string): PlayerProf
   return { ...profile, equippedPistolSkin: skinId };
 }
 
+export function equipCarSkin(profile: PlayerProfile, skinId: string): PlayerProfile | null {
+  const skin = carSkinById(skinId);
+  if (!skin || !profile.ownedCarSkins.includes(skinId)) return null;
+  if (skin.vehicle === 'sedan') return { ...profile, equippedSedanSkin: skinId };
+  return { ...profile, equippedBuggySkin: skinId };
+}
+
+/** Merge local + remote on sign-in: union owned lists, max credits, server picks when valid. */
+export function mergeProfiles(local: PlayerProfile, remote: PlayerProfile): PlayerProfile {
+  const ownedChassis = Array.from(new Set([...local.ownedChassis, ...remote.ownedChassis]));
+  const ownedGunSkins = Array.from(new Set([...local.ownedGunSkins, ...remote.ownedGunSkins]));
+  const ownedCarSkins = Array.from(new Set([...local.ownedCarSkins, ...remote.ownedCarSkins]));
+  const friends = Array.from(new Set([...remote.friends, ...local.friends])).slice(0, 50);
+  const pick = <T extends string>(remoteVal: T, localVal: T, owned: T[]) =>
+    owned.includes(remoteVal) ? remoteVal : owned.includes(localVal) ? localVal : owned[0]!;
+  return sanitizeProfile({
+    name: remote.name !== 'Pilot' ? remote.name : local.name,
+    credits: Math.max(local.credits, remote.credits),
+    chassisId: pick(remote.chassisId, local.chassisId, ownedChassis),
+    ownedChassis,
+    ownedGunSkins,
+    ownedCarSkins,
+    equippedRifleSkin: pick(remote.equippedRifleSkin, local.equippedRifleSkin, ownedGunSkins),
+    equippedPistolSkin: pick(remote.equippedPistolSkin, local.equippedPistolSkin, ownedGunSkins),
+    equippedSedanSkin: pick(remote.equippedSedanSkin, local.equippedSedanSkin, ownedCarSkins),
+    equippedBuggySkin: pick(remote.equippedBuggySkin, local.equippedBuggySkin, ownedCarSkins),
+    friends,
+  });
+}
+
 /** Shop only sells buy-type skins at/above unlock level (level gate always wins). */
 export function canBuyGunSkin(
   profile: PlayerProfile,
@@ -161,6 +234,37 @@ export function buyGunSkin(
       ...profile,
       credits: profile.credits - skin.price,
       ownedGunSkins: [...profile.ownedGunSkins, skinId],
+    },
+  };
+}
+
+export function canBuyCarSkin(
+  profile: PlayerProfile,
+  skinId: string,
+  level: number
+): { ok: true } | { ok: false; reason: string } {
+  const skin = carSkinById(skinId);
+  if (!skin) return { ok: false, reason: 'Unknown skin' };
+  if (skin.unlock !== 'buy') return { ok: false, reason: 'Not a shop skin' };
+  if (level < skin.unlockLevel) return { ok: false, reason: `Requires level ${skin.unlockLevel}` };
+  if (profile.ownedCarSkins.includes(skinId)) return { ok: false, reason: 'Already owned' };
+  if (profile.credits < skin.price) return { ok: false, reason: 'Not enough credits' };
+  return { ok: true };
+}
+
+export function buyCarSkin(
+  profile: PlayerProfile,
+  skinId: string,
+  level: number
+): { profile: PlayerProfile } | { error: string } {
+  const check = canBuyCarSkin(profile, skinId, level);
+  if (!check.ok) return { error: check.reason };
+  const skin = carSkinById(skinId)!;
+  return {
+    profile: {
+      ...profile,
+      credits: profile.credits - skin.price,
+      ownedCarSkins: [...profile.ownedCarSkins, skinId],
     },
   };
 }

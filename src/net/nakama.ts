@@ -1,5 +1,6 @@
 import { Client, Session } from '@heroiclabs/nakama-js';
 import type { Socket } from '@heroiclabs/nakama-js';
+import { sanitizeProfile, type PlayerProfile } from '../profile';
 import { MATCHMAKER_MAX, MATCHMAKER_MIN, MATCHMAKER_QUERY } from './matchmaking';
 
 let client: Client | null = null;
@@ -145,6 +146,55 @@ export async function saveStatsToServer(
         permission_write: 0,
       },
     ]);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+const PROFILE_COLLECTION = 'player_profile';
+const appliedProfileWriteIds = new Set<string>();
+
+/** Loads the signed-in account profile from Nakama storage. */
+export async function loadProfileFromServer(userId: string): Promise<PlayerProfile | null> {
+  const s = getSession();
+  if (!s || !s.user_id) return null;
+  try {
+    const result = await getClient().readStorageObjects(s, {
+      object_ids: [{ collection: PROFILE_COLLECTION, key: 'profile', user_id: userId }],
+    });
+    const obj = result.objects?.[0];
+    if (!obj?.value) return null;
+    const raw = obj.value as { profile?: unknown };
+    return sanitizeProfile(raw.profile ?? null);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Persists profile to Nakama for the signed-in account (INV-6 idempotent per writeId).
+ * Returns false when offline/unauthenticated so callers keep local storage.
+ */
+export async function saveProfileToServer(
+  userId: string,
+  profile: PlayerProfile,
+  writeId: string
+): Promise<boolean> {
+  if (appliedProfileWriteIds.has(writeId)) return true;
+  const s = getSession();
+  if (!s || !s.user_id) return false;
+  try {
+    await getClient().writeStorageObjects(s, [
+      {
+        collection: PROFILE_COLLECTION,
+        key: 'profile',
+        value: { userId, writeId, profile },
+        permission_read: 1,
+        permission_write: 1,
+      },
+    ]);
+    appliedProfileWriteIds.add(writeId);
     return true;
   } catch {
     return false;

@@ -5,12 +5,15 @@ import {
   defaultProfile,
   grantMatchCredits,
   matchCreditsReward,
+  mergeProfiles,
   sanitizeName,
   syncLevelUnlocks,
   equipGunSkin,
+  equipCarSkin,
+  buyCarSkin,
   setProfileName,
 } from '../src/profile';
-import { GUN_SKINS } from '../src/cosmetics';
+import { CAR_SKINS, GUN_SKINS } from '../src/cosmetics';
 
 describe('profile cosmetics', () => {
   it('sanitizes name to 3–16 safe chars', () => {
@@ -61,5 +64,41 @@ describe('profile cosmetics', () => {
   it('renames profile', () => {
     const p = setProfileName(defaultProfile(), 'Nova');
     expect(p.name).toBe('Nova');
+  });
+
+  it('unlocks free car skins at level', () => {
+    const p = syncLevelUnlocks(defaultProfile(), 3);
+    expect(p.ownedCarSkins).toContain('buggy_dune');
+  });
+
+  it('equips owned car skin', () => {
+    let p = syncLevelUnlocks(defaultProfile(), 3);
+    p = equipCarSkin(p, 'buggy_dune')!;
+    expect(p.equippedBuggySkin).toBe('buggy_dune');
+  });
+
+  it('buys car shop skin when level and credits ok', () => {
+    const volt = CAR_SKINS.find((s) => s.id === 'buggy_volt')!;
+    const p = { ...defaultProfile(), credits: volt.price };
+    const result = buyCarSkin(p, volt.id, volt.unlockLevel);
+    expect('profile' in result).toBe(true);
+  });
+
+  it('merges local and remote profiles on sign-in', () => {
+    const local = { ...defaultProfile(), credits: 100, name: 'LocalAce' };
+    const remote = {
+      ...defaultProfile(),
+      name: 'Pilot',
+      credits: 250,
+      ownedGunSkins: [...defaultProfile().ownedGunSkins, 'rifle_ember'],
+      equippedRifleSkin: 'rifle_ember',
+      friends: ['friend_u1'],
+    };
+    const merged = mergeProfiles(local, remote);
+    expect(merged.credits).toBe(250);
+    expect(merged.ownedGunSkins).toContain('rifle_ember');
+    expect(merged.equippedRifleSkin).toBe('rifle_ember');
+    expect(merged.friends).toContain('friend_u1');
+    expect(merged.name).toBe('LocalAce');
   });
 });

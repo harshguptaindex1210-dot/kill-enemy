@@ -5,13 +5,16 @@ import { defaultStats, recordMatchOnce, createWriteId, type PlayerStats } from '
 import { showAd } from './ad';
 import { fetchLeaderboard, loadLocalHistory, recordMatchResult } from './net/leaderboard';
 import {
+  buyCarSkin,
   buyChassis,
   buyGunSkin,
+  equipCarSkin,
   equipChassis,
   equipGunSkin,
   grantMatchCredits,
   loadProfile,
   matchCreditsReward,
+  mergeProfiles,
   saveProfile,
   setProfileName,
   syncLevelUnlocks,
@@ -19,6 +22,7 @@ import {
 } from './profile';
 import { chassisById, gunColorFor } from './cosmetics';
 import type { ChassisId } from './cosmetics';
+import type { LobbySceneHandle } from './lobbyScene';
 import type { OnlineMatchGame } from './net/onlineGame';
 import type { MatchClient } from './net/client';
 import type { NakamaSocket } from './net/nakama';
@@ -96,10 +100,59 @@ function init() {
   let socket: NakamaSocket | null = null;
   let queueTicket: string | null = null;
   let queueActive = false;
+  let lobbyScene: LobbySceneHandle | null = null;
+
+  function lobbyCosmetics() {
+    const chassis = chassisById(profile.chassisId);
+    return {
+      chassisColor: chassis?.color ?? 0x3366cc,
+      rifleColor: gunColorFor('rifle', profile.equippedRifleSkin),
+      pistolColor: gunColorFor('pistol', profile.equippedPistolSkin),
+    };
+  }
+
+  function stopLobbyScene() {
+    lobbyScene?.dispose();
+    lobbyScene = null;
+  }
+
+  async function startLobbyScene() {
+    const { createLobbyScene } = await import('./lobbyScene');
+    stopLobbyScene();
+    lobbyScene = createLobbyScene(canvas, settings.quality, lobbyCosmetics());
+    lobbyScene.start();
+  }
+
+  async function syncProfileOnline() {
+    try {
+      const { nakama } = await loadOnlineStack();
+      const session = nakama.getSession() ?? (await nakama.authenticateGuest());
+      const remote = await nakama.loadProfileFromServer(session.user_id!);
+      if (remote) {
+        profile = syncLevelUnlocks(mergeProfiles(profile, remote), stats.level);
+        saveProfile(profile);
+      }
+    } catch {
+      // offline — local profile only
+    }
+  }
+
+  async function pushProfileOnline() {
+    try {
+      const { nakama } = await loadOnlineStack();
+      const session = nakama.getSession();
+      if (!session?.user_id) return;
+      await nakama.saveProfileToServer(session.user_id, profile, createWriteId());
+    } catch {
+      // ignore
+    }
+  }
 
   function persistProfile(next: PlayerProfile) {
     profile = syncLevelUnlocks(next, stats.level);
     saveProfile(profile);
+    lobbyScene?.setCosmetics(lobbyCosmetics());
+    void pushProfileOnline();
   }
 
   function afterMatchRewards(summary: {
@@ -127,6 +180,7 @@ function init() {
   }
 
   function launchMatch() {
+    stopLobbyScene();
     game?.dispose();
     audio.resume();
     game = new MatchGame({
@@ -178,6 +232,7 @@ function init() {
 
   async function launchOnlineMatch() {
     const { OnlineMatchGame: OnlineGame } = await loadOnlineStack();
+    stopLobbyScene();
     onlineGame?.dispose();
     audio.resume();
     const overlay = document.getElementById('lobby-overlay');
@@ -337,10 +392,28 @@ function init() {
         }
         showLobbyUI();
       },
+      onEquipCarSkin(skinId: string) {
+        const next = equipCarSkin(profile, skinId);
+        if (next) {
+          persistProfile(next);
+          shopMessage = 'Car skin equipped';
+        } else shopMessage = 'Car skin not owned';
+        showLobbyUI();
+      },
+      onBuyCarSkin(skinId: string) {
+        const result = buyCarSkin(profile, skinId, stats.level);
+        if ('error' in result) shopMessage = result.error;
+        else {
+          persistProfile(result.profile);
+          shopMessage = 'Car skin purchased';
+        }
+        showLobbyUI();
+      },
     };
   }
 
   async function showLobbyUI(forcedQueueMessage?: string) {
+    await syncProfileOnline();
     const [{ showLobby }, history, leaderboard] = await Promise.all([
       import('./lobby'),
       loadLocalHistory(),
@@ -364,6 +437,7 @@ function init() {
       },
       shopMessage
     );
+    void startLobbyScene();
   }
 
   applyQuality(settings.quality);

@@ -1,0 +1,171 @@
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { createRenderer } from './renderer';
+import { createRobotModel, updateRobotAnim } from './robot';
+import { attachHeldWeaponKit, createHeldWeaponKit, syncHeldWeaponKit } from './heldWeapons';
+import type { QualityPreset } from './scene';
+
+export interface LobbyCosmetics {
+  chassisColor: number;
+  rifleColor: number;
+  pistolColor: number;
+}
+
+export interface LobbySceneHandle {
+  start(): void;
+  stop(): void;
+  setCosmetics(cosmetics: LobbyCosmetics): void;
+  dispose(): void;
+}
+
+/** Lightweight 3D backdrop for the lobby — robot on a podium, orbit camera, no match sim. */
+export function createLobbyScene(
+  canvas: HTMLCanvasElement,
+  quality: QualityPreset,
+  cosmetics: LobbyCosmetics
+): LobbySceneHandle {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  canvas.style.cssText = 'position:fixed;inset:0;width:100vw;height:100vh;display:block;';
+
+  const renderer = createRenderer(canvas, quality);
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x0a0e18);
+  scene.fog = new THREE.Fog(0x0a0e18, 8, 22);
+
+  const camera = new THREE.PerspectiveCamera(50, canvas.width / canvas.height, 0.1, 60);
+  camera.position.set(2.8, 1.6, 3.4);
+
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.target.set(0, 0.9, 0);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.08;
+  controls.minDistance = 2.2;
+  controls.maxDistance = 6;
+  controls.maxPolarAngle = Math.PI / 2.05;
+  controls.enablePan = false;
+
+  const ambient = new THREE.AmbientLight(0x8899cc, 0.55);
+  scene.add(ambient);
+  const key = new THREE.DirectionalLight(0xffe8c8, 1.4);
+  key.position.set(3, 5, 2);
+  scene.add(key);
+  const rim = new THREE.DirectionalLight(0x66aaff, 0.45);
+  rim.position.set(-2, 3, -3);
+  scene.add(rim);
+
+  const floor = new THREE.Mesh(
+    new THREE.CircleGeometry(4.5, 32),
+    new THREE.MeshStandardMaterial({ color: 0x1a2233, roughness: 0.9, metalness: 0.1 })
+  );
+  floor.rotation.x = -Math.PI / 2;
+  floor.position.y = -0.01;
+  scene.add(floor);
+
+  const podium = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.9, 1.05, 0.35, 24),
+    new THREE.MeshStandardMaterial({ color: 0x2a3348, roughness: 0.55, metalness: 0.35 })
+  );
+  podium.position.y = 0.175;
+  scene.add(podium);
+
+  const ring = new THREE.Mesh(
+    new THREE.TorusGeometry(1.15, 0.04, 8, 48),
+    new THREE.MeshStandardMaterial({
+      color: 0xc4121a,
+      emissive: 0x6b0505,
+      emissiveIntensity: 0.35,
+      metalness: 0.6,
+    })
+  );
+  ring.rotation.x = Math.PI / 2;
+  ring.position.y = 0.36;
+  scene.add(ring);
+
+  const { group: robotGroup, anim } = createRobotModel(cosmetics.chassisColor);
+  robotGroup.position.y = 0.35;
+  robotGroup.rotation.y = Math.PI * 0.12;
+  scene.add(robotGroup);
+
+  const held = createHeldWeaponKit({
+    rifle: cosmetics.rifleColor,
+    pistol: cosmetics.pistolColor,
+  });
+  attachHeldWeaponKit(robotGroup, held);
+  syncHeldWeaponKit(held, 'rifle');
+
+  let raf = 0;
+  let last = performance.now();
+  const onResize = () => {
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    canvas.width = w;
+    canvas.height = h;
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+    renderer.setSize(w, h);
+  };
+
+  const tick = (now: number) => {
+    const dt = Math.min(0.05, (now - last) / 1000);
+    last = now;
+    updateRobotAnim(anim, dt);
+    controls.update();
+    renderer.render(scene, camera);
+    raf = requestAnimationFrame(tick);
+  };
+
+  const applyCosmetics = (c: LobbyCosmetics) => {
+    createRobotModel(c.chassisColor);
+    robotGroup.traverse((obj) => {
+      if (obj instanceof THREE.Mesh && obj.material instanceof THREE.MeshStandardMaterial) {
+        const mat = obj.material;
+        if (mat.emissiveIntensity > 0.5) return;
+        const tint = new THREE.Color(c.chassisColor);
+        if (mat.metalness > 0.65) mat.color.copy(tint.clone().lerp(new THREE.Color(0xffffff), 0.35));
+        else mat.color.copy(tint.clone().multiplyScalar(0.55));
+      }
+    });
+    held.rifle.traverse((obj) => {
+      if (obj instanceof THREE.Mesh && obj.material instanceof THREE.MeshStandardMaterial) {
+        obj.material.color.setHex(c.rifleColor);
+      }
+    });
+    held.pistol.traverse((obj) => {
+      if (obj instanceof THREE.Mesh && obj.material instanceof THREE.MeshStandardMaterial) {
+        obj.material.color.setHex(c.pistolColor);
+      }
+    });
+  };
+
+  applyCosmetics(cosmetics);
+  window.addEventListener('resize', onResize);
+
+  return {
+    start() {
+      if (raf) return;
+      last = performance.now();
+      raf = requestAnimationFrame(tick);
+    },
+    stop() {
+      if (raf) cancelAnimationFrame(raf);
+      raf = 0;
+    },
+    setCosmetics(c) {
+      applyCosmetics(c);
+    },
+    dispose() {
+      this.stop();
+      window.removeEventListener('resize', onResize);
+      controls.dispose();
+      scene.traverse((obj) => {
+        if (obj instanceof THREE.Mesh) {
+          obj.geometry?.dispose();
+          const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+          for (const m of mats) m?.dispose();
+        }
+      });
+      renderer.dispose();
+    },
+  };
+}

@@ -16,6 +16,8 @@ function callbacks(): LobbyCallbacks {
     onBuyChassis: vi.fn(),
     onEquipChassis: vi.fn(),
     onEquipGunSkin: vi.fn(),
+    onBuyCarSkin: vi.fn(),
+    onEquipCarSkin: vi.fn(),
     onRename: vi.fn(),
   };
 }
@@ -47,7 +49,7 @@ describe('lobby responsive layout (#46)', () => {
     expect(hero!.querySelector('#inp-name')).toBeNull();
     expect(document.getElementById('inp-name')).toBeTruthy();
     expect(document.querySelector('.lobby-panels')).toBeTruthy();
-    expect(document.querySelectorAll('.lobby-shop-grid').length).toBeGreaterThanOrEqual(2);
+    expect(document.querySelectorAll('.lobby-shop-grid').length).toBeGreaterThanOrEqual(3);
   });
 
   it('keeps Cancel inside the hero while queueing', () => {
