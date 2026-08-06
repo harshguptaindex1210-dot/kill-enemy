@@ -39,7 +39,8 @@ export function createHeldWeaponKit(
     group.add(g);
   }
 
-  group.position.set(0.55, 0.95, 0.05);
+  group.position.set(0.45, 0.95, -0.35);
+  group.rotation.y = -0.08;
   return { group, rifle, pistol, grenade, melee };
 }
 
