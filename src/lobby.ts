@@ -219,7 +219,7 @@ export function showLobby(
           <button id="btn-online" class="lobby-btn lobby-btn-primary" type="button">${queue.active ? 'Searching for match...' : 'Play Online'}</button>
           ${queue.message && !queue.active ? `<p class="lobby-queue-msg">${escapeHtml(queue.message)}</p>` : ''}
           <div class="lobby-play-row">
-            <button id="btn-local" class="lobby-btn lobby-btn-secondary" type="button">Play Local</button>
+            <button id="btn-local" class="lobby-btn lobby-btn-secondary" type="button"${queue.active ? ' disabled' : ''}>Play Local</button>
             <button id="btn-cancel-queue" class="lobby-btn lobby-btn-danger" type="button" style="display:${queue.active ? 'inline-block' : 'none'};">Cancel</button>
           </div>
           <p class="lobby-quick-controls" aria-label="Quick controls"><kbd>W A S D</kbd> move · Mouse aim · <kbd>LMB</kbd> shoot · <kbd>E</kbd> loot/vehicle · <kbd>G</kbd> grenade</p>

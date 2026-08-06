@@ -4,6 +4,7 @@ export interface RobotAnimState {
   mixer: THREE.AnimationMixer;
   actions: Record<string, THREE.AnimationAction>;
   current: string;
+  root: THREE.Object3D;
 }
 
 /** Titanfall-style robot; `teamColor` tints chassis + accents (default human blue). */
@@ -124,7 +125,7 @@ function createAnimState(target: THREE.Object3D): RobotAnimState {
     jump: {
       duration: 0.3,
       loop: false,
-      tracks: [{ prop: '.scale[y]', times: [0, 0.1, 0.2], values: [1, 0.9, 1.2] }],
+      tracks: [{ prop: '.scale[y]', times: [0, 0.1, 0.2, 0.3], values: [1, 0.9, 1.05, 1] }],
     },
     crouch: {
       duration: 0.2,
@@ -157,11 +158,14 @@ function createAnimState(target: THREE.Object3D): RobotAnimState {
     actions[name] = action;
   }
 
-  return { mixer, actions, current: 'idle' };
+  return { mixer, actions, current: 'idle', root: target };
 }
 
 export function transitionAnim(anim: RobotAnimState, next: string) {
   if (anim.current === next || !anim.actions[next]) return;
+  if (anim.current === 'jump' || anim.current === 'crouch') {
+    anim.root.scale.y = 1;
+  }
   const cur = anim.actions[anim.current];
   if (cur) cur.fadeOut(0.1);
   anim.actions[next].reset().fadeIn(0.1).play();

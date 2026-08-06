@@ -278,6 +278,7 @@ function init() {
   function lobbyCallbacks() {
     return {
       onPlayLocal() {
+        if (queueActive) return;
         shopMessage = '';
         launchMatch();
       },

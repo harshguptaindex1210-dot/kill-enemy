@@ -122,6 +122,22 @@ describe('lobby responsive layout (#46)', () => {
     expect(document.querySelector('.lobby-quick-controls')!.textContent).toMatch(/W A S D/i);
   });
 
+  it('disables Play Local while matchmaking queue is active', () => {
+    const cb = callbacks();
+    showLobby(
+      { level: 1, xp: 0, wins: 0, kills: 0, matches: 0 },
+      defaultSettings(),
+      defaultProfile(),
+      cb,
+      { history: [], leaderboard: [] },
+      { active: true, message: 'Searching for match...' }
+    );
+    const localBtn = document.getElementById('btn-local') as HTMLButtonElement;
+    expect(localBtn.disabled).toBe(true);
+    localBtn.click();
+    expect(cb.onPlayLocal).not.toHaveBeenCalled();
+  });
+
   it('replaces a previous overlay instead of stacking duplicates', () => {
     const stats = { level: 1, xp: 0, wins: 0, kills: 0, matches: 0 };
     showLobby(stats, defaultSettings(), defaultProfile(), callbacks());

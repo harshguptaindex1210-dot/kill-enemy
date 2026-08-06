@@ -48,6 +48,18 @@ describe('robot model', () => {
     expect(() => updateRobotAnim(anim, 0.016)).not.toThrow();
   });
 
+  it('restores scale after jump and crouch', () => {
+    const { group, anim } = createRobotModel();
+    transitionAnim(anim, 'jump');
+    updateRobotAnim(anim, 0.3);
+    transitionAnim(anim, 'idle');
+    expect(group.scale.y).toBeCloseTo(1);
+    transitionAnim(anim, 'crouch');
+    updateRobotAnim(anim, 0.2);
+    transitionAnim(anim, 'walk');
+    expect(group.scale.y).toBeCloseTo(1);
+  });
+
   it('tints chassis from team color', () => {
     const { group } = createRobotModel(0xff0000);
     const torso = group.children[0];
