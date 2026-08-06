@@ -1,14 +1,11 @@
 # 46 — Responsive lobby layout (phone + laptop)
 
-**Status:** Review Ready  
-**Blocked by:** None — can start immediately  
-**Spec:** `CONTEXT/docs/prd/RESPONSIVE-LOBBY.md`
-
-## Debugger follow-ups (named for reviewer)
-
-- INV-L1/L2 viewport geometry is proven in **#47**, not this ticket.
-- Personalized `.claude/agents/debugger-*.md` was not persisted this run (local-tracker harden in coordinator session).
-
+**Status:** Done  
+**Blocked by:** None  
+**Spec:** `CONTEXT/docs/prd/RESPONSIVE-LOBBY.md`  
+**Bounce count:** 0  
+**Verdict:** PASS (score ~82 diagnostic) — gate green; criteria 1–7 satisfied in `lobby.ts` / `lobby.css` / `lobby-layout.test.ts`. INV-L1/L2 browser proof deferred to #47 by ticket design (not a miss).  
+**Independence:** same `/work` session authored the diff — contamination disclosed; recommend fresh eyes on #47.
 
 ## What to build
 
@@ -20,13 +17,13 @@ typography, and card alignment. No HUD / touch / results / spectate changes.
 
 ## Acceptance criteria
 
-- [ ] Lobby still exposes Play Online, Play Local, Cancel (when queueing), character, loadout, settings, chassis, gun skins, recent matches, and season leaderboard.
-- [ ] Phone-oriented layout: a hero/first-fold region contains the brand title and play actions; other sections are not required to sit in that first fold.
-- [ ] Shop chassis and gun-skin cards use a wrapping grid (no reliance on page-level horizontal scroll).
-- [ ] Laptop-oriented layout keeps a multi-column arrangement for the upper panels (not forced to a permanent single stack at ≥1024px).
-- [ ] Lobby styles use semantic classes / a stylesheet with responsive rules (not only hard-coded desktop inline widths).
-- [ ] Existing lobby callbacks and escaped text behavior remain intact (no shop/play regressions in unit coverage).
-- [ ] INV-3: `npm run build` still passes the initial-bundle gate.
+- [x] Lobby still exposes Play Online, Play Local, Cancel (when queueing), character, loadout, settings, chassis, gun skins, recent matches, and season leaderboard.
+- [x] Phone-oriented layout: a hero/first-fold region contains the brand title and play actions; other sections are not required to sit in that first fold.
+- [x] Shop chassis and gun-skin cards use a wrapping grid (no reliance on page-level horizontal scroll).
+- [x] Laptop-oriented layout keeps a multi-column arrangement for the upper panels (not forced to a permanent single stack at ≥1024px).
+- [x] Lobby styles use semantic classes / a stylesheet with responsive rules (not only hard-coded desktop inline widths).
+- [x] Existing lobby callbacks and escaped text behavior remain intact (no shop/play regressions in unit coverage).
+- [x] INV-3: `npm run build` still passes the initial-bundle gate.
 
 ## Invariants
 
@@ -37,13 +34,6 @@ INV-L1 / INV-L2 (structure prepared here; browser proof is ticket #47), INV-3, I
 ```bash
 npm test -- tests/lobby-layout.test.ts && npm run typecheck && npm run lint && npm run build
 ```
-
-## Files / modules likely touched
-
-- `src/lobby.ts`
-- new lobby CSS (e.g. `src/lobby.css` imported from lobby or main)
-- `tests/lobby-layout.test.ts`
-- possibly `index.html` / font link only if needed for type polish (prefer existing stack if already branded)
 
 ## Priority
 

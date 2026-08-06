@@ -1,7 +1,7 @@
 # 47 — Lobby viewport smoke (INV-L1 / INV-L2)
 
-**Status:** Planned  
-**Blocked by:** #46 — Responsive lobby layout  
+**Status:** Agent Ready  
+**Blocked by:** #46 — Responsive lobby layout (**Done**)  
 **Spec:** `CONTEXT/docs/prd/RESPONSIVE-LOBBY.md`
 
 ## What to build
