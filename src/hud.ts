@@ -45,7 +45,7 @@ export function createHUD(): {
         <div>💊 <span id="hud-heals">3</span></div>
       </div>
     </div>
-    <div id="hud-killfeed" style="position:absolute;top:64px;right:12px;display:flex;flex-direction:column;gap:4px;align-items:flex-end;"></div>
+    <div id="hud-killfeed" style="position:absolute;top:64px;left:12px;display:flex;flex-direction:column;gap:4px;align-items:flex-start;max-width:min(240px,calc(100vw - 200px));"></div>
     <div id="hud-damage" style="position:absolute;inset:0;background:radial-gradient(transparent 50%, rgba(255,0,0,0.4) 100%);opacity:0;transition:opacity 0.1s;pointer-events:none;"></div>
     <div id="hud-compass" style="position:absolute;top:56px;left:50%;transform:translateX(-50%);display:flex;gap:5px;background:rgba(0,0,0,0.45);padding:3px 10px;border-radius:4px;font-size:12px;">
       ${['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'].map((d) => `<span data-dir="${d}" style="color:#889;min-width:15px;text-align:center;">${d}</span>`).join('')}
@@ -192,13 +192,18 @@ export interface HUDData {
   showRespawn?: boolean;
 }
 
-export function createMinimap(): { update: (data: MinimapData) => void; remove: () => void } {
+export function createMinimap(onToggleFullscreen?: () => void): {
+  update: (data: MinimapData) => void;
+  remove: () => void;
+} {
   const canvas = document.createElement('canvas');
   canvas.id = 'minimap';
   canvas.width = 160;
   canvas.height = 160;
+  canvas.title = 'Click to toggle fullscreen minimap (N)';
   canvas.style.cssText =
     'position:fixed;top:50px;right:12px;z-index:9997;border:2px solid rgba(255,255,255,0.3);border-radius:4px;background:#1a1a2e;cursor:pointer;transition:all 0.2s;';
+  canvas.addEventListener('click', () => onToggleFullscreen?.());
   document.body.appendChild(canvas);
   const ctx = canvas.getContext('2d')!;
 
@@ -268,8 +273,9 @@ export function createMinimap(): { update: (data: MinimapData) => void; remove: 
       ctx.strokeStyle = '#0f0';
       ctx.lineWidth = 2;
       ctx.beginPath();
+      const aimYaw = data.aimYaw ?? data.pyaw;
       ctx.moveTo(ox, oz);
-      ctx.lineTo(ox - Math.sin(data.pyaw) * 15, oz - Math.cos(data.pyaw) * 15);
+      ctx.lineTo(ox - Math.sin(aimYaw) * 15, oz - Math.cos(aimYaw) * 15);
       ctx.stroke();
     },
     remove() {
@@ -282,6 +288,7 @@ export interface MinimapData {
   px: number;
   pz: number;
   pyaw: number;
+  aimYaw?: number;
   sx: number;
   sz: number;
   sr: number;

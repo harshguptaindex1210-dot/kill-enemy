@@ -12,6 +12,8 @@ import {
   equipCarSkin,
   buyCarSkin,
   setProfileName,
+  addFriend,
+  removeFriend,
 } from '../src/profile';
 import { CAR_SKINS, GUN_SKINS } from '../src/cosmetics';
 
@@ -100,5 +102,22 @@ describe('profile cosmetics', () => {
     expect(merged.equippedRifleSkin).toBe('rifle_ember');
     expect(merged.friends).toContain('friend_u1');
     expect(merged.name).toBe('LocalAce');
+  });
+
+  it('adds and removes friends by username', () => {
+    let p = defaultProfile();
+    const added = addFriend(p, 'Nova Ace');
+    expect('profile' in added).toBe(true);
+    if ('profile' in added) {
+      p = added.profile;
+      expect(p.friends).toContain('Nova Ace');
+    }
+    p = removeFriend(p, 'Nova Ace');
+    expect(p.friends).not.toContain('Nova Ace');
+    const tooShort = addFriend(p, 'ab');
+    expect('error' in tooShort).toBe(true);
+    p = setProfileName(p, 'LocalAce');
+    const self = addFriend(p, 'LocalAce');
+    expect('error' in self).toBe(true);
   });
 });

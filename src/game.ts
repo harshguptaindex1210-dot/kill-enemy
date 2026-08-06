@@ -232,7 +232,9 @@ export class MatchGame {
     this.input = createInputManager(c);
     this.hud = createHUD();
     this.hud.onRespawn?.(() => this.respawnHuman());
-    this.minimap = createMinimap();
+    this.minimap = createMinimap(() => {
+      this.minimapFullscreen = !this.minimapFullscreen;
+    });
 
     this.buildRigs();
     this.buildLoot();
@@ -471,11 +473,9 @@ export class MatchGame {
           this.muzzleFlash(String(e.unitId));
           if (String(e.unitId) !== this.humanId && !e.melee && !e.grenade) {
             const firing = this.sim.units.get(String(e.unitId));
-            const human = this.sim.units.get(this.humanId);
-            if (firing && human) {
-              const dz = firing.player.position.z - human.player.position.z;
-              const dx = firing.player.position.x - human.player.position.x;
-              addCompassPing(formatCompassBearing(Math.atan2(dx, dz)));
+            if (firing) {
+              const fireYaw = typeof e.yaw === 'number' ? e.yaw : firing.player.yaw;
+              addCompassPing(formatCompassBearing(fireYaw));
             }
           }
           break;
@@ -570,18 +570,16 @@ export class MatchGame {
     const overlay = document.createElement('div');
     overlay.id = 'spectate-overlay';
     overlay.style.cssText =
-      'position:fixed;inset:0;background:rgba(0,0,0,0.55);display:flex;flex-direction:column;align-items:center;justify-content:flex-start;z-index:9999;font-family:sans-serif;color:#fff;pointer-events:none;padding-top:48px;';
+      'position:fixed;inset:0;background:rgba(0,0,0,0.78);display:flex;flex-direction:column;align-items:center;justify-content:flex-start;z-index:9999;font-family:sans-serif;color:#fff;pointer-events:none;padding-top:48px;';
     overlay.innerHTML = `
-      <div id="spectate-info" style="background:rgba(0,0,0,0.6);padding:12px 24px;border-radius:8px;font-size:16px;text-align:center;">
+      <div id="spectate-info" style="background:rgba(0,0,0,0.75);padding:12px 24px;border-radius:8px;font-size:16px;text-align:center;border:1px solid rgba(255,255,255,0.12);">
         <div style="color:#f66;font-size:22px;font-weight:bold;margin-bottom:8px;">ELIMINATED</div>
         <div id="spectate-placement" style="color:#fa0;font-size:18px;font-weight:bold;"></div>
         <div id="spectate-target" style="color:#8af;margin-top:8px;font-size:14px;"></div>
       </div>
-      <button id="btn-respawn" type="button" style="pointer-events:auto;margin-top:20px;padding:14px 36px;font-size:16px;font-weight:bold;background:linear-gradient(180deg,#5ad4ff,#1a9fd0);color:#041018;border:none;border-radius:8px;cursor:pointer;box-shadow:0 8px 24px rgba(62,200,255,0.35);letter-spacing:0.06em;">RESPAWN</button>
-      <p style="margin-top:12px;font-size:12px;color:#889;pointer-events:none;">Or press <kbd style="padding:2px 6px;background:rgba(255,255,255,0.1);border-radius:4px;">R</kbd> to respawn · <kbd style="padding:2px 6px;background:rgba(255,255,255,0.1);border-radius:4px;">F</kbd> spectate</p>
+      <p style="margin-top:20px;font-size:12px;color:#aab;pointer-events:none;">Press <kbd style="padding:2px 6px;background:rgba(255,255,255,0.12);border-radius:4px;">R</kbd> or click <b>RESPAWN</b> below · <kbd style="padding:2px 6px;background:rgba(255,255,255,0.12);border-radius:4px;">F</kbd> spectate</p>
     `;
     document.body.appendChild(overlay);
-    document.getElementById('btn-respawn')!.addEventListener('click', () => this.respawnHuman());
   }
 
   private respawnHuman() {
@@ -1021,10 +1019,15 @@ export class MatchGame {
 
   private updateMinimap() {
     const human = this.humanUnit();
+    const aimYaw = Math.atan2(
+      -Math.sin(human.player.yaw) * Math.cos(human.player.pitch),
+      -Math.cos(human.player.yaw) * Math.cos(human.player.pitch)
+    );
     const data: MinimapData = {
       px: human.player.position.x,
       pz: human.player.position.z,
       pyaw: human.player.yaw,
+      aimYaw,
       sx: this.sim.zone.center.x,
       sz: this.sim.zone.center.z,
       sr: this.sim.zone.innerRadius,

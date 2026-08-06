@@ -17,6 +17,9 @@ export interface LobbyCallbacks {
   onBuyCarSkin: (skinId: string) => void;
   onEquipCarSkin: (skinId: string) => void;
   onRename: (name: string) => void;
+  onAddFriend: (username: string) => void;
+  onRemoveFriend: (username: string) => void;
+  onInviteFriend: (username: string) => void;
 }
 
 export interface LobbyActivity {
@@ -72,6 +75,33 @@ function renderInstructionsPanel(): string {
       <dt>Win</dt>
       <dd>Be the last fighter standing in the 10-player match</dd>
     </dl>
+  </aside>`;
+}
+
+function renderFriendsPanel(profile: PlayerProfile): string {
+  const rows =
+    profile.friends.length === 0
+      ? '<p class="lobby-friends-empty muted">No friends yet — add by username below</p>'
+      : profile.friends
+          .map(
+            (name) =>
+              `<div class="lobby-friend-row">
+                <span class="lobby-friend-name">${escapeHtml(name)}</span>
+                <div class="lobby-friend-actions">
+                  <button type="button" class="lobby-friend-invite" data-invite-friend="${escapeHtml(name)}" title="Invite to match (online stub)">Invite</button>
+                  <button type="button" class="lobby-friend-remove" data-remove-friend="${escapeHtml(name)}" title="Remove friend">×</button>
+                </div>
+              </div>`
+          )
+          .join('');
+  return `<aside id="lobby-friends" class="lobby-panel lobby-friends" aria-label="Friends">
+    <b class="lobby-panel-title">Squad · Friends</b>
+    <div class="lobby-friends-add">
+      <input id="inp-friend" maxlength="16" placeholder="Add by username" aria-label="Friend username" />
+      <button id="btn-add-friend" class="lobby-btn lobby-btn-primary" type="button" style="width:auto;padding:8px 14px;min-height:40px;font-size:0.75rem;">Add</button>
+    </div>
+    <div class="lobby-friends-list">${rows}</div>
+    <p class="lobby-friends-hint muted">Online invites sync when Nakama friends API is wired (#67).</p>
   </aside>`;
 }
 
@@ -258,19 +288,40 @@ export function showLobby(
     <div class="lobby-layout">
     <div class="lobby-shell">
       <header id="lobby-hero" class="lobby-hero">
-        <h1 style="color:#c4121a;text-shadow:0 0 8px #6b0505,0 0 16px #3d0202;text-decoration:underline;text-decoration-color:#c4121a;text-underline-offset:4px;">KILL ENEMY</h1>
-        <p class="lobby-tagline">10-player battle royale · robot apocalypse · drop in and fight</p>
-        <div class="lobby-play">
-          <button id="btn-online" class="lobby-btn lobby-btn-primary" type="button">${queue.active ? 'Searching for match...' : 'Play Online'}</button>
-          ${queue.message && !queue.active ? `<p class="lobby-queue-msg">${escapeHtml(queue.message)}</p>` : ''}
-          <div class="lobby-play-row">
-            <button id="btn-local" class="lobby-btn lobby-btn-secondary" type="button"${queue.active ? ' disabled' : ''}>Play Local</button>
-            <button id="btn-cancel-queue" class="lobby-btn lobby-btn-danger" type="button" style="display:${queue.active ? 'inline-block' : 'none'};">Cancel</button>
-          </div>
-          <p class="lobby-quick-controls" aria-label="Quick controls"><kbd>W A S D</kbd> move · Mouse aim · <kbd>LMB</kbd> shoot · <kbd>E</kbd> loot/vehicle · <kbd>G</kbd> grenade</p>
+        <div class="lobby-hero-badge">SEASON 1 · 10-PLAYER BR</div>
+        <h1>KILL ENEMY</h1>
+        <p class="lobby-tagline">Drop into the robot apocalypse — loot, drive, survive</p>
+        <div class="lobby-hero-stats">
+          <span><b>Lv ${stats.level}</b> <span class="muted">Pilot</span></span>
+          <span><b style="color:#fa0;">${profile.credits}</b> <span class="muted">Credits</span></span>
+          <span><b style="color:#4f4;">${stats.wins}</b> <span class="muted">Wins</span></span>
+          <span><b style="color:#f44;">${stats.kills}</b> <span class="muted">Kills</span></span>
         </div>
       </header>
+      <section class="lobby-modes" aria-label="Play modes">
+        <article class="lobby-mode-card lobby-mode-card-primary">
+          <div class="lobby-mode-head">
+            <span class="lobby-mode-label">Ranked Queue</span>
+            <span class="lobby-mode-tag">ONLINE</span>
+          </div>
+          <p class="lobby-mode-desc">Matchmake with players worldwide. Bots fill empty slots.</p>
+          <button id="btn-online" class="lobby-btn lobby-btn-primary" type="button">${queue.active ? 'Searching for match...' : 'Play Online'}</button>
+          ${queue.message && !queue.active ? `<p class="lobby-queue-msg">${escapeHtml(queue.message)}</p>` : ''}
+          <button id="btn-cancel-queue" class="lobby-btn lobby-btn-danger" type="button" style="display:${queue.active ? 'inline-block' : 'none'};margin-top:8px;width:100%;">Cancel Search</button>
+        </article>
+        <article class="lobby-mode-card">
+          <div class="lobby-mode-head">
+            <span class="lobby-mode-label">Training Ground</span>
+            <span class="lobby-mode-tag lobby-mode-tag-muted">LOCAL</span>
+          </div>
+          <p class="lobby-mode-desc">Instant match vs AI bots. No account required.</p>
+          <button id="btn-local" class="lobby-btn lobby-btn-secondary" type="button" style="width:100%;"${queue.active ? ' disabled' : ''}>Play Local</button>
+        </article>
+      </section>
+      <p class="lobby-quick-controls" aria-label="Quick controls"><kbd>W A S D</kbd> move · Mouse aim · <kbd>LMB</kbd> shoot · <kbd>E</kbd> loot/vehicle · <kbd>G</kbd> grenade</p>
       ${shopMessage ? `<p id="shop-msg" class="lobby-shop-msg">${escapeHtml(shopMessage)}</p>` : ''}
+      <div class="lobby-body">
+        <div class="lobby-body-main">
       <div class="lobby-panels">
         <section class="lobby-panel">
           <b class="lobby-panel-title">Character</b>
@@ -405,6 +456,11 @@ export function showLobby(
           <div class="lobby-list">${leaderboardMarkup}</div>
         </section>
       </div>
+        </div>
+        <div class="lobby-body-side">
+          ${renderFriendsPanel(profile)}
+        </div>
+      </div>
     </div>
     ${renderInstructionsPanel()}
     </div>
@@ -437,6 +493,29 @@ export function showLobby(
   document.getElementById('btn-rename')?.addEventListener('click', () => {
     const inp = document.getElementById('inp-name') as HTMLInputElement | null;
     if (inp) callbacks.onRename(inp.value);
+  });
+
+  document.getElementById('btn-add-friend')?.addEventListener('click', () => {
+    const inp = document.getElementById('inp-friend') as HTMLInputElement | null;
+    if (inp?.value.trim()) callbacks.onAddFriend(inp.value.trim());
+  });
+  document.getElementById('inp-friend')?.addEventListener('keydown', (e) => {
+    if ((e as KeyboardEvent).key === 'Enter') {
+      const inp = e.target as HTMLInputElement;
+      if (inp.value.trim()) callbacks.onAddFriend(inp.value.trim());
+    }
+  });
+  overlay.querySelectorAll('[data-remove-friend]').forEach((el) => {
+    el.addEventListener('click', () => {
+      const name = (el as HTMLElement).dataset.removeFriend;
+      if (name) callbacks.onRemoveFriend(name);
+    });
+  });
+  overlay.querySelectorAll('[data-invite-friend]').forEach((el) => {
+    el.addEventListener('click', () => {
+      const name = (el as HTMLElement).dataset.inviteFriend;
+      if (name) callbacks.onInviteFriend(name);
+    });
   });
 
   overlay.querySelectorAll('[data-equip-chassis]').forEach((el) => {

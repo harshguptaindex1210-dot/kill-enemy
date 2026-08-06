@@ -53,6 +53,8 @@ export interface BotBrain {
   lastShotTime: number;
   strafeDir: 1 | -1;
   strafeTimer: number;
+  lastThinkMs: number;
+  lastInput: PlayerInput | null;
 }
 
 export function createBotBrain(difficulty: BotDifficulty): BotBrain {
@@ -64,6 +66,8 @@ export function createBotBrain(difficulty: BotDifficulty): BotBrain {
     lastShotTime: 0,
     strafeDir: Math.random() < 0.5 ? 1 : -1,
     strafeTimer: 0,
+    lastThinkMs: 0,
+    lastInput: null,
   };
 }
 

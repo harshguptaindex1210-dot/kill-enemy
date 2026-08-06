@@ -18,6 +18,8 @@ import {
   saveProfile,
   setProfileName,
   syncLevelUnlocks,
+  addFriend,
+  removeFriend,
   type PlayerProfile,
 } from './profile';
 import { chassisById, gunColorFor } from './cosmetics';
@@ -407,6 +409,24 @@ function init() {
           persistProfile(result.profile);
           shopMessage = 'Car skin purchased';
         }
+        showLobbyUI();
+      },
+      onAddFriend(username: string) {
+        const result = addFriend(profile, username);
+        if ('error' in result) shopMessage = result.error;
+        else {
+          persistProfile(result.profile);
+          shopMessage = `Added ${result.profile.friends[result.profile.friends.length - 1]}`;
+        }
+        showLobbyUI();
+      },
+      onRemoveFriend(username: string) {
+        persistProfile(removeFriend(profile, username));
+        shopMessage = `Removed ${username}`;
+        showLobbyUI();
+      },
+      onInviteFriend(username: string) {
+        shopMessage = `Invite sent to ${username} (online matchmaking stub)`;
         showLobbyUI();
       },
     };

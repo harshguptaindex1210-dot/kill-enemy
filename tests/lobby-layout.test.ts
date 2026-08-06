@@ -19,6 +19,9 @@ function callbacks(): LobbyCallbacks {
     onBuyCarSkin: vi.fn(),
     onEquipCarSkin: vi.fn(),
     onRename: vi.fn(),
+    onAddFriend: vi.fn(),
+    onRemoveFriend: vi.fn(),
+    onInviteFriend: vi.fn(),
   };
 }
 
@@ -42,8 +45,8 @@ describe('lobby responsive layout (#46)', () => {
     const hero = document.getElementById('lobby-hero');
     expect(hero).toBeTruthy();
     expect(hero!.querySelector('h1')?.textContent).toMatch(/KILL ENEMY/i);
-    expect(hero!.querySelector('#btn-online')).toBeTruthy();
-    expect(hero!.querySelector('#btn-local')).toBeTruthy();
+    expect(document.getElementById('btn-online')).toBeTruthy();
+    expect(document.getElementById('btn-local')).toBeTruthy();
 
     // Character / settings / shop live outside the first fold.
     expect(hero!.querySelector('#inp-name')).toBeNull();
@@ -62,10 +65,35 @@ describe('lobby responsive layout (#46)', () => {
       { active: true, message: 'Searching…' }
     );
 
-    const hero = document.getElementById('lobby-hero')!;
-    const cancel = hero.querySelector('#btn-cancel-queue') as HTMLButtonElement;
+    const cancel = document.getElementById('btn-cancel-queue') as HTMLButtonElement;
     expect(cancel).toBeTruthy();
     expect(cancel.style.display).not.toBe('none');
+  });
+
+  it('mounts friends panel with add-by-username', () => {
+    const profile = { ...defaultProfile(), friends: ['AcePilot'] };
+    showLobby(
+      { level: 1, xp: 0, wins: 0, kills: 0, matches: 0 },
+      defaultSettings(),
+      profile,
+      callbacks()
+    );
+    expect(document.getElementById('lobby-friends')).toBeTruthy();
+    expect(document.getElementById('inp-friend')).toBeTruthy();
+    expect(document.getElementById('btn-add-friend')).toBeTruthy();
+    expect(document.body.textContent).toMatch(/AcePilot/);
+  });
+
+  it('mounts mode cards with play buttons in first fold', () => {
+    showLobby(
+      { level: 1, xp: 0, wins: 0, kills: 0, matches: 0 },
+      defaultSettings(),
+      defaultProfile(),
+      callbacks()
+    );
+    expect(document.querySelector('.lobby-modes')).toBeTruthy();
+    expect(document.querySelector('.lobby-mode-card-primary #btn-online')).toBeTruthy();
+    expect(document.querySelector('.lobby-mode-card #btn-local')).toBeTruthy();
   });
 
   it('escapes profile name so markup cannot break out of the name input', () => {

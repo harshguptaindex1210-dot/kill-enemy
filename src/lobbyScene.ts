@@ -26,7 +26,8 @@ export function createLobbyScene(
 ): LobbySceneHandle {
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
-  canvas.style.cssText = 'position:fixed;inset:0;width:100vw;height:100vh;display:block;';
+  canvas.style.cssText =
+    'position:fixed;inset:0;width:100vw;height:100vh;display:block;z-index:0;pointer-events:none;';
 
   const renderer = createRenderer(canvas, quality);
   const scene = new THREE.Scene();

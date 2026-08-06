@@ -348,12 +348,20 @@ export class MatchSim {
   }
 
   private botInput(unit: SimUnit): PlayerInput {
+    const brain = unit.botBrain!;
     const enemy = this.nearestEnemy(unit);
+    const inCombat = Boolean(
+      enemy && enemy.player.position.distanceTo(unit.player.position) <= 140
+    );
+    const THINK_MS = inCombat ? 0 : 80;
+    if (brain.lastInput && THINK_MS > 0 && this.time - brain.lastThinkMs < THINK_MS) {
+      return brain.lastInput;
+    }
     const loot = this.nearestLoot(unit);
     const weapon = this.currentWeapon(unit);
     const zone = this.zone;
-    return decideBotInput({
-      brain: unit.botBrain!,
+    const input = decideBotInput({
+      brain,
       pos: unit.player.position,
       yaw: unit.player.yaw,
       pitch: unit.player.pitch,
@@ -366,6 +374,9 @@ export class MatchSim {
       weaponReady: weapon ? weapon.ammo > 0 && !weapon.reloading : false,
       needsReload: weapon ? weapon.ammo === 0 : false,
     });
+    brain.lastInput = input;
+    brain.lastThinkMs = this.time;
+    return input;
   }
 
   private nearestEnemy(unit: SimUnit): SimUnit | null {
@@ -512,7 +523,13 @@ export class MatchSim {
     const results = fireWeapon(weapon, origin, dir, targets, now);
     // Rate-limited frames must not emit shot SFX / tracers.
     if (weapon.lastFireTime === beforeFire) return;
-    this.events.push({ type: 'shot', time: now, unitId: unit.id, weapon: weapon.def.type });
+    this.events.push({
+      type: 'shot',
+      time: now,
+      unitId: unit.id,
+      weapon: weapon.def.type,
+      yaw: unit.player.yaw,
+    });
     for (const r of results) {
       if (r.hit && r.entityId) {
         this.applyDamage(unit.id, r.entityId, r.damage, 'shot');

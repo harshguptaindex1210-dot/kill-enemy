@@ -164,6 +164,25 @@ export function setProfileName(profile: PlayerProfile, name: string): PlayerProf
   return { ...profile, name: sanitizeName(name) };
 }
 
+export function addFriend(
+  profile: PlayerProfile,
+  username: string
+): { profile: PlayerProfile } | { error: string } {
+  const name = sanitizeName(username);
+  if (name === 'Pilot') return { error: 'Enter a valid username (3–16 chars)' };
+  if (name.toLowerCase() === profile.name.toLowerCase()) return { error: 'Cannot add yourself' };
+  if (profile.friends.some((f) => f.toLowerCase() === name.toLowerCase())) {
+    return { error: 'Already on friends list' };
+  }
+  if (profile.friends.length >= 50) return { error: 'Friends list full (50 max)' };
+  return { profile: { ...profile, friends: [...profile.friends, name] } };
+}
+
+export function removeFriend(profile: PlayerProfile, username: string): PlayerProfile {
+  const key = username.toLowerCase();
+  return { ...profile, friends: profile.friends.filter((f) => f.toLowerCase() !== key) };
+}
+
 export function equipChassis(profile: PlayerProfile, id: ChassisId): PlayerProfile | null {
   if (!profile.ownedChassis.includes(id)) return null;
   return { ...profile, chassisId: id };
