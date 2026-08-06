@@ -268,7 +268,7 @@ export function createMinimap(): { update: (data: MinimapData) => void; remove: 
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.moveTo(ox, oz);
-      ctx.lineTo(ox + Math.sin(data.pyaw) * 15, oz + Math.cos(data.pyaw) * 15);
+      ctx.lineTo(ox - Math.sin(data.pyaw) * 15, oz - Math.cos(data.pyaw) * 15);
       ctx.stroke();
     },
     remove() {

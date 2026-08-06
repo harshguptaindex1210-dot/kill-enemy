@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { createScene, type QualityPreset } from './scene';
+import { createScene, disposeScene, type QualityPreset } from './scene';
 import { POI_RADIUS, MAP_SIZE } from './constants';
 import { MatchSim, type SimEvent, type SimUnit } from './gameplay';
 import { ZoneSystem } from './zone';
@@ -139,6 +139,7 @@ export class MatchGame {
   private scene: THREE.Scene;
   private camera: THREE.PerspectiveCamera;
   private renderer: THREE.WebGLRenderer;
+  private sceneControls: import('three/addons/controls/OrbitControls.js').OrbitControls;
   private zoneSys: ZoneSystem;
   private input: InputManager;
   private hud: ReturnType<typeof createHUD>;
@@ -217,6 +218,7 @@ export class MatchGame {
     this.scene = scene;
     this.camera = camera;
     this.renderer = renderer;
+    this.sceneControls = controls;
 
     this.sim = new MatchSim({
       seed: opts.seed,
@@ -300,7 +302,13 @@ export class MatchGame {
     }
     this.muzzleFlashGeo.dispose();
     this.muzzleFlashMat.dispose();
-    this.renderer.dispose();
+    disposeScene({
+      scene: this.scene,
+      camera: this.camera,
+      renderer: this.renderer,
+      controls: this.sceneControls,
+      pois: [],
+    });
     this.input.dispose();
   }
 

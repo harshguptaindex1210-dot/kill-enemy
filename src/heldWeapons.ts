@@ -100,7 +100,6 @@ function buildRifle(color: number): THREE.Group {
   );
   stock.position.set(0, -0.05, 0.55);
   g.add(body, barrel, stock);
-  g.rotation.x = Math.PI / 2;
   return g;
 }
 
@@ -123,7 +122,6 @@ function buildPistol(color: number): THREE.Group {
   );
   grip.position.set(0, -0.18, 0.05);
   g.add(body, grip);
-  g.rotation.x = Math.PI / 2;
   return g;
 }
 

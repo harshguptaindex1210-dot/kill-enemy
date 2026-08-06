@@ -1,6 +1,16 @@
 import type { WireSnapshot } from './protocol';
 import { entityWorld } from './protocol';
 
+function lerp(a: number, b: number, t: number): number {
+  return a + (b - a) * t;
+}
+
+/** Shortest-arc yaw interpolation across the ±π seam. */
+export function lerpYaw(a: number, b: number, t: number): number {
+  const delta = Math.atan2(Math.sin(b - a), Math.cos(b - a));
+  return a + delta * t;
+}
+
 export interface InterpolatedEntity {
   id: string;
   x: number;
@@ -92,7 +102,7 @@ export class InterpolationBuffer {
         health: Math.round(lerp(wa.health, wb.health)),
         armor: Math.round(lerp(wa.armor, wb.armor)),
         alive: wb.alive,
-        yaw: lerp(wa.yaw, wb.yaw),
+        yaw: lerpYaw(wa.yaw, wb.yaw, t),
       });
     }
     return out;

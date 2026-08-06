@@ -13,6 +13,18 @@ export interface SceneBundle {
   pois: { name: string; group: THREE.Group; position: THREE.Vector3 }[];
 }
 
+export function disposeScene(bundle: SceneBundle) {
+  bundle.controls.dispose();
+  bundle.scene.traverse((obj) => {
+    if (obj instanceof THREE.Mesh) {
+      obj.geometry?.dispose();
+      const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+      for (const m of mats) m?.dispose();
+    }
+  });
+  bundle.renderer.dispose();
+}
+
 export function createScene(
   canvas: HTMLCanvasElement,
   quality: QualityPreset = 'medium'
@@ -78,8 +90,8 @@ export function createScene(
     const roadMat = new THREE.MeshStandardMaterial({ color: 0x3a3a48, roughness: 0.9 });
     const road = new THREE.Mesh(new THREE.PlaneGeometry(4, POI_RADIUS * 1.4), roadMat);
     road.rotation.x = -Math.PI / 2;
+    road.rotation.y = -angle;
     road.position.set(x / 2, 0.05, z / 2);
-    road.lookAt(0, 0.05, 0);
     scene.add(road);
   }
 
