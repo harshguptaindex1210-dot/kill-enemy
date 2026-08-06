@@ -24,7 +24,7 @@ Where things live. Load `CONTEXT/CONTEXT.md` first.
 | `CONTEXT/docs/prd/tickets-responsive-lobby.md` | Local ticket index (#46 Agent Ready, #47 Planned) |
 | `CONTEXT/docs/prd/tickets-held-weapons-lag.md` | Local ticket index (#44/#45 Planned; deferred behind #46) |
 | `CONTEXT/docs/prd/issues/` | Per-ticket bodies for local tracker |
-| `CONTEXT/handoffs/` | Per-effort handoffs (newest first) |
+| `CONTEXT/handoffs/` | Per-effort handoffs (newest: `2026-08-06-1645-kill-enemy-session.md`) |
 
 ## Source (`src/`)
 
