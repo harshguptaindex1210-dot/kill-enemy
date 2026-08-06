@@ -8,6 +8,4 @@ Spec: `CONTEXT/docs/prd/RESPONSIVE-LOBBY.md`
 | **46** | [Responsive lobby layout](issues/46-responsive-lobby.md) | **Done** | None |
 | **47** | [Lobby viewport smoke (INV-L1/L2)](issues/47-lobby-viewport-smoke.md) | **Done** | 46 (Done) |
 
-**Frontier:** resume held-weapons **#44** (promote to Agent Ready).
-
-Related deferred queue: held-weapons #44 Planned (behind this effort), #45 Planned (blocked by 44).
+**Frontier:** queue empty (responsive lobby effort complete).
