@@ -14,7 +14,7 @@ import {
   type HUDData,
   type MinimapData,
 } from './hud';
-import { createVehicle } from './vehicle';
+import { createVehicle, riderWorldPose, shouldShowUnitRig } from './vehicle';
 import { SKILL_DEFS, type ChassisId } from './cosmetics';
 import type { AudioManager } from './audio';
 import type { Settings } from './settings';
@@ -709,8 +709,17 @@ export class MatchGame {
     const rig = this.rigs.get(unit.id);
     if (!rig) return;
     if (unit.alive) {
-      rig.group.visible = unit.inVehicleId === null;
-      if (unit.inVehicleId === null) {
+      rig.group.visible = shouldShowUnitRig(true);
+      if (unit.inVehicleId !== null) {
+        const v = this.sim.vehicles.find((vv) => vv.id === unit.inVehicleId);
+        if (v) {
+          const pose = riderWorldPose(v.type, v.state.position, v.state.rotation);
+          rig.group.position.copy(pose.position);
+          rig.group.position.y += ROBOT_GROUP_Y_OFFSET;
+          rig.group.rotation.y = pose.yaw;
+          transitionAnim(rig.anim, 'crouch');
+        }
+      } else {
         rig.group.position.copy(unit.player.position);
         rig.group.position.y = unit.player.position.y + ROBOT_GROUP_Y_OFFSET;
         rig.group.rotation.y = unit.player.yaw;
@@ -743,6 +752,7 @@ export class MatchGame {
       updateRobotAnim(rig.anim, dt);
     } else if (!rig.dead) {
       rig.dead = true;
+      rig.group.visible = shouldShowUnitRig(false);
       rig.group.rotation.x = -Math.PI / 2;
       if (rig.held) {
         syncHeldWeaponKit(rig.held, 'none');

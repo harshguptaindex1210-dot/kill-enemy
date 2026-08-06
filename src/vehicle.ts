@@ -111,6 +111,35 @@ export function updateVehicle(
   vehicle.position.y = groundY + 0.5;
 }
 
+/** Local-space seat offset (x right, y up, z forward along vehicle facing). */
+export function seatOffsetForVehicle(type: VehicleType): { x: number; y: number; z: number } {
+  if (type === 'motorbike') return { x: 0, y: 0.45, z: -0.15 };
+  // sedan / buggy — slightly left of center, above floor
+  return { x: -0.4, y: 0.35, z: 0.2 };
+}
+
+/** World pose for a visible rider on an occupied vehicle. */
+export function riderWorldPose(
+  type: VehicleType,
+  vehiclePos: THREE.Vector3,
+  vehicleRotation: number
+): { position: THREE.Vector3; yaw: number } {
+  const seat = seatOffsetForVehicle(type);
+  const forward = new THREE.Vector3(Math.sin(vehicleRotation), 0, Math.cos(vehicleRotation));
+  const right = new THREE.Vector3(Math.cos(vehicleRotation), 0, -Math.sin(vehicleRotation));
+  const position = vehiclePos
+    .clone()
+    .add(right.multiplyScalar(seat.x))
+    .add(new THREE.Vector3(0, seat.y, 0))
+    .add(forward.multiplyScalar(seat.z));
+  return { position, yaw: vehicleRotation };
+}
+
+/** Alive units stay drawn on foot and while mounted (bike/car). */
+export function shouldShowUnitRig(alive: boolean): boolean {
+  return alive;
+}
+
 export function findNearbyVehicle(
   vehicles: { state: VehicleState; mesh: THREE.Group }[],
   pos: THREE.Vector3,
