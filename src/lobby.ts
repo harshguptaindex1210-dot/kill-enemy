@@ -49,6 +49,28 @@ function escapeHtml(value: string): string {
   });
 }
 
+function renderInstructionsPanel(): string {
+  return `<aside id="lobby-instructions" class="lobby-instructions" aria-label="How to play">
+    <b class="lobby-panel-title">How to Play</b>
+    <dl class="lobby-instructions-list">
+      <dt>Move</dt>
+      <dd><kbd>W A S D</kbd> walk · <kbd>Shift</kbd> sprint · <kbd>Ctrl</kbd> crouch · <kbd>Space</kbd> jump</dd>
+      <dt>Aim &amp; shoot</dt>
+      <dd>Mouse look · <kbd>LMB</kbd> fire · <kbd>R</kbd> reload · <kbd>1</kbd>/<kbd>2</kbd>/<kbd>3</kbd> weapons · <kbd>F</kbd> skill</dd>
+      <dt>Grenades</dt>
+      <dd><kbd>G</kbd> throw · cook with hold (release to toss)</dd>
+      <dt>Loot</dt>
+      <dd>Walk over weapon pads · <kbd>E</kbd> open crates &amp; airdrops</dd>
+      <dt>Vehicles</dt>
+      <dd><kbd>E</kbd> enter / exit cars &amp; bikes</dd>
+      <dt>Storm</dt>
+      <dd>Stay inside the blue safe zone — damage ramps each phase</dd>
+      <dt>Win</dt>
+      <dd>Be the last fighter standing in the 10-player match</dd>
+    </dl>
+  </aside>`;
+}
+
 function placementLabel(placement: number): string {
   if (placement === 1) return '1st';
   if (placement === 2) return '2nd';
@@ -188,6 +210,7 @@ export function showLobby(
 
   overlay.className = 'lobby-overlay';
   overlay.innerHTML = `
+    <div class="lobby-layout">
     <div class="lobby-shell">
       <header id="lobby-hero" class="lobby-hero">
         <h1 style="color:#c4121a;text-shadow:0 0 8px #6b0505,0 0 16px #3d0202;text-decoration:underline;text-decoration-color:#c4121a;text-underline-offset:4px;">KILL ENEMY</h1>
@@ -323,6 +346,8 @@ export function showLobby(
           <div class="lobby-list">${leaderboardMarkup}</div>
         </section>
       </div>
+    </div>
+    ${renderInstructionsPanel()}
     </div>
   `;
 

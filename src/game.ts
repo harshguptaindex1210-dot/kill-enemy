@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { createScene, type QualityPreset } from './scene';
+import { POI_RADIUS } from './constants';
 import { MatchSim, type SimEvent, type SimUnit } from './gameplay';
 import { ZoneSystem } from './zone';
 import { createInputManager, type InputManager } from './input';
@@ -957,10 +958,10 @@ export class MatchGame {
       sz: this.sim.zone.center.z,
       sr: this.sim.zone.innerRadius,
       buildings: [
-        { x: 300, z: 0 },
-        { x: 0, z: 300 },
-        { x: -300, z: 0 },
-        { x: 0, z: -300 },
+        { x: POI_RADIUS, z: 0 },
+        { x: 0, z: POI_RADIUS },
+        { x: -POI_RADIUS, z: 0 },
+        { x: 0, z: -POI_RADIUS },
       ],
       loot: this.sim.loot.map((l) => ({
         x: l.position.x,

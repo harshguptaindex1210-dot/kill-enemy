@@ -9,7 +9,7 @@ local TICK_DT           = 1.0 / TICK_HZ
 local TICK_MS           = 1000 / TICK_HZ
 local MAX_MATCH_MS      = 25 * 60 * 1000
 local REWIND_TICKS      = 2          -- 100 ms lag comp at 20 Hz
-local MAP_BOUND         = 480
+local MAP_BOUND         = 280
 local GROUND_Y          = 0
 local STAND_H           = 1.8
 local PLAYER_Y          = GROUND_Y + STAND_H / 2
@@ -36,19 +36,19 @@ local OP_INPUT          = 1
 local OP_SNAPSHOT       = 2
 
 local ZONE_PHASES = {
-  { radius = 400, dps = 1,  duration = 200 },
-  { radius = 300, dps = 2,  duration = 150 },
-  { radius = 200, dps = 4,  duration = 120 },
-  { radius = 100, dps = 8,  duration = 90  },
-  { radius = 30,  dps = 16, duration = 60  },
+  { radius = 230, dps = 1,  duration = 200 },
+  { radius = 175, dps = 2,  duration = 150 },
+  { radius = 115, dps = 4,  duration = 120 },
+  { radius = 58,  dps = 8,  duration = 90  },
+  { radius = 18,  dps = 16, duration = 60  },
 }
 local SHRINK_DURATION   = 30
 
 local POIS = {
-  { name = "Town",    x = 300,  z = 0   },
-  { name = "Factory", x = 0,    z = 300 },
-  { name = "Docks",   x = -300, z = 0   },
-  { name = "Hilltop", x = 0,    z = -300},
+  { name = "Town",    x = 175,  z = 0   },
+  { name = "Factory", x = 0,    z = 175 },
+  { name = "Docks",   x = -175, z = 0   },
+  { name = "Hilltop", x = 0,    z = -175},
 }
 
 -- ── helpers ───────────────────────────────────────────────────────────────
@@ -185,7 +185,7 @@ end
 local function spawn_point(index, count, rng)
   local spread = math.min(count, 10)
   local a = (index / spread) * math.pi * 2 + rng() * 0.2
-  local radius = 300 + (index % 3) * 50
+  local radius = 55 + (index % 3) * 18
   return math.cos(a) * radius, PLAYER_Y, math.sin(a) * radius
 end
 

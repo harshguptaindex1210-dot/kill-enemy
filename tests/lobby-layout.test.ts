@@ -79,9 +79,27 @@ describe('lobby responsive layout (#46)', () => {
     expect(document.querySelector('#lobby-overlay script')).toBeNull();
   });
 
+  it('mounts a how-to-play instructions panel', () => {
+    showLobby(
+      { level: 1, xp: 0, wins: 0, kills: 0, matches: 0 },
+      defaultSettings(),
+      defaultProfile(),
+      callbacks()
+    );
+
+    const panel = document.getElementById('lobby-instructions');
+    expect(panel).toBeTruthy();
+    expect(panel!.classList.contains('lobby-instructions')).toBe(true);
+    expect(panel!.textContent).toMatch(/How to Play/i);
+    expect(panel!.textContent).toMatch(/W A S D/i);
+    expect(document.querySelector('.lobby-layout')).toBeTruthy();
+  });
+
   it('ships stylesheet rules for phone wrap and laptop multi-column', () => {
     const css = readFileSync(resolve(__dirname, '../src/lobby.css'), 'utf8');
     expect(css).toMatch(/\.lobby-overlay/);
+    expect(css).toMatch(/\.lobby-layout/);
+    expect(css).toMatch(/\.lobby-instructions/);
     expect(css).toMatch(/\.lobby-hero/);
     expect(css).toMatch(/\.lobby-shop-grid/);
     expect(css).toMatch(/@media\s*\(\s*min-width:\s*1024px\s*\)/);

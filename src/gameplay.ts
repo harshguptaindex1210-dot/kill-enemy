@@ -7,6 +7,7 @@ import {
   tickMatch,
   type MatchState,
 } from './match';
+import { MAP_BOUND, DEFAULT_POI_POSITIONS, DEFAULT_OBSTACLES } from './constants';
 import { ZoneLogic } from './zone';
 import { createPlayer, type PlayerBundle, type PlayerInput } from './player';
 import {
@@ -118,7 +119,6 @@ export interface MatchSimConfig {
   lootPois?: { name: string; position: THREE.Vector3 }[];
 }
 
-const MAP_BOUND = 480;
 const UNIT_RADIUS = 0.6;
 const CAPSULE_HEIGHT = 1.8;
 const CAPSULE_RADIUS = 0.4;
@@ -133,20 +133,6 @@ const BOT_DAMAGE_SCALE = 0.45;
 /** Distinct bot chassis tints so the arena reads as multi-faction, not all-red. */
 const BOT_COLORS = [
   0xcc4444, 0x44cc66, 0xcc8844, 0xcc44aa, 0x44cccc, 0xcccc44, 0xaa66ff, 0xff6644, 0x66aaff,
-];
-
-const DEFAULT_OBSTACLES = [
-  { x: 300, z: 0, r: 45 },
-  { x: 0, z: 300, r: 45 },
-  { x: -300, z: 0, r: 45 },
-  { x: 0, z: -300, r: 45 },
-];
-
-const DEFAULT_POIS = [
-  { name: 'Town', position: new THREE.Vector3(300, 0, 0) },
-  { name: 'Factory', position: new THREE.Vector3(0, 0, 300) },
-  { name: 'Docks', position: new THREE.Vector3(-300, 0, 0) },
-  { name: 'Hilltop', position: new THREE.Vector3(0, 0, -300) },
 ];
 
 const HEAL_DURATION: Record<'medkit' | 'bandage', number> = { medkit: 4000, bandage: 2000 };
@@ -237,7 +223,7 @@ export class MatchSim {
       this.units.set(id, this.createUnit(id, `BOT-${i}`, true, difficulty, i));
     }
 
-    this.loot = generateLootData(config.lootPois ?? DEFAULT_POIS, this.rng);
+    this.loot = generateLootData(config.lootPois ?? DEFAULT_POI_POSITIONS, this.rng);
     this.spawnVehicles();
   }
 

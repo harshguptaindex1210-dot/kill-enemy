@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { createRenderer } from './renderer';
+import { MAP_BOUND, MAP_SIZE, POI_RADIUS } from './constants';
 
 export type QualityPreset = 'low' | 'medium';
 
@@ -20,7 +21,7 @@ export function createScene(
 
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x6a9ec4);
-  scene.fog = new THREE.Fog(0x6a9ec4, 280, 720);
+  scene.fog = new THREE.Fog(0x6a9ec4, 160, 420);
 
   const camera = new THREE.PerspectiveCamera(75, canvas.width / canvas.height, 0.1, 2000);
   camera.position.set(0, 50, 100);
@@ -41,11 +42,11 @@ export function createScene(
   if (quality === 'medium') {
     dirLight.castShadow = true;
     dirLight.shadow.mapSize.set(2048, 2048);
-    dirLight.shadow.camera.left = -500;
-    dirLight.shadow.camera.right = 500;
-    dirLight.shadow.camera.top = 500;
-    dirLight.shadow.camera.bottom = -500;
-    dirLight.shadow.camera.far = 700;
+    dirLight.shadow.camera.left = -MAP_BOUND;
+    dirLight.shadow.camera.right = MAP_BOUND;
+    dirLight.shadow.camera.top = MAP_BOUND;
+    dirLight.shadow.camera.bottom = -MAP_BOUND;
+    dirLight.shadow.camera.far = MAP_BOUND * 1.5;
   }
   scene.add(dirLight);
 
@@ -53,7 +54,7 @@ export function createScene(
   scene.add(hemiLight);
 
   // Ground — textured grid
-  const groundGeo = new THREE.PlaneGeometry(1000, 1000);
+  const groundGeo = new THREE.PlaneGeometry(MAP_SIZE, MAP_SIZE);
   const groundMat = new THREE.MeshStandardMaterial({
     color: 0x5a8a3a,
     roughness: 0.85,
@@ -66,16 +67,16 @@ export function createScene(
   scene.add(ground);
 
   // Grid helper
-  const gridHelper = new THREE.GridHelper(1000, 40, 0x3d6b2e, 0x2a4a22);
+  const gridHelper = new THREE.GridHelper(MAP_SIZE, 28, 0x3d6b2e, 0x2a4a22);
   scene.add(gridHelper);
 
   // Road circles connecting POIs
   for (let i = 0; i < 4; i++) {
     const angle = (i / 4) * Math.PI * 2;
-    const x = Math.cos(angle) * 300;
-    const z = Math.sin(angle) * 300;
+    const x = Math.cos(angle) * POI_RADIUS;
+    const z = Math.sin(angle) * POI_RADIUS;
     const roadMat = new THREE.MeshStandardMaterial({ color: 0x3a3a48, roughness: 0.9 });
-    const road = new THREE.Mesh(new THREE.PlaneGeometry(4, 420), roadMat);
+    const road = new THREE.Mesh(new THREE.PlaneGeometry(4, POI_RADIUS * 1.4), roadMat);
     road.rotation.x = -Math.PI / 2;
     road.position.set(x / 2, 0.05, z / 2);
     road.lookAt(0, 0.05, 0);
@@ -91,7 +92,7 @@ export function createScene(
 
     for (let i = 0; i < 200; i++) {
       const angle = Math.random() * Math.PI * 2;
-      const dist = 30 + Math.random() * 450;
+      const dist = 30 + Math.random() * (MAP_BOUND - 40);
       const x = Math.cos(angle) * dist;
       const z = Math.sin(angle) * dist;
 
@@ -99,7 +100,7 @@ export function createScene(
       const poiCoords: [number, number][] = [];
       for (let j = 0; j < 4; j++) {
         const a = (j / 4) * Math.PI * 2;
-        poiCoords.push([Math.cos(a) * 300, Math.sin(a) * 300]);
+        poiCoords.push([Math.cos(a) * POI_RADIUS, Math.sin(a) * POI_RADIUS]);
       }
       const nearPoi = poiCoords.some(([px, pz]) => Math.abs(x - px) < 40 && Math.abs(z - pz) < 40);
       if (nearPoi) continue;
@@ -130,8 +131,8 @@ export function createScene(
 
   for (let i = 0; i < names.length; i++) {
     const angle = (i / names.length) * Math.PI * 2;
-    const x = Math.cos(angle) * 300;
-    const z = Math.sin(angle) * 300;
+    const x = Math.cos(angle) * POI_RADIUS;
+    const z = Math.sin(angle) * POI_RADIUS;
     const group = new THREE.Group();
     group.position.set(x, 0, z);
     group.userData.name = names[i];

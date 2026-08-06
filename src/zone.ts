@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { MAP_BOUND, ZONE_PHASE_DURATIONS, ZONE_PHASE_DPS, ZONE_PHASE_RADII } from './constants';
 
 export interface ZonePhase {
   radius: number;
@@ -7,7 +8,6 @@ export interface ZonePhase {
   center: THREE.Vector3;
 }
 
-const MAP_BOUND = 480;
 const SHRINK_DURATION = 30;
 export const ZONE_WARNING_LEAD = 5;
 
@@ -19,13 +19,12 @@ export class ZoneLogic {
   private warnedPhase = -1;
 
   constructor() {
-    this.phases = [
-      { radius: 400, damagePerSec: 1, duration: 200, center: new THREE.Vector3(0, 0, 0) },
-      { radius: 300, damagePerSec: 2, duration: 150, center: new THREE.Vector3(0, 0, 0) },
-      { radius: 200, damagePerSec: 4, duration: 120, center: new THREE.Vector3(0, 0, 0) },
-      { radius: 100, damagePerSec: 8, duration: 90, center: new THREE.Vector3(0, 0, 0) },
-      { radius: 30, damagePerSec: 16, duration: 60, center: new THREE.Vector3(0, 0, 0) },
-    ];
+    this.phases = ZONE_PHASE_RADII.map((radius, i) => ({
+      radius,
+      damagePerSec: ZONE_PHASE_DPS[i]!,
+      duration: ZONE_PHASE_DURATIONS[i]!,
+      center: new THREE.Vector3(0, 0, 0),
+    }));
   }
 
   update(dt: number) {
@@ -98,7 +97,7 @@ export class ZoneSystem extends ZoneLogic {
 
   constructor(scene: THREE.Scene) {
     super();
-    const geo = new THREE.RingGeometry(400, 420, 64);
+    const geo = new THREE.RingGeometry(ZONE_PHASE_RADII[0], ZONE_PHASE_RADII[0] + 20, 64);
     const mat = new THREE.MeshBasicMaterial({
       color: 0x4488ff,
       side: THREE.DoubleSide,

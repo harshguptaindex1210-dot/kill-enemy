@@ -132,7 +132,7 @@ describe('MatchSim', () => {
     runFor(sim, 9);
     const spawn = sim.loot[0];
     spawn.collected = false;
-    spawn.position.set(480, 0.5, 480);
+    spawn.position.set(250, 0.5, 250);
     runFor(sim, 1);
     expect(spawn.collected).toBe(true);
     sim.lootRespawns.push({ id: spawn.id, until: sim.time + 1000 });
@@ -307,8 +307,8 @@ describe('MatchSim', () => {
     const player = sim.units.get('player')!;
     player.player.position.set(5000, 0.9, 5000);
     runFor(sim, 0.5);
-    expect(Math.abs(player.player.position.x)).toBeLessThanOrEqual(480);
-    expect(Math.abs(player.player.position.z)).toBeLessThanOrEqual(480);
+    expect(Math.abs(player.player.position.x)).toBeLessThanOrEqual(280);
+    expect(Math.abs(player.player.position.z)).toBeLessThanOrEqual(280);
   });
 });
 

@@ -36,6 +36,15 @@ describe('bot AI', () => {
     expect(input.aim).toBe(true);
   });
 
+  it('chases when player closes in instead of fleeing', () => {
+    const c = ctx({
+      enemy: { position: new THREE.Vector3(0, 0, -10) },
+    });
+    const input = decideBotInput(c);
+    expect(input.forward).toBe(true);
+    expect(input.backward).toBe(false);
+  });
+
   it('does not fire before reaction time', () => {
     const c = ctx({
       brain: createBotBrain('hard'),

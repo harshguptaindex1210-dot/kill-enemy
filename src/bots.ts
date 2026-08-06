@@ -142,8 +142,10 @@ export function decideBotInput(ctx: BotContext): PlayerInput {
     const dist = toPoint(ctx.enemy.position);
     distToTarget = dist;
     desiredRange = p.preferredRange;
-    forward = dist > desiredRange + 2;
-    backward = dist < desiredRange - 4;
+    // Chase until close — prior kiting band (backward when dist < preferredRange-4) made bots flee on approach.
+    const meleeDist = 4;
+    forward = dist > meleeDist;
+    backward = p.strafe && dist < meleeDist + 1 && dist > meleeDist * 0.5;
     if (p.strafe && ctx.time - brain.lastGoalChange > 400) {
       if (ctx.time - brain.strafeTimer > 1500) {
         brain.strafeTimer = ctx.time;

@@ -39,7 +39,7 @@ describe('zone shrink + warning', () => {
     const start = z.currentSafeRadius;
     z.update(30);
     expect(z.currentSafeRadius).toBeLessThan(start);
-    expect(z.currentSafeRadius).toBeCloseTo(400, 0);
+    expect(z.currentSafeRadius).toBeCloseTo(230, 0);
   });
 
   it('safe radius keeps shrinking across phases', () => {
@@ -49,7 +49,7 @@ describe('zone shrink + warning', () => {
     const r0 = z.currentSafeRadius;
     z.update(30);
     expect(z.currentSafeRadius).toBeLessThan(r0);
-    expect(z.currentSafeRadius).toBeCloseTo(300, 0);
+    expect(z.currentSafeRadius).toBeCloseTo(175, 0);
   });
 
   it('zoneIncoming fires once per phase before a shrink', () => {
