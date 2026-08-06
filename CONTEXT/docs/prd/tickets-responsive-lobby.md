@@ -6,8 +6,8 @@ Spec: `CONTEXT/docs/prd/RESPONSIVE-LOBBY.md`
 | # | Title | Status | Blocked by |
 |---|-------|--------|------------|
 | **46** | [Responsive lobby layout](issues/46-responsive-lobby.md) | **Done** | None |
-| **47** | [Lobby viewport smoke (INV-L1/L2)](issues/47-lobby-viewport-smoke.md) | **Agent Ready** | 46 (Done) |
+| **47** | [Lobby viewport smoke (INV-L1/L2)](issues/47-lobby-viewport-smoke.md) | **Done** | 46 (Done) |
 
-**Frontier:** start at **47**. After 47 is Done, resume held-weapons #44.
+**Frontier:** resume held-weapons **#44** (promote to Agent Ready).
 
 Related deferred queue: held-weapons #44 Planned (behind this effort), #45 Planned (blocked by 44).
