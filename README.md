@@ -1,8 +1,10 @@
-# Robot Arena — Browser Battle Royale
+# Kill Enemy — Browser Battle Royale
 
 A browser-based 3D battle-royale game set in a robot apocalypse. Titanfall-style
 humanoid robots fight with guns, melee, and grenades on a 1×1 km map. Built with
 Three.js + Vite + TypeScript; authoritative multiplayer via Nakama.
+
+**Play:** https://harshguptaindex1210-dot.github.io/kill-enemy/
 
 ## What it is
 
