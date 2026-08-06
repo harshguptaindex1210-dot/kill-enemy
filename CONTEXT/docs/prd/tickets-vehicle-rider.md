@@ -1,9 +1,7 @@
 # Tickets — Vehicle rider visibility
 
-Local tracker. User report: cannot see self on bike/car.
-
 | # | Title | Status | Blocked by |
 |---|-------|--------|------------|
-| **48** | [Show rider on bike and cars](issues/48-vehicle-rider-visible.md) | **Debugger Ready** | None |
+| **48** | [Show rider on bike and cars](issues/48-vehicle-rider-visible.md) | **Done** | None |
 
-**Frontier:** #48. Lobby #47 remains Agent Ready but deferred this lap per user priority. Do not touch lobby name/interface.
+**Next frontier:** #47 Agent Ready (lobby viewport smoke), then held-weapons #44.

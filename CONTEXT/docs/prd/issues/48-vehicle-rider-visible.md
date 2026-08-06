@@ -1,8 +1,10 @@
 # 48 — Show rider on bike and cars
 
-**Status:** Debugger Ready  
-**Blocked by:** None — can start immediately  
-**Spec:** ad-hoc bug fix (user report 2026-08-06)
+**Status:** Done  
+**Blocked by:** None  
+**Bounce count:** 0  
+**Verdict:** PASS — gate green; riders visible on motorbike/sedan/buggy with seat offsets; lobby untouched.  
+**Independence:** same `/work` session authored + judged (disclosed).
 
 ## What to build
 
@@ -29,7 +31,3 @@ INV-W1 vehicle branch (held mesh hidden in vehicle) remains true.
 ```bash
 npm test -- tests/vehicle-rider.test.ts && npm run typecheck && npm run lint && npm run build
 ```
-
-## Priority
-
-Urgent — user-blocking while driving; ahead of #47 for this `/work` lap.
