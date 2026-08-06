@@ -1,6 +1,6 @@
 # 45 — Mid-match lag hotspots (INV-1)
 
-**Status:** Planned  
+**Status:** Agent Ready  
 **Blocked by:** 44 — Local held-weapon skins  
 **Spec:** `CONTEXT/docs/prd/HELD-WEAPONS-LAG.md`
 

@@ -5,8 +5,7 @@ Spec: `CONTEXT/docs/prd/HELD-WEAPONS-LAG.md`
 
 | # | Title | Status | Blocked by |
 |---|-------|--------|------------|
-| **44** | [Local held-weapon skins](issues/44-local-held-weapons.md) | **Agent Ready** | Deferred behind #46/#47 (L8) — now unblocked |
-| **45** | [Mid-match lag hotspots (INV-1)](issues/45-mid-match-lag-hotspots.md) | Planned | 44 |
+| **44** | [Local held-weapon skins](issues/44-local-held-weapons.md) | **Done** | Deferred behind #46/#47 (L8) |
+| **45** | [Mid-match lag hotspots (INV-1)](issues/45-mid-match-lag-hotspots.md) | **Agent Ready** | 44 (Done) |
 
-**Frontier for this effort:** resume at **44** only after responsive lobby #46 and #47 are Done.  
-**Current repo frontier:** **#46** — see `tickets-responsive-lobby.md`.
+**Frontier for this effort:** **#45** Agent Ready.

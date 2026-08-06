@@ -18,6 +18,18 @@ describe('held weapons', () => {
     ).toBe('rifle');
   });
 
+  it('shows pistol when alive with pistol slot', () => {
+    expect(
+      resolveHeldKind({ alive: true, inVehicle: false, meleeMode: false, weaponType: 'pistol' })
+    ).toBe('pistol');
+  });
+
+  it('shows grenade when alive with grenade slot', () => {
+    expect(
+      resolveHeldKind({ alive: true, inVehicle: false, meleeMode: false, weaponType: 'grenade' })
+    ).toBe('grenade');
+  });
+
   it('shows melee when melee mode', () => {
     expect(
       resolveHeldKind({ alive: true, inVehicle: false, meleeMode: true, weaponType: 'rifle' })
