@@ -79,6 +79,10 @@ function init() {
   const canvas: HTMLCanvasElement = maybeCanvas;
 
   let settings: Settings = loadSettings();
+  const urlQuality = new URLSearchParams(location.search).get('quality');
+  if (urlQuality === 'low' || urlQuality === 'medium') {
+    settings = { ...settings, quality: urlQuality };
+  }
   let stats: PlayerStats = loadStats();
   let profile: PlayerProfile = syncLevelUnlocks(loadProfile(), stats.level);
   saveProfile(profile);
