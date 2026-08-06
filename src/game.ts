@@ -570,7 +570,7 @@ export class MatchGame {
     const overlay = document.createElement('div');
     overlay.id = 'spectate-overlay';
     overlay.style.cssText =
-      'position:fixed;inset:0;background:rgba(0,0,0,0.55);display:flex;flex-direction:column;align-items:center;justify-content:flex-start;z-index:9998;font-family:sans-serif;color:#fff;pointer-events:none;padding-top:48px;';
+      'position:fixed;inset:0;background:rgba(0,0,0,0.55);display:flex;flex-direction:column;align-items:center;justify-content:flex-start;z-index:9999;font-family:sans-serif;color:#fff;pointer-events:none;padding-top:48px;';
     overlay.innerHTML = `
       <div id="spectate-info" style="background:rgba(0,0,0,0.6);padding:12px 24px;border-radius:8px;font-size:16px;text-align:center;">
         <div style="color:#f66;font-size:22px;font-weight:bold;margin-bottom:8px;">ELIMINATED</div>

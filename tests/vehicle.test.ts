@@ -25,24 +25,32 @@ describe('vehicles', () => {
     const v = createVehicle('sedan', new THREE.Vector3(0, 0.5, 0));
     updateVehicle(v.state, 1, 0, 1 / 60, 0);
     expect(v.state.speed).toBeGreaterThan(0);
-    expect(v.state.position.z).toBeGreaterThan(0);
+    expect(v.state.position.z).toBeLessThan(0);
   });
 
-  it('steers left when steer input is negative', () => {
+  it('steers left when steer input is positive', () => {
     const v = createVehicle('sedan', new THREE.Vector3(0, 0.5, 0));
     v.state.speed = 20;
     const rotBefore = v.state.rotation;
-    updateVehicle(v.state, 1, -1, 1 / 60, 0);
-    expect(v.state.rotation).toBeLessThan(rotBefore);
+    updateVehicle(v.state, 1, 1, 1 / 60, 0);
+    expect(v.state.rotation).toBeGreaterThan(rotBefore);
   });
 
   it('turns toward world left when steering left at speed', () => {
     const v = createVehicle('sedan', new THREE.Vector3(0, 0.5, 0));
     v.state.speed = 30;
     for (let i = 0; i < 40; i++) {
-      updateVehicle(v.state, 1, -1, 1 / 60, 0);
+      updateVehicle(v.state, 1, 1, 1 / 60, 0);
     }
     expect(v.state.position.x).toBeLessThan(0);
+  });
+
+  it('motorbike steers left with positive steer input', () => {
+    const v = createVehicle('motorbike', new THREE.Vector3(0, 0.5, 0));
+    v.state.speed = 40;
+    const rotBefore = v.state.rotation;
+    updateVehicle(v.state, 1, 1, 1 / 60, 0);
+    expect(v.state.rotation).toBeGreaterThan(rotBefore);
   });
 
   it('finds nearby unoccupied vehicle', () => {

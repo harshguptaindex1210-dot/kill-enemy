@@ -19,7 +19,7 @@ describe('vehicle rider visibility (#48)', () => {
     const pose = riderWorldPose('motorbike', v.state.position, v.state.rotation);
     const seat = seatOffsetForVehicle('motorbike');
     expect(pose.position.y).toBeCloseTo(v.state.position.y + seat.y, 5);
-    expect(pose.position.z).toBeCloseTo(v.state.position.z + seat.z, 5);
+    expect(pose.position.z).toBeCloseTo(v.state.position.z - seat.z, 5);
     expect(pose.yaw).toBe(0);
   });
 

@@ -94,6 +94,7 @@ describe('lobby responsive layout (#46)', () => {
     expect(panel!.classList.contains('lobby-instructions')).toBe(true);
     expect(panel!.textContent).toMatch(/How to Play/i);
     expect(panel!.textContent).toMatch(/W A S D/i);
+    expect(panel!.textContent).toMatch(/Respawn/i);
     expect(document.querySelector('.lobby-layout')).toBeTruthy();
   });
 
@@ -108,6 +109,8 @@ describe('lobby responsive layout (#46)', () => {
     expect(css).toMatch(/@media\s*\(\s*min-width:\s*900px\s*\)/);
     expect(css).toMatch(/@media\s*\(\s*min-width:\s*1024px\s*\)/);
     expect(css).toMatch(/\.lobby-panels/);
+    expect(css).toMatch(/\.lobby-instructions[^}]*position:\s*fixed/s);
+    expect(css).toMatch(/z-index:\s*10001/);
     const desktopBlock = css.split(/@media\s*\(\s*min-width:\s*768px\s*\)/)[1] ?? '';
     expect(desktopBlock).toMatch(/\.lobby-instructions[^}]*position:\s*fixed/s);
     expect(desktopBlock).toMatch(/z-index:\s*10000/);

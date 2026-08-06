@@ -38,6 +38,7 @@ describe('bot AI', () => {
 
   it('chases when player closes in instead of fleeing', () => {
     const c = ctx({
+      yaw: 0,
       enemy: { position: new THREE.Vector3(0, 0, -10) },
     });
     const input = decideBotInput(c);
@@ -45,9 +46,20 @@ describe('bot AI', () => {
     expect(input.backward).toBe(false);
   });
 
+  it('does not run forward while facing away from the enemy', () => {
+    const c = ctx({
+      yaw: Math.PI,
+      enemy: { position: new THREE.Vector3(0, 0, -10) },
+    });
+    const input = decideBotInput(c);
+    expect(input.forward).toBe(false);
+    expect(input.backward).toBe(false);
+  });
+
   it('keeps pushing forward at melee range instead of backing up', () => {
     const c = ctx({
       brain: createBotBrain('hard'),
+      yaw: 0,
       enemy: { position: new THREE.Vector3(0, 0, -3) },
     });
     const input = decideBotInput(c);

@@ -64,7 +64,9 @@ function renderInstructionsPanel(): string {
       <dt>Loot</dt>
       <dd>Walk over weapon pads · <kbd>E</kbd> open crates &amp; airdrops</dd>
       <dt>Vehicles</dt>
-      <dd><kbd>E</kbd> enter / exit cars &amp; bikes</dd>
+      <dd><kbd>E</kbd> enter / exit · <kbd>W A S D</kbd> drive · <kbd>A</kbd>/<kbd>D</kbd> steer</dd>
+      <dt>Respawn</dt>
+      <dd>Local match: <kbd>R</kbd> or click <b>RESPAWN</b> on the death overlay</dd>
       <dt>Storm</dt>
       <dd>Stay inside the blue safe zone — damage ramps each phase</dd>
       <dt>Win</dt>

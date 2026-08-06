@@ -26,7 +26,7 @@
   justify-content: flex-start;
   padding: 20px 14px 48px;
   padding-left: max(14px, env(safe-area-inset-left));
-  padding-right: max(14px, env(safe-area-inset-right));
+  padding-right: max(14px, calc(300px + env(safe-area-inset-right)));
   padding-bottom: max(48px, env(safe-area-inset-bottom));
   color: #eef3f8;
   font-family: 'Exo 2', 'Segoe UI', sans-serif;
@@ -80,14 +80,20 @@
 }
 
 .lobby-instructions {
+  position: fixed;
+  right: max(12px, env(safe-area-inset-right));
+  top: max(12px, env(safe-area-inset-top));
+  width: min(280px, calc(100vw - 24px));
+  max-height: calc(100vh - 24px);
+  overflow-y: auto;
+  z-index: 10001;
   background: var(--lobby-panel);
   padding: 14px 16px;
   border-radius: var(--lobby-radius);
   font-size: 0.8rem;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
   backdrop-filter: blur(8px);
-  width: 100%;
 }
 
 .lobby-instructions-list {

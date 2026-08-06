@@ -467,7 +467,7 @@ describe('local respawn', () => {
     runFor(sim, 9);
     const player = sim.units.get('player')!;
     const spawn = player.spawnPos.clone();
-    sim.applyDamage('bot_1', 'player', 200, 'shot');
+    sim.applyDamage('zone', 'player', 200, 'zone');
     expect(player.alive).toBe(false);
     expect(sim.match.players.player.alive).toBe(false);
 

@@ -51,7 +51,7 @@ export function createHUD(): {
       ${['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'].map((d) => `<span data-dir="${d}" style="color:#889;min-width:15px;text-align:center;">${d}</span>`).join('')}
     </div>
     <div id="hud-damage-numbers" style="position:absolute;inset:0;overflow:hidden;pointer-events:none;"></div>
-    <button id="hud-respawn" type="button" style="display:none;position:absolute;bottom:120px;left:50%;transform:translateX(-50%);pointer-events:auto;padding:14px 32px;font-size:16px;font-weight:bold;background:linear-gradient(180deg,#5ad4ff,#1a9fd0);color:#041018;border:none;border-radius:8px;cursor:pointer;box-shadow:0 8px 24px rgba(62,200,255,0.35);letter-spacing:0.06em;">RESPAWN</button>
+    <button id="hud-respawn" type="button" style="display:none;position:absolute;bottom:120px;left:50%;transform:translateX(-50%);pointer-events:auto;padding:14px 32px;font-size:16px;font-weight:bold;background:linear-gradient(180deg,#5ad4ff,#1a9fd0);color:#041018;border:none;border-radius:8px;cursor:pointer;box-shadow:0 8px 24px rgba(62,200,255,0.35);letter-spacing:0.06em;z-index:10002;">RESPAWN</button>
   `;
   document.body.appendChild(el);
 
@@ -118,6 +118,7 @@ export function createHUD(): {
         setTimeout(() => (dmg.style.opacity = '0'), 150);
       }
       respawnBtn.style.display = data.showRespawn ? 'block' : 'none';
+      respawnBtn.style.zIndex = data.showRespawn ? '10002' : '';
     },
     remove() {
       el.remove();

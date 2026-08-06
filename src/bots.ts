@@ -142,10 +142,11 @@ export function decideBotInput(ctx: BotContext): PlayerInput {
     const dist = toPoint(ctx.enemy.position);
     distToTarget = dist;
     desiredRange = p.preferredRange;
-    // Always close distance in combat — never kite backward on approach.
-    forward = dist > 1.5;
+    const yawErr = wrapAngle(targetYaw - ctx.yaw);
+    // Only walk forward when roughly facing the target — prevents running away while turning.
+    forward = dist > 1.5 && Math.abs(yawErr) < 0.75;
     backward = false;
-    if (p.strafe && dist > p.preferredRange && ctx.time - brain.lastGoalChange > 400) {
+    if (p.strafe && dist > p.preferredRange + 6 && ctx.time - brain.lastGoalChange > 400) {
       if (ctx.time - brain.strafeTimer > 1500) {
         brain.strafeTimer = ctx.time;
         brain.strafeDir = brain.strafeDir === 1 ? -1 : 1;
@@ -153,14 +154,13 @@ export function decideBotInput(ctx: BotContext): PlayerInput {
       strafeDir = brain.strafeDir;
     }
 
-    const yawErr = Math.abs(wrapAngle(targetYaw - ctx.yaw));
     const pitchErr = Math.abs(wrapAngle(targetPitch - ctx.pitch));
     const reactionDone = ctx.time - brain.lastGoalChange >= p.reactionMs;
     const cooldownDone = ctx.time - brain.lastShotTime >= p.fireIntervalMs;
     if (
       reactionDone &&
       cooldownDone &&
-      yawErr < Math.max(0.28, p.aimError * 2.2) &&
+      Math.abs(yawErr) < Math.max(0.28, p.aimError * 2.2) &&
       pitchErr < 0.4
     ) {
       if (ctx.weaponReady && Math.random() < 0.55) {

@@ -294,10 +294,10 @@ export class MatchSim {
       ['buggy', new THREE.Vector3(-edge, 0, edge)],
       ['sedan', new THREE.Vector3(edge, 0, -edge)],
       ['buggy', new THREE.Vector3(-edge, 0, -edge)],
-      ['motorbike', new THREE.Vector3(80, 0, 60)],
-      ['motorbike', new THREE.Vector3(-80, 0, 60)],
-      ['motorbike', new THREE.Vector3(60, 0, -80)],
-      ['motorbike', new THREE.Vector3(-60, 0, -80)],
+      ['motorbike', new THREE.Vector3(48, 0, 36)],
+      ['motorbike', new THREE.Vector3(-48, 0, 36)],
+      ['motorbike', new THREE.Vector3(36, 0, -48)],
+      ['motorbike', new THREE.Vector3(-36, 0, -48)],
     ];
     spots.forEach(([type, pos], i) => {
       const { state } = createVehicle(type, pos.clone());
@@ -430,7 +430,7 @@ export class MatchSim {
       const v = this.vehicles.find((vv) => vv.id === unit.inVehicleId);
       if (v) {
         const throttle = input.forward ? 1 : input.backward ? -1 : 0;
-        const steer = input.left ? -1 : input.right ? 1 : 0;
+        const steer = input.left ? 1 : input.right ? -1 : 0;
         updateVehicle(v.state, throttle, steer, dt, GROUND_Y);
         bundle.position.copy(v.state.position);
         bundle.setFacing(v.state.rotation);

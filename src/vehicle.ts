@@ -104,10 +104,13 @@ export function updateVehicle(
     if (Math.abs(vehicle.speed) < 0.1) vehicle.speed = 0;
   }
 
-  vehicle.rotation += steer * def.turnSpeed * dt * (vehicle.speed / def.maxSpeed);
+  const speedSign = vehicle.speed === 0 ? 1 : Math.sign(vehicle.speed);
+  vehicle.rotation +=
+    steer * def.turnSpeed * dt * (Math.abs(vehicle.speed) / def.maxSpeed) * speedSign;
 
-  vehicle.position.x += Math.sin(vehicle.rotation) * vehicle.speed * dt;
-  vehicle.position.z += Math.cos(vehicle.rotation) * vehicle.speed * dt;
+  // Match player yaw convention: rotation 0 faces -Z (see player.ts forwardVec).
+  vehicle.position.x -= Math.sin(vehicle.rotation) * vehicle.speed * dt;
+  vehicle.position.z -= Math.cos(vehicle.rotation) * vehicle.speed * dt;
   vehicle.position.y = groundY + 0.5;
 }
 
@@ -125,8 +128,8 @@ export function riderWorldPose(
   vehicleRotation: number
 ): { position: THREE.Vector3; yaw: number } {
   const seat = seatOffsetForVehicle(type);
-  const forward = new THREE.Vector3(Math.sin(vehicleRotation), 0, Math.cos(vehicleRotation));
-  const right = new THREE.Vector3(Math.cos(vehicleRotation), 0, -Math.sin(vehicleRotation));
+  const forward = new THREE.Vector3(-Math.sin(vehicleRotation), 0, -Math.cos(vehicleRotation));
+  const right = new THREE.Vector3(-Math.cos(vehicleRotation), 0, Math.sin(vehicleRotation));
   const position = vehiclePos
     .clone()
     .add(right.multiplyScalar(seat.x))
