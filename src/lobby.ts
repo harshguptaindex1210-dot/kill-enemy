@@ -109,6 +109,8 @@ export function showLobby(
 
   const overlay = document.createElement('div');
   overlay.id = 'lobby-overlay';
+  // Essential positioning if the CSS chunk is slow/unavailable (INV-L failure degrade).
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:9998;overflow:auto;';
 
   const select = (id: string, opts: [string, string][], cur: string) =>
     `<select id="${id}">${opts.map(([v, l]) => `<option value="${v}"${v === cur ? ' selected' : ''}>${l}</option>`).join('')}</select>`;

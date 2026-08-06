@@ -1,8 +1,14 @@
 # 46 — Responsive lobby layout (phone + laptop)
 
-**Status:** Debugger Ready  
+**Status:** Review Ready  
 **Blocked by:** None — can start immediately  
 **Spec:** `CONTEXT/docs/prd/RESPONSIVE-LOBBY.md`
+
+## Debugger follow-ups (named for reviewer)
+
+- INV-L1/L2 viewport geometry is proven in **#47**, not this ticket.
+- Personalized `.claude/agents/debugger-*.md` was not persisted this run (local-tracker harden in coordinator session).
+
 
 ## What to build
 

@@ -86,10 +86,45 @@ describe('lobby responsive layout (#46)', () => {
     expect(css).toMatch(/\.lobby-shop-grid/);
     expect(css).toMatch(/@media\s*\(\s*min-width:\s*1024px\s*\)/);
     expect(css).toMatch(/\.lobby-panels/);
-    // Laptop keeps a multi-column panels row (not permanent single stack).
     const laptopBlock = css.split(/@media\s*\(\s*min-width:\s*1024px\s*\)/)[1] ?? '';
     expect(laptopBlock).toMatch(
       /lobby-panels[^}]*flex-direction:\s*row|lobby-panels[^}]*grid-template-columns/s
     );
+  });
+
+  it('replaces a previous overlay instead of stacking duplicates', () => {
+    const stats = { level: 1, xp: 0, wins: 0, kills: 0, matches: 0 };
+    showLobby(stats, defaultSettings(), defaultProfile(), callbacks());
+    showLobby(stats, defaultSettings(), defaultProfile(), callbacks());
+    expect(document.querySelectorAll('#lobby-overlay').length).toBe(1);
+  });
+
+  it('escapes queue and shop messages against markup breakout', () => {
+    showLobby(
+      { level: 1, xp: 0, wins: 0, kills: 0, matches: 0 },
+      defaultSettings(),
+      defaultProfile(),
+      callbacks(),
+      { history: [], leaderboard: [] },
+      { active: false, message: '"><img src=x onerror=alert(1)>' },
+      '"><script>alert(1)</script>'
+    );
+    expect(document.querySelector('#lobby-overlay img')).toBeNull();
+    expect(document.querySelector('#lobby-overlay script')).toBeNull();
+    expect(document.querySelector('.lobby-queue-msg')).toBeTruthy();
+    expect(document.getElementById('shop-msg')).toBeTruthy();
+  });
+
+  it('keeps essential overlay positioning even before stylesheet rules apply', () => {
+    showLobby(
+      { level: 1, xp: 0, wins: 0, kills: 0, matches: 0 },
+      defaultSettings(),
+      defaultProfile(),
+      callbacks()
+    );
+    const overlay = document.getElementById('lobby-overlay')!;
+    expect(overlay.style.position).toBe('fixed');
+    expect(['0', '0px']).toContain(overlay.style.inset);
+    expect(overlay.style.zIndex).toBe('9998');
   });
 });
