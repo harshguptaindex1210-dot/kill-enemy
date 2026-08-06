@@ -88,10 +88,13 @@
   font-size: clamp(1.65rem, 7vw, 3rem);
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: #f4fbff;
+  color: #c4121a;
   font-weight: 800;
   line-height: 1.1;
-  text-shadow: 0 0 28px rgba(62, 200, 255, 0.35);
+  text-shadow:
+    0 0 12px rgba(160, 0, 0, 0.85),
+    0 0 28px rgba(220, 20, 30, 0.55),
+    0 2px 0 #4a0508;
 }
 
 .lobby-hero h1::after {
@@ -101,7 +104,7 @@
   height: 3px;
   margin: 12px auto 0;
   border-radius: 2px;
-  background: linear-gradient(90deg, transparent, var(--lobby-accent), transparent);
+  background: linear-gradient(90deg, transparent, #c4121a, #8b0000, #c4121a, transparent);
 }
 
 .lobby-hero .lobby-tagline {
