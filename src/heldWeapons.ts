@@ -63,7 +63,8 @@ export function resolveHeldKind(opts: {
   return 'none';
 }
 
-export function syncHeldWeaponKit(kit: HeldWeaponKit, kind: HeldKind): void {
+export function syncHeldWeaponKit(kit: HeldWeaponKit | undefined | null, kind: HeldKind): void {
+  if (!kit) return;
   kit.rifle.visible = kind === 'rifle';
   kit.pistol.visible = kind === 'pistol';
   kit.grenade.visible = kind === 'grenade';

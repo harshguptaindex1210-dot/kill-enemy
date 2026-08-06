@@ -48,6 +48,11 @@ describe('held weapons', () => {
     syncHeldWeaponKit(kit, 'none');
     expect(kit.group.visible).toBe(false);
   });
+
+  it('INV-W2: handles undefined or null kit gracefully without throwing', () => {
+    expect(() => syncHeldWeaponKit(undefined, 'rifle')).not.toThrow();
+    expect(() => syncHeldWeaponKit(null, 'pistol')).not.toThrow();
+  });
 });
 
 describe('weapon pacing', () => {

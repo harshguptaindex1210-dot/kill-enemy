@@ -65,7 +65,7 @@ interface UnitRig {
   group: THREE.Group;
   anim: RobotAnimState;
   dead: boolean;
-  held: HeldWeaponKit;
+  held?: HeldWeaponKit;
 }
 
 /** Local BR is always you + 9 bots = 10 players. */
@@ -309,24 +309,23 @@ export class MatchGame {
       mark.name = 'teamMark';
       model.group.add(mark);
 
-      const held = createHeldWeaponKit(
-        unit.isBot
-          ? unit.color
-          : {
-              rifle: cos?.rifleColor ?? 0xffcc33,
-              pistol: cos?.pistolColor ?? 0xff8844,
-            }
-      );
-      attachHeldWeaponKit(model.group, held);
-      syncHeldWeaponKit(
-        held,
-        resolveHeldKind({
-          alive: unit.alive,
-          inVehicle: unit.inVehicleId !== null,
-          meleeMode: unit.meleeMode,
-          weaponType: unit.weapons[unit.inventory.weaponIndex]?.def.type ?? null,
-        })
-      );
+      let held: HeldWeaponKit | undefined;
+      if (!unit.isBot && unit.id === this.humanId) {
+        held = createHeldWeaponKit({
+          rifle: cos?.rifleColor ?? 0xffcc33,
+          pistol: cos?.pistolColor ?? 0xff8844,
+        });
+        attachHeldWeaponKit(model.group, held);
+        syncHeldWeaponKit(
+          held,
+          resolveHeldKind({
+            alive: unit.alive,
+            inVehicle: unit.inVehicleId !== null,
+            meleeMode: unit.meleeMode,
+            weaponType: unit.weapons[unit.inventory.weaponIndex]?.def.type ?? null,
+          })
+        );
+      }
 
       model.group.position.copy(unit.player.position);
       model.group.position.y = unit.player.position.y + ROBOT_GROUP_Y_OFFSET;
@@ -730,20 +729,24 @@ export class MatchGame {
                   : 'idle';
         transitionAnim(rig.anim, anim);
       }
-      syncHeldWeaponKit(
-        rig.held,
-        resolveHeldKind({
-          alive: true,
-          inVehicle: unit.inVehicleId !== null,
-          meleeMode: unit.meleeMode,
-          weaponType: unit.weapons[unit.inventory.weaponIndex]?.def.type ?? null,
-        })
-      );
+      if (rig.held) {
+        syncHeldWeaponKit(
+          rig.held,
+          resolveHeldKind({
+            alive: true,
+            inVehicle: unit.inVehicleId !== null,
+            meleeMode: unit.meleeMode,
+            weaponType: unit.weapons[unit.inventory.weaponIndex]?.def.type ?? null,
+          })
+        );
+      }
       updateRobotAnim(rig.anim, dt);
     } else if (!rig.dead) {
       rig.dead = true;
       rig.group.rotation.x = -Math.PI / 2;
-      syncHeldWeaponKit(rig.held, 'none');
+      if (rig.held) {
+        syncHeldWeaponKit(rig.held, 'none');
+      }
       const mark = rig.group.getObjectByName('teamMark') as THREE.Mesh | undefined;
       if (mark) {
         const mat = mark.material as THREE.MeshStandardMaterial;
