@@ -49,6 +49,8 @@ export interface MatchCosmetics {
   chassisId?: ChassisId;
   rifleColor: number;
   pistolColor: number;
+  sedanColor?: number;
+  buggyColor?: number;
   displayName?: string;
 }
 
@@ -393,8 +395,19 @@ export class MatchGame {
   }
 
   private buildVehicles() {
+    const cos = this.opts.cosmetics;
     for (const v of this.sim.vehicles) {
-      const { mesh } = createVehicle(v.type, v.state.position);
+      const bodyColor =
+        v.type === 'sedan'
+          ? cos?.sedanColor
+          : v.type === 'buggy'
+            ? cos?.buggyColor
+            : undefined;
+      const { mesh } = createVehicle(
+        v.type,
+        v.state.position,
+        bodyColor !== undefined ? { bodyColor } : undefined
+      );
       this.scene.add(mesh);
       this.vehicleMeshes.set(v.id, mesh);
     }

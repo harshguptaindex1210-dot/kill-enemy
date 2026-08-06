@@ -22,7 +22,7 @@ import {
   removeFriend,
   type PlayerProfile,
 } from './profile';
-import { chassisById, gunColorFor } from './cosmetics';
+import { carColorFor, chassisById, gunColorFor } from './cosmetics';
 import type { ChassisId } from './cosmetics';
 import type { LobbySceneHandle } from './lobbyScene';
 import type { OnlineMatchGame } from './net/onlineGame';
@@ -75,6 +75,8 @@ function matchCosmetics(profile: PlayerProfile) {
     chassisId: profile.chassisId,
     rifleColor: gunColorFor('rifle', profile.equippedRifleSkin),
     pistolColor: gunColorFor('pistol', profile.equippedPistolSkin),
+    sedanColor: carColorFor('sedan', profile.equippedSedanSkin),
+    buggyColor: carColorFor('buggy', profile.equippedBuggySkin),
     displayName: profile.name,
   };
 }

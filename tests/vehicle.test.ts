@@ -2,12 +2,24 @@ import { describe, it, expect } from 'vitest';
 import * as THREE from 'three';
 import { createVehicle, updateVehicle, findNearbyVehicle } from '../src/vehicle';
 
+function bodyMeshColor(mesh: THREE.Group): number {
+  const body = mesh.children[0] as THREE.Mesh;
+  return (body.material as THREE.MeshStandardMaterial).color.getHex();
+}
+
 describe('vehicles', () => {
   it('creates sedan with full health', () => {
     const v = createVehicle('sedan', new THREE.Vector3(0, 0, 0));
     expect(v.state.health).toBe(200);
     expect(v.state.type).toBe('sedan');
     expect(v.state.occupied).toBe(false);
+  });
+
+  it('applies client cosmetic body color when provided', () => {
+    const sedan = createVehicle('sedan', new THREE.Vector3(0, 0, 0), { bodyColor: 0xe63946 });
+    const buggy = createVehicle('buggy', new THREE.Vector3(0, 0, 0), { bodyColor: 0x219ebc });
+    expect(bodyMeshColor(sedan.mesh)).toBe(0xe63946);
+    expect(bodyMeshColor(buggy.mesh)).toBe(0x219ebc);
   });
 
   it('creates buggy with lower health', () => {

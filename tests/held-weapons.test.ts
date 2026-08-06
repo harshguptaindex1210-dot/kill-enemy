@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import * as THREE from 'three';
 import { createHeldWeaponKit, resolveHeldKind, syncHeldWeaponKit } from '../src/heldWeapons';
 import { WEAPON_DEFS } from '../src/weapons';
 
@@ -10,6 +11,14 @@ describe('held weapons', () => {
     expect(kit.grenade.name).toBe('held-grenade');
     expect(kit.melee.name).toBe('held-melee');
     expect(kit.rifle.children.length).toBeGreaterThan(kit.pistol.children.length - 1);
+  });
+
+  it('tints rifle and pistol body materials from accent colors', () => {
+    const kit = createHeldWeaponKit({ rifle: 0xff5522, pistol: 0xaa66ff });
+    const rifleBody = kit.rifle.children[0] as THREE.Mesh;
+    const pistolBody = kit.pistol.children[0] as THREE.Mesh;
+    expect((rifleBody.material as THREE.MeshStandardMaterial).color.getHex()).toBe(0xff5522);
+    expect((pistolBody.material as THREE.MeshStandardMaterial).color.getHex()).toBe(0xaa66ff);
   });
 
   it('shows rifle when alive with rifle slot', () => {

@@ -17,9 +17,15 @@ const VEHICLE_DEFS = {
   motorbike: { maxSpeed: 50, accel: 25, brake: 25, turnSpeed: 2.5, health: 100 },
 };
 
+export interface CreateVehicleOptions {
+  /** Client-only cosmetic tint for sedan/buggy body (local match view). */
+  bodyColor?: number;
+}
+
 export function createVehicle(
   type: VehicleType,
-  pos: THREE.Vector3
+  pos: THREE.Vector3,
+  opts?: CreateVehicleOptions
 ): { state: VehicleState; mesh: THREE.Group } {
   const def = VEHICLE_DEFS[type];
   const state: VehicleState = {
@@ -38,11 +44,12 @@ export function createVehicle(
   const buggyColors = [0x80b918, 0xffb703, 0xfb8500, 0x219ebc];
   const bikeColors = [0x3a86ef, 0xff006e, 0x8338ec, 0xffbe0b];
   const bodyColor =
-    type === 'sedan'
+    opts?.bodyColor ??
+    (type === 'sedan'
       ? sedanColors[Math.abs(Math.floor(pos.x)) % sedanColors.length]!
       : type === 'buggy'
         ? buggyColors[Math.abs(Math.floor(pos.z)) % buggyColors.length]!
-        : bikeColors[Math.abs(Math.floor(pos.x + pos.z)) % bikeColors.length]!;
+        : bikeColors[Math.abs(Math.floor(pos.x + pos.z)) % bikeColors.length]!);
 
   const bodyMat = new THREE.MeshStandardMaterial({
     color: bodyColor,
