@@ -115,7 +115,7 @@ export function addKillFeedEntry(text: string) {
   if (!feed) return;
   const entry = document.createElement('div');
   entry.style.cssText =
-    'background:rgba(0,0,0,0.6);padding:3px 10px;border-radius:3px;color:#fff;font-size:12px;';
+    'background:rgba(0,0,0,0.6);padding:3px 10px;border-radius:3px;color:#c4121a;font-size:12px;font-weight:bold;text-shadow:0 0 4px #6b0505;';
   entry.textContent = text;
   feed.appendChild(entry);
   setTimeout(() => entry.remove(), 4000);
