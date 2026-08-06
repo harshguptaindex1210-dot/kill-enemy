@@ -190,7 +190,7 @@ export function showLobby(
   overlay.innerHTML = `
     <div class="lobby-shell">
       <header id="lobby-hero" class="lobby-hero">
-        <h1>ROBOT ARENA</h1>
+        <h1>KILL ENEMY</h1>
         <p class="lobby-tagline">10-player battle royale · robot apocalypse · drop in and fight</p>
         <div class="lobby-play">
           <button id="btn-online" class="lobby-btn lobby-btn-primary" type="button">${queue.active ? 'Searching for match...' : 'Play Online'}</button>

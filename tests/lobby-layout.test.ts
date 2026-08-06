@@ -39,7 +39,7 @@ describe('lobby responsive layout (#46)', () => {
 
     const hero = document.getElementById('lobby-hero');
     expect(hero).toBeTruthy();
-    expect(hero!.querySelector('h1')?.textContent).toMatch(/ROBOT ARENA/i);
+    expect(hero!.querySelector('h1')?.textContent).toMatch(/KILL ENEMY/i);
     expect(hero!.querySelector('#btn-online')).toBeTruthy();
     expect(hero!.querySelector('#btn-local')).toBeTruthy();
 
