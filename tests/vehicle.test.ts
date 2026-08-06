@@ -33,7 +33,16 @@ describe('vehicles', () => {
     v.state.speed = 20;
     const rotBefore = v.state.rotation;
     updateVehicle(v.state, 1, -1, 1 / 60, 0);
-    expect(v.state.rotation).toBeGreaterThan(rotBefore);
+    expect(v.state.rotation).toBeLessThan(rotBefore);
+  });
+
+  it('turns toward world left when steering left at speed', () => {
+    const v = createVehicle('sedan', new THREE.Vector3(0, 0.5, 0));
+    v.state.speed = 30;
+    for (let i = 0; i < 40; i++) {
+      updateVehicle(v.state, 1, -1, 1 / 60, 0);
+    }
+    expect(v.state.position.x).toBeLessThan(0);
   });
 
   it('finds nearby unoccupied vehicle', () => {

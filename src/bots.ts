@@ -145,7 +145,7 @@ export function decideBotInput(ctx: BotContext): PlayerInput {
     // Always close distance in combat — never kite backward on approach.
     forward = dist > 1.5;
     backward = false;
-    if (p.strafe && ctx.time - brain.lastGoalChange > 400) {
+    if (p.strafe && dist > p.preferredRange && ctx.time - brain.lastGoalChange > 400) {
       if (ctx.time - brain.strafeTimer > 1500) {
         brain.strafeTimer = ctx.time;
         brain.strafeDir = brain.strafeDir === 1 ? -1 : 1;

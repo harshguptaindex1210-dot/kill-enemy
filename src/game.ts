@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { createScene, type QualityPreset } from './scene';
-import { POI_RADIUS } from './constants';
+import { POI_RADIUS, MAP_SIZE } from './constants';
 import { MatchSim, type SimEvent, type SimUnit } from './gameplay';
 import { ZoneSystem } from './zone';
 import { createInputManager, type InputManager } from './input';
@@ -90,6 +90,13 @@ export function summarizeMatch(sim: MatchSim): MatchSummary {
   };
 }
 
+/** Advance spectate target; when current is dead/missing, picks first alive id. */
+export function resolveSpectateTarget(currentId: string | null, aliveIds: string[]): string | null {
+  if (aliveIds.length === 0) return null;
+  const idx = aliveIds.findIndex((id) => id === currentId);
+  return aliveIds[(idx + 1) % aliveIds.length];
+}
+
 export function computeInteractionPrompt(sim: MatchSim, unitId: string): string {
   const unit = sim.units.get(unitId);
   if (!unit || !unit.alive) return '';
@@ -147,6 +154,9 @@ export class MatchGame {
   private beaconMesh: THREE.Group | null = null;
   private projMeshes = new Map<number, THREE.Mesh>();
   private explosionFx: { light: THREE.PointLight; mesh: THREE.Mesh; until: number }[] = [];
+  private muzzleFlashPool: { light: THREE.PointLight; tracer: THREE.Mesh }[] = [];
+  private muzzleFlashGeo = new THREE.SphereGeometry(0.08, 4, 4);
+  private muzzleFlashMat = new THREE.MeshBasicMaterial({ color: 0xffff00 });
 
   private bannerEl: HTMLElement;
   private crosshairEl: HTMLElement;
@@ -172,6 +182,7 @@ export class MatchGame {
     if (e.code === 'KeyH') this.healMedPressed = true;
     if (e.code === 'KeyB') this.healBandPressed = true;
     if (e.code === 'KeyF') this.spectatePressed = true;
+    if (e.code === 'KeyR' && this.dead) this.respawnHuman();
     if (e.code === 'KeyM') {
       this.audio.setMuted(!this.audio.isMuted());
       this.banner(this.audio.isMuted() ? '🔇 SOUND MUTED' : '🔊 SOUND ON', 1200);
@@ -218,6 +229,7 @@ export class MatchGame {
     this.zoneSys = new ZoneSystem(scene);
     this.input = createInputManager(c);
     this.hud = createHUD();
+    this.hud.onRespawn?.(() => this.respawnHuman());
     this.minimap = createMinimap();
 
     this.buildRigs();
@@ -282,6 +294,12 @@ export class MatchGame {
       this.scene.remove(fx.light);
       this.scene.remove(fx.mesh);
     }
+    for (const fx of this.muzzleFlashPool) {
+      this.scene.remove(fx.light);
+      this.scene.remove(fx.tracer);
+    }
+    this.muzzleFlashGeo.dispose();
+    this.muzzleFlashMat.dispose();
     this.renderer.dispose();
     this.input.dispose();
   }
@@ -337,23 +355,30 @@ export class MatchGame {
     }
   }
 
+  private lootColor(type: string): number {
+    return type === 'weapon'
+      ? 0xff4444
+      : type === 'ammo'
+        ? 0xffaa00
+        : type === 'armor'
+          ? 0x4444ff
+          : 0x44ff44;
+  }
+
+  private createLootMesh(spawn: { position: THREE.Vector3; loot: { type: string } }): THREE.Mesh {
+    const color = this.lootColor(spawn.loot.type);
+    const mesh = new THREE.Mesh(
+      new THREE.BoxGeometry(0.7, 0.45, 0.7),
+      new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.7 })
+    );
+    mesh.position.copy(spawn.position);
+    this.scene.add(mesh);
+    return mesh;
+  }
+
   private buildLoot() {
     for (const spawn of this.sim.loot) {
-      const color =
-        spawn.loot.type === 'weapon'
-          ? 0xff4444
-          : spawn.loot.type === 'ammo'
-            ? 0xffaa00
-            : spawn.loot.type === 'armor'
-              ? 0x4444ff
-              : 0x44ff44;
-      const mesh = new THREE.Mesh(
-        new THREE.BoxGeometry(0.7, 0.45, 0.7),
-        new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.7 })
-      );
-      mesh.position.copy(spawn.position);
-      this.scene.add(mesh);
-      this.lootMeshes.set(spawn.id, mesh);
+      this.lootMeshes.set(spawn.id, this.createLootMesh(spawn));
     }
   }
 
@@ -508,14 +533,26 @@ export class MatchGame {
     }
   }
 
+  private aliveSpectateIds(): string[] {
+    return this.sim.aliveUnits.filter((u) => u.id !== this.humanId).map((u) => u.id);
+  }
+
   private pickSpectateTarget() {
-    const alive = this.sim.aliveUnits.filter((u) => u.id !== this.humanId);
-    if (alive.length === 0) return;
-    const current = this.spectateId;
-    const idx = alive.findIndex((u) => u.id === current);
-    const next = alive[(idx + 1) % alive.length];
-    this.spectateId = next.id;
+    const aliveIds = this.aliveSpectateIds();
+    if (aliveIds.length === 0) {
+      this.spectateId = null;
+      this.updateSpectateOverlay();
+      return;
+    }
+    this.spectateId = resolveSpectateTarget(this.spectateId, aliveIds);
     this.updateSpectateOverlay();
+  }
+
+  private ensureSpectateTarget() {
+    if (!this.dead) return;
+    const target = this.spectateId ? this.sim.units.get(this.spectateId) : null;
+    if (target?.alive) return;
+    this.pickSpectateTarget();
   }
 
   private showSpectateOverlay() {
@@ -525,14 +562,29 @@ export class MatchGame {
     const overlay = document.createElement('div');
     overlay.id = 'spectate-overlay';
     overlay.style.cssText =
-      'position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;flex-direction:column;align-items:center;justify-content:flex-start;z-index:9998;font-family:sans-serif;color:#fff;pointer-events:none;padding-top:60px;';
+      'position:fixed;inset:0;background:rgba(0,0,0,0.55);display:flex;flex-direction:column;align-items:center;justify-content:flex-start;z-index:9998;font-family:sans-serif;color:#fff;pointer-events:none;padding-top:48px;';
     overlay.innerHTML = `
       <div id="spectate-info" style="background:rgba(0,0,0,0.6);padding:12px 24px;border-radius:8px;font-size:16px;text-align:center;">
-        <div id="spectate-placement" style="color:#fa0;font-size:20px;font-weight:bold;"></div>
-        <div id="spectate-target" style="color:#8af;margin-top:8px;"></div>
+        <div style="color:#f66;font-size:22px;font-weight:bold;margin-bottom:8px;">ELIMINATED</div>
+        <div id="spectate-placement" style="color:#fa0;font-size:18px;font-weight:bold;"></div>
+        <div id="spectate-target" style="color:#8af;margin-top:8px;font-size:14px;"></div>
       </div>
+      <button id="btn-respawn" type="button" style="pointer-events:auto;margin-top:20px;padding:14px 36px;font-size:16px;font-weight:bold;background:linear-gradient(180deg,#5ad4ff,#1a9fd0);color:#041018;border:none;border-radius:8px;cursor:pointer;box-shadow:0 8px 24px rgba(62,200,255,0.35);letter-spacing:0.06em;">RESPAWN</button>
+      <p style="margin-top:12px;font-size:12px;color:#889;pointer-events:none;">Or press <kbd style="padding:2px 6px;background:rgba(255,255,255,0.1);border-radius:4px;">R</kbd> to respawn · <kbd style="padding:2px 6px;background:rgba(255,255,255,0.1);border-radius:4px;">F</kbd> spectate</p>
     `;
     document.body.appendChild(overlay);
+    document.getElementById('btn-respawn')!.addEventListener('click', () => this.respawnHuman());
+  }
+
+  private respawnHuman() {
+    if (!this.dead) return;
+    if (!this.sim.respawnUnit(this.humanId)) return;
+    this.dead = false;
+    this.spectateId = null;
+    document.getElementById('spectate-overlay')?.remove();
+    const rig = this.rigs.get(this.humanId);
+    if (rig) rig.dead = false;
+    this.opts.canvas.requestPointerLock();
   }
 
   private updateSpectateOverlay() {
@@ -625,18 +677,18 @@ export class MatchGame {
     ).normalize();
     const muzzle = origin.addScaledVector(dir, 1.1);
 
-    const light = new THREE.PointLight(0xffff44, 4, 16);
-    light.position.copy(muzzle);
-    this.scene.add(light);
-    const tracer = new THREE.Mesh(
-      new THREE.SphereGeometry(0.08, 4, 4),
-      new THREE.MeshBasicMaterial({ color: 0xffff00 })
-    );
-    tracer.position.copy(muzzle);
-    this.scene.add(tracer);
+    const fx = this.muzzleFlashPool.pop() ?? {
+      light: new THREE.PointLight(0xffff44, 4, 16),
+      tracer: new THREE.Mesh(this.muzzleFlashGeo, this.muzzleFlashMat),
+    };
+    fx.light.position.copy(muzzle);
+    fx.tracer.position.copy(muzzle);
+    this.scene.add(fx.light);
+    this.scene.add(fx.tracer);
     setTimeout(() => {
-      this.scene.remove(light);
-      this.scene.remove(tracer);
+      this.scene.remove(fx.light);
+      this.scene.remove(fx.tracer);
+      this.muzzleFlashPool.push(fx);
     }, 80);
   }
 
@@ -676,11 +728,15 @@ export class MatchGame {
     for (const unit of this.sim.units.values()) this.syncUnitRig(unit, dt);
 
     for (const spawn of this.sim.loot) {
-      const mesh = this.lootMeshes.get(spawn.id);
-      if (mesh) {
-        mesh.visible = !spawn.collected;
-        mesh.position.y = 0.5 + Math.sin(now * 0.002 + spawn.id) * 0.08;
+      let mesh = this.lootMeshes.get(spawn.id);
+      if (!mesh) {
+        mesh = this.createLootMesh(spawn);
+        this.lootMeshes.set(spawn.id, mesh);
       }
+      mesh.visible = !spawn.collected;
+      mesh.position.x = spawn.position.x;
+      mesh.position.z = spawn.position.z;
+      mesh.position.y = 0.5 + Math.sin(now * 0.002 + spawn.id) * 0.08;
     }
 
     for (const v of this.sim.vehicles) {
@@ -863,9 +919,14 @@ export class MatchGame {
   private updateCamera(dt: number) {
     const human = this.humanUnit();
     if (human.alive) {
+      let yaw = human.player.yaw;
+      if (human.inVehicleId !== null) {
+        const v = this.sim.vehicles.find((vv) => vv.id === human.inVehicleId);
+        if (v) yaw = v.state.rotation;
+      }
       updateCamera(
         this.camera,
-        human.player.yaw,
+        yaw,
         human.player.pitch,
         human.player.getEyeHeight(),
         human.player.cameraMode,
@@ -874,8 +935,9 @@ export class MatchGame {
       );
       return;
     }
+    this.ensureSpectateTarget();
     const target = this.spectateId ? this.sim.units.get(this.spectateId) : null;
-    const t = target && target.alive ? target.player.position : new THREE.Vector3(0, 10, 0);
+    const t = target?.alive ? target.player.position : new THREE.Vector3(0, 10, 0);
     const angle = this.sim.time * 0.001;
     const camPos = t.clone().add(new THREE.Vector3(Math.sin(angle) * 7, 5, Math.cos(angle) * 7));
     const lerp = 1 - Math.pow(0.01, dt);
@@ -930,6 +992,7 @@ export class MatchGame {
       skillName: skillDef ? skillDef.name : 'Skill [F]',
       skillCooldownText: skillReady ? 'READY' : `${skillCdSec}s`,
       skillReady,
+      showRespawn: this.dead && this.sim.match.phase === 'playing',
     };
     this.hud.update(data);
   }
@@ -979,6 +1042,7 @@ export class MatchGame {
         claimed: a.claimed || a.despawned,
       })),
       size: this.settings.minimapSize === 'large' ? 240 : 160,
+      mapExtent: MAP_SIZE,
       fullscreen: this.minimapFullscreen,
     };
     this.minimap.update(data);

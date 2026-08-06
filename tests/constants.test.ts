@@ -9,6 +9,7 @@ describe('map constants (#50)', () => {
 
   it('scales POIs and zone phases with the map', () => {
     expect(POI_RADIUS).toBeLessThan(MAP_BOUND);
+    expect(POI_RADIUS).toBe(90);
     expect(ZONE_PHASE_RADII[0]).toBeLessThanOrEqual(MAP_BOUND);
     expect(ZONE_PHASE_RADII.at(-1)).toBeGreaterThan(0);
   });

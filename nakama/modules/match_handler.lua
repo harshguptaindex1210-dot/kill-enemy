@@ -310,7 +310,7 @@ local function bot_input(state, p)
     local dx = tx - p.x
     local dist = math.max(dist2d(p.x, p.z, tx, tz), 0.1)
     if dist > 14 then input.forward = true end
-    if dist < 8 then input.backward = true end
+    -- Always push forward in combat; never kite backward when player closes in.
     -- turn toward target
     local target_yaw = math.atan2(-dx, -dz)
     input.mouseX = -(wrap_angle(target_yaw - p.yaw)) / 0.002

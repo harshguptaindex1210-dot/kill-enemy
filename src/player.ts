@@ -34,6 +34,7 @@ export interface PlayerBundle {
   pitch: number;
   update: (input: PlayerInput, dt: number, groundY: number, speedMult?: number) => void;
   getEyeHeight: () => number;
+  setFacing: (yaw: number, pitch?: number) => void;
 }
 
 const STAND_HEIGHT = 1.8;
@@ -162,6 +163,13 @@ export function createPlayer(startPos: THREE.Vector3 = new THREE.Vector3(0, 0.9,
 
   bundle.getEyeHeight = () => {
     return bundle.position.y + (pState === 'crouch' ? CROUCH_HEIGHT - 0.2 : STAND_HEIGHT - 0.2);
+  };
+
+  bundle.setFacing = (yaw: number, pitch?: number) => {
+    pYaw = yaw;
+    if (pitch !== undefined) {
+      pPitch = Math.max(-MAX_PITCH, Math.min(MAX_PITCH, pitch));
+    }
   };
 
   return bundle;

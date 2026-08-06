@@ -138,11 +138,25 @@ describe('bot AI', () => {
     expect(reloaded).toBe(true);
   });
 
+  it('does not strafe when enemy is within preferred range', () => {
+    const c = ctx({
+      brain: createBotBrain('hard'),
+      time: 10000,
+      enemy: { position: new THREE.Vector3(0, 0, -8) },
+    });
+    c.time = 10000;
+    const input = decideBotInput(c);
+    expect(input.forward).toBe(true);
+    expect(input.backward).toBe(false);
+    expect(input.left).toBe(false);
+    expect(input.right).toBe(false);
+  });
+
   it('strafe changes direction over time', () => {
     const c = ctx({
       brain: createBotBrain('hard'),
       time: 10000,
-      enemy: { position: new THREE.Vector3(0, 0, -10) },
+      enemy: { position: new THREE.Vector3(0, 0, -25) },
     });
     c.time = 10000;
     let sawLeft = false;

@@ -212,10 +212,13 @@ describe('MatchSim', () => {
     sim.startMatch();
     runFor(sim, 9);
     const player = sim.units.get('player')!;
+    const bot = sim.units.get('bot_1')!;
+    player.player.position.set(0, 0.9, 0);
+    bot.player.position.set(150, 0.9, 150);
     player.health = 50;
     sim.useHealing('player', 'bandage');
     expect(player.health).toBe(50);
-    runFor(sim, 3);
+    runFor(sim, 3, fullInput());
     expect(player.health).toBe(65);
   });
 
@@ -454,5 +457,47 @@ describe('zone gameplay (#28)', () => {
     sim.zone.phaseTime = sim.zone.phases[0].duration - 4;
     sim.update(1 / 20);
     expect(sim.events.some((e) => e.type === 'zone-incoming')).toBe(true);
+  });
+});
+
+describe('local respawn', () => {
+  it('revives a dead player at spawn with full health', () => {
+    const sim = makeSim(2);
+    sim.startMatch();
+    runFor(sim, 9);
+    const player = sim.units.get('player')!;
+    const spawn = player.spawnPos.clone();
+    sim.applyDamage('bot_1', 'player', 200, 'shot');
+    expect(player.alive).toBe(false);
+    expect(sim.match.players.player.alive).toBe(false);
+
+    expect(sim.respawnUnit('player')).toBe(true);
+    expect(player.alive).toBe(true);
+    expect(player.health).toBe(100);
+    expect(sim.match.players.player.alive).toBe(true);
+    expect(player.player.position.distanceTo(spawn)).toBeLessThan(0.01);
+  });
+
+  it('does not respawn while still alive', () => {
+    const sim = makeSim(1);
+    sim.startMatch();
+    runFor(sim, 9);
+    expect(sim.respawnUnit('player')).toBe(false);
+  });
+});
+
+describe('bot engage integration', () => {
+  it('bot closes distance when player is nearby instead of fleeing', () => {
+    const sim = makeSim(1);
+    sim.startMatch();
+    runFor(sim, 9);
+    const bot = sim.units.get('bot_1')!;
+    const player = sim.units.get('player')!;
+    bot.player.position.set(0, 0.9, 0);
+    player.player.position.set(0, 0.9, -12);
+    const startDist = bot.player.position.distanceTo(player.player.position);
+    runFor(sim, 2);
+    const endDist = bot.player.position.distanceTo(player.player.position);
+    expect(endDist).toBeLessThan(startDist);
   });
 });

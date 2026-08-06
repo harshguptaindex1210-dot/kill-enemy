@@ -21,9 +21,9 @@ export function createScene(
 
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x6a9ec4);
-  scene.fog = new THREE.Fog(0x6a9ec4, 160, 420);
+  scene.fog = new THREE.Fog(0x6a9ec4, MAP_BOUND * 0.5, MAP_BOUND * 1.6);
 
-  const camera = new THREE.PerspectiveCamera(75, canvas.width / canvas.height, 0.1, 2000);
+  const camera = new THREE.PerspectiveCamera(75, canvas.width / canvas.height, 0.1, MAP_BOUND * 4);
   camera.position.set(0, 50, 100);
 
   const controls = new OrbitControls(camera, renderer.domElement);

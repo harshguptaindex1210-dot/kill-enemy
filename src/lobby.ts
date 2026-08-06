@@ -222,6 +222,7 @@ export function showLobby(
             <button id="btn-local" class="lobby-btn lobby-btn-secondary" type="button">Play Local</button>
             <button id="btn-cancel-queue" class="lobby-btn lobby-btn-danger" type="button" style="display:${queue.active ? 'inline-block' : 'none'};">Cancel</button>
           </div>
+          <p class="lobby-quick-controls" aria-label="Quick controls"><kbd>W A S D</kbd> move · Mouse aim · <kbd>LMB</kbd> shoot · <kbd>E</kbd> loot/vehicle · <kbd>G</kbd> grenade</p>
         </div>
       </header>
       ${shopMessage ? `<p id="shop-msg" class="lobby-shop-msg">${escapeHtml(shopMessage)}</p>` : ''}

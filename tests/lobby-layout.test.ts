@@ -102,11 +102,24 @@ describe('lobby responsive layout (#46)', () => {
     expect(css).toMatch(/\.lobby-instructions/);
     expect(css).toMatch(/\.lobby-hero/);
     expect(css).toMatch(/\.lobby-shop-grid/);
+    expect(css).toMatch(/@media\s*\(\s*min-width:\s*768px\s*\)/);
     expect(css).toMatch(/@media\s*\(\s*min-width:\s*900px\s*\)/);
     expect(css).toMatch(/@media\s*\(\s*min-width:\s*1024px\s*\)/);
     expect(css).toMatch(/\.lobby-panels/);
-    const desktopBlock = css.split(/@media\s*\(\s*min-width:\s*900px\s*\)/)[1] ?? '';
+    const desktopBlock = css.split(/@media\s*\(\s*min-width:\s*768px\s*\)/)[1] ?? '';
     expect(desktopBlock).toMatch(/\.lobby-instructions[^}]*position:\s*fixed/s);
+    expect(desktopBlock).toMatch(/z-index:\s*10000/);
+  });
+
+  it('shows quick controls in hero on mobile', () => {
+    showLobby(
+      { level: 1, xp: 0, wins: 0, kills: 0, matches: 0 },
+      defaultSettings(),
+      defaultProfile(),
+      callbacks()
+    );
+    expect(document.querySelector('.lobby-quick-controls')).toBeTruthy();
+    expect(document.querySelector('.lobby-quick-controls')!.textContent).toMatch(/W A S D/i);
   });
 
   it('replaces a previous overlay instead of stacking duplicates', () => {

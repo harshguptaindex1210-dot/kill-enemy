@@ -181,6 +181,25 @@
   max-width: 340px;
 }
 
+.lobby-quick-controls {
+  margin: 0;
+  font-size: 0.72rem;
+  color: var(--lobby-muted);
+  line-height: 1.5;
+  text-align: center;
+}
+
+.lobby-quick-controls kbd {
+  display: inline-block;
+  padding: 1px 5px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(0, 0, 0, 0.35);
+  font-family: inherit;
+  font-size: 0.68rem;
+  color: #eef3f8;
+}
+
 .lobby-btn {
   border: none;
   border-radius: 8px;
@@ -485,6 +504,42 @@
   }
 }
 
+@media (min-width: 768px) {
+  .lobby-overlay {
+    padding: 32px 24px 56px;
+    padding-right: max(24px, calc(300px + env(safe-area-inset-right)));
+  }
+
+  .lobby-layout {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 18px;
+    max-width: calc(var(--lobby-max) + 320px);
+  }
+
+  .lobby-shell {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .lobby-instructions {
+    position: fixed;
+    right: max(16px, env(safe-area-inset-right));
+    top: max(16px, env(safe-area-inset-top));
+    width: 280px;
+    max-height: calc(100vh - 32px);
+    overflow-y: auto;
+    z-index: 10000;
+    flex: none;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+  }
+
+  .lobby-quick-controls {
+    display: none;
+  }
+}
+
 @media (min-width: 900px) {
   .lobby-overlay {
     padding: 32px 24px 56px;
@@ -498,7 +553,7 @@
     width: 280px;
     max-height: calc(100vh - 40px);
     overflow-y: auto;
-    z-index: 3;
+    z-index: 10000;
     flex: none;
   }
 
@@ -561,10 +616,11 @@
   }
 
   .lobby-instructions {
-    position: sticky;
-    top: 24px;
-    right: auto;
+    position: fixed;
+    right: max(20px, env(safe-area-inset-right));
+    top: max(20px, env(safe-area-inset-top));
     align-self: flex-start;
     max-height: calc(100vh - 48px);
+    z-index: 10000;
   }
 }

@@ -104,7 +104,7 @@ export function updateVehicle(
     if (Math.abs(vehicle.speed) < 0.1) vehicle.speed = 0;
   }
 
-  vehicle.rotation -= steer * def.turnSpeed * dt * (vehicle.speed / def.maxSpeed);
+  vehicle.rotation += steer * def.turnSpeed * dt * (vehicle.speed / def.maxSpeed);
 
   vehicle.position.x += Math.sin(vehicle.rotation) * vehicle.speed * dt;
   vehicle.position.z += Math.cos(vehicle.rotation) * vehicle.speed * dt;
