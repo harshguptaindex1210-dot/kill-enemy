@@ -20,7 +20,9 @@ Where things live. Load `CONTEXT/CONTEXT.md` first.
 | `CONTEXT/docs/DEPLOY.md` | Mirror pointer — prefer root `DEPLOY.md` |
 | `CONTEXT/docs/prd.md` | Production-grade PRD |
 | `CONTEXT/docs/prd/HELD-WEAPONS-LAG.md` | Spec: local held weapons + mid-match lag |
-| `CONTEXT/docs/prd/tickets-held-weapons-lag.md` | Local ticket index (#44 Agent Ready, #45 Planned) |
+| `CONTEXT/docs/prd/RESPONSIVE-LOBBY.md` | Spec: phone + laptop lobby polish |
+| `CONTEXT/docs/prd/tickets-responsive-lobby.md` | Local ticket index (#46 Agent Ready, #47 Planned) |
+| `CONTEXT/docs/prd/tickets-held-weapons-lag.md` | Local ticket index (#44/#45 Planned; deferred behind #46) |
 | `CONTEXT/docs/prd/issues/` | Per-ticket bodies for local tracker |
 | `CONTEXT/handoffs/` | Per-effort handoffs (newest first) |
 

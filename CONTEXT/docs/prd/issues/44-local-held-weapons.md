@@ -1,7 +1,7 @@
 # 44 — Local held-weapon skins (rifle / pistol / nade / melee)
 
-**Status:** Agent Ready  
-**Blocked by:** None — can start immediately  
+**Status:** Planned  
+**Blocked by:** None (deferred behind responsive lobby #46 / #47 per L8)  
 **Spec:** `CONTEXT/docs/prd/HELD-WEAPONS-LAG.md`
 
 ## What to build

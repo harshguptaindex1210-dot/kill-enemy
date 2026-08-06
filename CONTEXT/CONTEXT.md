@@ -83,6 +83,8 @@ These are testable, non-negotiable constraints. Every issue that touches one mus
 | **INV-7** | Browser boot + one frame | `npm run build && npm run smoke` (`scripts/smoke.mjs`); CI `browser-smoke` job |
 | **INV-W1** | Local held mesh matches active loadout | `npm test -- tests/held-weapons.test.ts` |
 | **INV-W2** | No held meshes on bots/remotes from this effort | same test file asserts non-local rigs stay unequipped |
+| **INV-L1** | Phone lobby: Play Online in first fold; no horizontal overflow | `npm run smoke:lobby` |
+| **INV-L2** | Laptop lobby: mounts; no horizontal overflow; multi-column preserved | `npm run smoke:lobby` |
 
 Full gate (clean checkout): `npm ci && npm run gate`
 
@@ -110,6 +112,17 @@ Locked after grill (`CONTEXT/docs/prd/HELD-WEAPONS-LAG.md`):
 ### INV-W2: Local-Only Draw Budget
 - Bot and remote player rigs must **not** receive held-weapon meshes from this effort.
 - **Verification**: held-weapons tests assert non-local units remain unequipped.
+
+### INV-L1: Phone Lobby First Fold
+- At a phone viewport (**~390×844**), the lobby overlay mounts and **Play Online** is visible in the first viewport (no scroll required to reach it).
+- The lobby must not create **page-level horizontal overflow** (`documentElement.scrollWidth ≤ clientWidth`).
+- First fold shows brand + play actions only; character / settings / shop / history / leaderboard may require vertical scroll.
+- **Verification**: `npm run smoke:lobby` (Puppeteer phone + laptop viewport checks).
+
+### INV-L2: Laptop Lobby Readable Layout
+- At a laptop viewport (**~1280×720**), the lobby overlay mounts with no page-level horizontal overflow.
+- Multi-column layout is preserved (not a forced single stack); spacing/type remain readable.
+- **Verification**: same `npm run smoke:lobby`.
 
 ### INV-1: Frame Rate Floor
 - Client must sustain **≥ 30 fps** on a machine with integrated GPU (Intel UHD 620 equivalent) at 720p, low quality preset.
@@ -173,7 +186,8 @@ Locked after grill (`CONTEXT/docs/prd/HELD-WEAPONS-LAG.md`):
 - 50-player matches
 - Realistic 3D assets
 - Anti-cheat beyond server validation
-- Mobile / touch controls (desktop only)
+- Full mobile gameplay redesign (touch controls exist; lobby responsive polish is in-scope via #46/#47)
+- Native mobile clients
 - Ranking / leaderboards
 - Spectator mode
 - Replay system
