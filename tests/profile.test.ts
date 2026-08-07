@@ -14,6 +14,7 @@ import {
   equipCarSkin,
   buyCarSkin,
   setProfileName,
+  RESERVED_FOUNDER_NAME,
   addFriend,
   removeFriend,
 } from '../src/profile';
@@ -78,14 +79,38 @@ describe('profile cosmetics', () => {
   });
 
   it('renames profile', () => {
-    const p = setProfileName(defaultProfile(), 'Nova');
-    expect(p.name).toBe('Nova');
+    const result = setProfileName(defaultProfile(), 'Nova');
+    expect('profile' in result).toBe(true);
+    if ('profile' in result) expect(result.profile.name).toBe('Nova');
   });
 
   it('persists renamed profile to storage', () => {
     const store = memStorage();
-    saveProfile(setProfileName(defaultProfile(), 'Nova Ace'), store);
-    expect(loadProfile(store).name).toBe('Nova Ace');
+    const result = setProfileName(defaultProfile(), 'Nova Ace');
+    expect('profile' in result).toBe(true);
+    if ('profile' in result) {
+      saveProfile(result.profile, store);
+      expect(loadProfile(store).name).toBe('Nova Ace');
+    }
+  });
+
+  it('blocks non-founder attempt to set reserved founder name', () => {
+    const result = setProfileName(defaultProfile(), `  ${RESERVED_FOUNDER_NAME.toLowerCase()}  `);
+    expect('error' in result).toBe(true);
+    if ('error' in result) expect(result.error).toMatch(/already taken|failed/i);
+  });
+
+  it('allows existing founder profile to keep reserved founder name', () => {
+    const founder = { ...defaultProfile(), name: RESERVED_FOUNDER_NAME };
+    const result = setProfileName(founder, ` ${RESERVED_FOUNDER_NAME.toLowerCase()} `);
+    expect('profile' in result).toBe(true);
+    if ('profile' in result) expect(result.profile.name).toBe(RESERVED_FOUNDER_NAME);
+  });
+
+  it('keeps 20-char cap when renaming profile', () => {
+    const result = setProfileName(defaultProfile(), 'x'.repeat(24));
+    expect('profile' in result).toBe(true);
+    if ('profile' in result) expect(result.profile.name.length).toBe(20);
   });
 
   it('unlocks free car skins at level', () => {
@@ -136,7 +161,9 @@ describe('profile cosmetics', () => {
     expect(p.friends).not.toContain('Nova Ace');
     const tooShort = addFriend(p, 'ab');
     expect('error' in tooShort).toBe(true);
-    p = setProfileName(p, 'LocalAce');
+    const renamed = setProfileName(p, 'LocalAce');
+    expect('profile' in renamed).toBe(true);
+    if ('profile' in renamed) p = renamed.profile;
     const self = addFriend(p, 'LocalAce');
     expect('error' in self).toBe(true);
   });

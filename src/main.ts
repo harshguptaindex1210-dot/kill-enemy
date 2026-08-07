@@ -1,7 +1,12 @@
 import { MatchGame } from './game';
 import { AudioManager } from './audio';
 import { loadSettings, saveSettings, type Settings } from './settings';
-import { defaultStats, recordMatchOnce, createWriteId, type PlayerStats } from './persistence';
+import {
+  defaultStats,
+  recordMatchOnce,
+  createWriteId,
+  type PlayerStats,
+} from './persistence';
 import { showAd } from './ad';
 import { fetchLeaderboard, loadLocalHistory, recordMatchResult } from './net/leaderboard';
 import {
@@ -167,7 +172,8 @@ function init() {
   }
 
   function persistProfile(next: PlayerProfile) {
-    profile = syncLevelUnlocks(next, stats.level);
+    profile = next;
+    profile = syncLevelUnlocks(profile, stats.level);
     saveProfile(profile);
     lobbyScene?.setCosmetics(lobbyCosmetics());
     void pushProfileOnline();
@@ -393,8 +399,13 @@ function init() {
         showLobbyUI();
       },
       onRename(name: string) {
-        persistProfile(setProfileName(profile, name));
-        shopMessage = 'Name saved';
+        const result = setProfileName(profile, name);
+        if ('error' in result) {
+          shopMessage = result.error;
+        } else {
+          persistProfile(result.profile);
+          shopMessage = 'Name saved';
+        }
         showLobbyUI();
       },
       onEquipChassis(id: string) {

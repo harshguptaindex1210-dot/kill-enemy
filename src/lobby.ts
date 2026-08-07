@@ -361,6 +361,7 @@ export function showLobby(
           <input id="inp-name" maxlength="20" value="${escapeHtml(profile.name)}" placeholder="Name" aria-label="Player name" />
           <button id="btn-rename" class="lobby-btn lobby-btn-primary" type="button" style="width:auto;padding:8px 14px;min-height:40px;font-size:0.75rem;">Save</button>
         </div>
+        ${shopMessage ? `<p id="shop-msg" class="lobby-shop-msg">${escapeHtml(shopMessage)}</p>` : ''}
       </section>
       <section class="lobby-panel lobby-preset-panel" aria-label="Performance presets">
         <b class="lobby-panel-title">Device Presets</b>
@@ -371,7 +372,6 @@ export function showLobby(
         </div>
       </section>
       <p class="lobby-quick-controls" aria-label="Quick controls">${touchControlsHint}</p>
-      ${shopMessage ? `<p id="shop-msg" class="lobby-shop-msg">${escapeHtml(shopMessage)}</p>` : ''}
       <div class="lobby-body">
         <div class="lobby-body-main">
       <div class="lobby-panels">

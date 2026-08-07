@@ -22,11 +22,15 @@ export interface PlayerProfile {
   equippedSedanSkin: string;
   equippedBuggySkin: string;
   friends: string[];
+  ownerToken?: string;
 }
 
 const PROFILE_KEY = 'robot_arena_profile_v1';
 const NAME_MIN = 3;
 const NAME_MAX = 20;
+export const RESERVED_FOUNDER_NAME = 'HARSH FOUNDERCEO_01';
+const RESERVED_FOUNDER_NAME_KEY = RESERVED_FOUNDER_NAME.toLowerCase();
+const FOUNDER_OWNER_KEY = 'raf_owner';
 
 export function defaultProfile(): PlayerProfile {
   return {
@@ -52,6 +56,14 @@ export function sanitizeName(raw: unknown): string {
     .trim();
   if (cleaned.length < NAME_MIN) return 'Pilot';
   return cleaned.slice(0, NAME_MAX);
+}
+
+function normalizeNameForReservation(name: string): string {
+  return name.trim().replace(/\s+/g, ' ').toLowerCase();
+}
+
+function token(raw: unknown): string {
+  return typeof raw === 'string' ? raw.trim().slice(0, 64) : '';
 }
 
 export function sanitizeProfile(raw: unknown): PlayerProfile {
@@ -103,6 +115,7 @@ export function sanitizeProfile(raw: unknown): PlayerProfile {
         ? r.equippedBuggySkin
         : d.equippedBuggySkin,
     friends,
+    ownerToken: token(r.ownerToken) || undefined,
   };
 }
 
@@ -158,8 +171,60 @@ export function grantMatchCredits(profile: PlayerProfile, amount: number): Playe
   return { ...profile, credits: profile.credits + Math.max(0, Math.floor(amount)) };
 }
 
-export function setProfileName(profile: PlayerProfile, name: string): PlayerProfile {
-  return { ...profile, name: sanitizeName(name) };
+export function setProfileName(
+  profile: PlayerProfile,
+  name: string,
+  storage: StorageLike = defaultStorage()
+): { profile: PlayerProfile } | { error: string } {
+  let nextName = sanitizeName(name);
+  const currentName = sanitizeName(profile.name);
+  const nextIsReserved = normalizeNameForReservation(nextName) === RESERVED_FOUNDER_NAME_KEY;
+  const currentIsReserved = normalizeNameForReservation(currentName) === RESERVED_FOUNDER_NAME_KEY;
+  if (!nextIsReserved) return { profile: { ...profile, name: nextName } };
+
+  const profileToken = token(profile.ownerToken);
+  let storedToken = '';
+  try {
+    storedToken = token(storage.getItem(FOUNDER_OWNER_KEY));
+  } catch {
+    // ignore
+  }
+
+  let ownerToken = profileToken;
+  if (storedToken) {
+    if (ownerToken !== storedToken) {
+      if (currentIsReserved && !ownerToken) ownerToken = storedToken;
+      else return { error: 'Name reserved (save failed)' };
+    }
+  } else {
+    ownerToken =
+      ownerToken ||
+      globalThis.crypto?.randomUUID?.()?.replace(/-/g, '') ||
+      `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`;
+    try {
+      storage.setItem(FOUNDER_OWNER_KEY, ownerToken);
+    } catch {
+      // ignore
+    }
+  }
+
+  nextName = RESERVED_FOUNDER_NAME;
+  return { profile: { ...profile, name: nextName, ownerToken } };
+}
+
+export function isReservedFounderOwner(
+  profile: PlayerProfile,
+  storage: StorageLike = defaultStorage()
+): boolean {
+  if (normalizeNameForReservation(profile.name) !== RESERVED_FOUNDER_NAME_KEY) return false;
+  const ownerToken = token(profile.ownerToken);
+  if (!ownerToken) return false;
+  try {
+    const stored = token(storage.getItem(FOUNDER_OWNER_KEY));
+    return !!stored && stored === ownerToken;
+  } catch {
+    return false;
+  }
 }
 
 export function addFriend(

@@ -233,6 +233,38 @@ describe('lobby responsive layout (#46)', () => {
     expect(document.getElementById('shop-msg')).toBeTruthy();
   });
 
+  it('shows failed reserved-name save message in lobby feedback', () => {
+    showLobby(
+      { level: 1, xp: 0, wins: 0, kills: 0, matches: 0 },
+      defaultSettings(),
+      defaultProfile(),
+      callbacks(),
+      { history: [], leaderboard: [] },
+      { active: false, message: '' },
+      'Name already reserved on this device (save failed)'
+    );
+    const banner = document.getElementById('shop-msg');
+    expect(banner).toBeTruthy();
+    expect(banner!.textContent).toMatch(/reserved|failed/i);
+  });
+
+  it('shows and escapes profile rename error in profile panel', () => {
+    showLobby(
+      { level: 1, xp: 0, wins: 0, kills: 0, matches: 0 },
+      defaultSettings(),
+      defaultProfile(),
+      callbacks(),
+      { history: [], leaderboard: [] },
+      { active: false, message: '' },
+      'Name "><img src=x onerror=alert(1)> already taken'
+    );
+    expect(document.querySelector('#lobby-overlay img')).toBeNull();
+    const msg = document.getElementById('shop-msg');
+    expect(msg).toBeTruthy();
+    expect(msg!.textContent).toMatch(/already taken/i);
+    expect(document.querySelector('.lobby-profile-panel #shop-msg')).toBeTruthy();
+  });
+
   it('keeps essential overlay positioning even before stylesheet rules apply', () => {
     showLobby(
       { level: 1, xp: 0, wins: 0, kills: 0, matches: 0 },
