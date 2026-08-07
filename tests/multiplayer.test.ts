@@ -261,4 +261,25 @@ describe('#39 client path', () => {
     expect(player).toMatchObject({ x: 1, z: 3, health: 88 });
     client.dispose();
   });
+
+  it('local mode adopts authoritative pose without client prediction', async () => {
+    const client = new MatchClient('local', { onSnapshot: () => {}, onDisconnect: () => {} });
+    await client.connect();
+    const handle = (client as unknown as { handleSnapshot: (s: WireSnapshot) => void }).handleSnapshot.bind(
+      client
+    );
+    handle(snap);
+    client.rollback.applyInput(frame(1, { forward: true }), 1 / 20, 0);
+    const predictedZ = client.rollback.localState.pos.z;
+    handle(
+      makeSnap({
+        tick: 2,
+        entities: { player: entity(4, 7) },
+      })
+    );
+    expect(client.rollback.localState.pos.x).toBe(4);
+    expect(client.rollback.localState.pos.z).toBe(7);
+    expect(client.rollback.localState.pos.z).not.toBe(predictedZ);
+    client.dispose();
+  });
 });

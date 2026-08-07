@@ -148,7 +148,10 @@ export class MatchClient {
       };
     }
     const input = { ...merged, seq: ++this.seq };
-    this.rollback.applyInput(this.toPredictionInput(input), 1 / 20, 0);
+    // Demo/local server is authoritative in-process — client prediction fights MatchSim.
+    if (this.mode !== 'local') {
+      this.rollback.applyInput(this.toPredictionInput(input), 1 / 20, 0);
+    }
     if (this.mode === 'local') {
       this.local?.sendInput(input);
     } else if (this.socket) {
@@ -166,18 +169,27 @@ export class MatchClient {
     this.measureLatency(snap);
     const self = snap.entities[this.selfEntity];
     if (self) {
-      this.rollback.applySnapshot({
-        tick: snap.tick,
-        entities: {
-          [this.selfEntity]: {
-            pos: new THREE.Vector3(self.px / 100, self.py / 100, self.pz / 100),
-            vel: new THREE.Vector3(self.vx / 100, self.vy / 100, self.vz / 100),
-            health: self.hp,
+      const pos = new THREE.Vector3(self.px / 100, self.py / 100, self.pz / 100);
+      const vel = new THREE.Vector3(self.vx / 100, self.vy / 100, self.vz / 100);
+      if (this.mode === 'local') {
+        // Adopt server pose directly — no rollback replay in demo online mode.
+        this.rollback.localState.pos.copy(pos);
+        this.rollback.localState.vel.copy(vel);
+        this.rollback.localState.health = self.hp;
+        this.rollback.yaw = self.yaw / 100;
+        const ack = snap.acks?.[this.selfEntity] ?? snap.tick;
+        this.rollback.lastAckedTick = Math.max(this.rollback.lastAckedTick, ack);
+        this.rollback.inputs = [];
+      } else {
+        this.rollback.applySnapshot({
+          tick: snap.tick,
+          entities: {
+            [this.selfEntity]: { pos, vel, health: self.hp },
           },
-        },
-        inputAck: snap.acks?.[this.selfEntity],
-        yaw: self.yaw / 100,
-      });
+          inputAck: snap.acks?.[this.selfEntity],
+          yaw: self.yaw / 100,
+        });
+      }
     }
     this.cb.onSnapshot(snap);
   }

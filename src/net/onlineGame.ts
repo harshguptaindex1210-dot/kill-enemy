@@ -9,7 +9,7 @@ import { MatchClient } from './client';
 import type { AudioManager } from '../audio';
 import type { Settings } from '../settings';
 import { formatTimer } from '../feedback';
-import { REWIND_MS, type WireSnapshot } from './protocol';
+import { REWIND_MS, entityWorld, type WireSnapshot } from './protocol';
 
 const ROBOT_GROUP_Y_OFFSET = -0.65;
 const LATENCY_ID = 'net-latency';
@@ -39,6 +39,14 @@ interface OnlineRig {
   anim: RobotAnimState;
 }
 
+interface SelfPose {
+  x: number;
+  y: number;
+  z: number;
+  yaw: number;
+  alive: boolean;
+}
+
 /**
  * Snapshot-driven online match renderer (#39). Reads entity state from the
  * MatchClient (interpolation + rollback), not a local MatchSim, so the client
@@ -57,11 +65,14 @@ export class OnlineMatchGame {
   private lootMeshes = new Map<number, THREE.Mesh>();
   private raf = 0;
   private lastTime = 0;
-  private lastSnap: WireSnapshot | null = null;
+  private lastSnapTick = -1;
   private renderTimeMs = 0;
   private latencyEl: HTMLElement;
   private input: InputManager;
   private finished = false;
+  private cameraPos = new THREE.Vector3();
+  private smoothedYaw = 0;
+  private yawInit = false;
 
   constructor(opts: OnlineGameOptions) {
     this.opts = opts;
@@ -128,31 +139,24 @@ export class OnlineMatchGame {
       fire: input.fire,
       reload: input.reload,
     });
-    this.renderTimeMs = this.lastSnap ? this.lastSnap.time_ms - REWIND_MS : 0;
 
     const snap = this.client.interp.latest;
-    if (snap) this.syncWorld(snap);
+    if (snap) {
+      this.renderTimeMs = snap.time_ms - REWIND_MS;
+      if (snap.tick > this.lastSnapTick) this.syncSnapshot(snap);
+    }
+
+    this.syncPlayers(dt);
     this.updateCamera(dt);
     this.updateHUD(snap);
     this.renderer.render(this.scene, this.camera);
   }
 
-  private syncWorld(snap: WireSnapshot) {
-    if (this.lastSnap && snap.tick <= this.lastSnap.tick) return;
-    this.lastSnap = snap;
-
+  /** Zone, loot, and latency — only when a new authoritative tick arrives. */
+  private syncSnapshot(snap: WireSnapshot) {
+    this.lastSnapTick = snap.tick;
     this.zoneSys.updateFromZone(snap.zone.r / 100);
 
-    // remote entities via interpolation at the render time (REWIND_MS behind)
-    const remotes = this.client.sampleRemotes(this.renderTimeMs);
-    if (remotes) {
-      for (const e of remotes) {
-        if (e.id === this.client.selfId) continue;
-        this.syncRemoteRig(e.id, e.x, e.y, e.z, e.yaw, e.alive);
-      }
-    }
-
-    // loot pads from snapshot
     const active = new Set<number>();
     for (const l of snap.loot) {
       active.add(l.id);
@@ -176,10 +180,56 @@ export class OnlineMatchGame {
     this.latencyEl.textContent = `LATENCY ${Math.round(this.client.latency)} ms`;
   }
 
-  private syncRemoteRig(id: string, x: number, y: number, z: number, yaw: number, alive: boolean) {
+  /** Interpolate remote rigs every frame; local rig uses a single pose source. */
+  private syncPlayers(dt: number) {
+    const remotes = this.client.sampleRemotes(this.renderTimeMs);
+    if (remotes) {
+      for (const e of remotes) {
+        if (e.id === this.client.selfId) continue;
+        this.syncRig(e.id, e.x, e.y, e.z, e.yaw, e.alive, false, dt);
+      }
+    }
+    const self = this.getSelfPose();
+    this.syncRig(this.client.selfId, self.x, self.y, self.z, self.yaw, self.alive, true, dt);
+  }
+
+  private getSelfPose(): SelfPose {
+    if (this.client.mode === 'local') {
+      const sampled = this.client.sampleRemotes(this.renderTimeMs);
+      const hit = sampled?.find((e) => e.id === this.client.selfId);
+      if (hit) {
+        return { x: hit.x, y: hit.y, z: hit.z, yaw: hit.yaw, alive: hit.alive };
+      }
+      const ent = this.client.interp.latest?.entities[this.client.selfId];
+      if (ent) {
+        const w = entityWorld(ent);
+        return { x: w.x, y: w.y, z: w.z, yaw: w.yaw, alive: w.alive };
+      }
+    }
+    const state = this.client.rollback.localState;
+    const ent = this.client.interp.latest?.entities[this.client.selfId];
+    return {
+      x: state.pos.x,
+      y: state.pos.y,
+      z: state.pos.z,
+      yaw: this.client.rollback.yaw,
+      alive: ent ? ent.al !== 0 : true,
+    };
+  }
+
+  private syncRig(
+    id: string,
+    x: number,
+    y: number,
+    z: number,
+    yaw: number,
+    alive: boolean,
+    isLocal: boolean,
+    dt: number
+  ) {
     let rig = this.rigs.get(id);
     if (!rig) {
-      const tint = id === this.client.selfId ? 0x3366cc : remoteTint(id);
+      const tint = isLocal ? 0x3366cc : remoteTint(id);
       const model = createRobotModel(tint);
       model.group.position.set(x, y + ROBOT_GROUP_Y_OFFSET, z);
       this.scene.add(model.group);
@@ -191,19 +241,31 @@ export class OnlineMatchGame {
       rig.group.position.set(x, y + ROBOT_GROUP_Y_OFFSET, z);
       rig.group.rotation.y = yaw;
     }
-    updateRobotAnim(rig.anim, 0.05);
+    updateRobotAnim(rig.anim, dt);
   }
 
   private updateCamera(dt: number) {
-    const self = this.client.rollback.localState.pos;
-    const yaw = this.selfYaw();
-    updateCamera(this.camera, yaw, 0, 1.6, this.opts.settings.cameraMode, self, dt);
-  }
+    const self = this.getSelfPose();
+    this.cameraPos.set(self.x, self.y, self.z);
 
-  private selfYaw(): number {
-    const snap = this.client.interp.latest;
-    const self = snap?.entities[this.client.selfId];
-    return self ? self.yaw / 100 : 0;
+    if (!this.yawInit) {
+      this.smoothedYaw = self.yaw;
+      this.yawInit = true;
+    } else {
+      const delta = Math.atan2(Math.sin(self.yaw - this.smoothedYaw), Math.cos(self.yaw - this.smoothedYaw));
+      const yawLerp = 1 - Math.pow(0.001, dt);
+      this.smoothedYaw += delta * yawLerp;
+    }
+
+    updateCamera(
+      this.camera,
+      this.smoothedYaw,
+      0,
+      1.6,
+      this.opts.settings.cameraMode,
+      this.cameraPos,
+      dt
+    );
   }
 
   private updateHUD(snap: WireSnapshot | null) {
@@ -226,7 +288,7 @@ export class OnlineMatchGame {
       inStorm: false,
       justHit: false,
       prompt: '',
-      bearing: this.compassBearing(this.selfYaw()),
+      bearing: this.compassBearing(this.smoothedYaw),
     };
     this.hud.update(data);
   }
