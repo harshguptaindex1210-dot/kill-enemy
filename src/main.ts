@@ -34,7 +34,7 @@ import {
   canSyncWithNakama,
   onlineUnavailableMessage,
 } from './net/nakamaConfig';
-import { isMobileDevice } from './platform';
+import { isMobileDevice, isPhoneDevice } from './platform';
 
 const STATS_KEY = 'robot_arena_stats_v1';
 
@@ -521,4 +521,4 @@ try {
       ? 'WebGL is unavailable on this device. Try closing other tabs or updating iOS Safari.'
       : 'The game failed to start. Try refreshing the page.'
   );
-});
+}
