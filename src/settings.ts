@@ -47,9 +47,7 @@ export function sanitizeSettings(raw: unknown): Settings {
     minimapSize:
       r.minimapSize === 'small' || r.minimapSize === 'large' ? r.minimapSize : d.minimapSize,
     invertLookHorizontal:
-      typeof r.invertLookHorizontal === 'boolean'
-        ? r.invertLookHorizontal
-        : d.invertLookHorizontal,
+      typeof r.invertLookHorizontal === 'boolean' ? r.invertLookHorizontal : d.invertLookHorizontal,
   };
 }
 
