@@ -4,11 +4,18 @@ A browser-based 3D battle-royale game set in a robot apocalypse. Titanfall-style
 humanoid robots fight with guns, melee, and grenades on a 1×1 km map. Built with
 Three.js + Vite + TypeScript; authoritative multiplayer via Nakama.
 
-**Play:** https://harshguptaindex1210-dot.github.io/kill-enemy/
+## Play Kill Enemy
 
-Short link (redirects to game): https://harshguptaindex1210-dot.github.io/
+| Use | Link |
+|-----|------|
+| **Phone / share with friends** | https://harshguptaindex1210-dot.github.io/ |
+| **Bookmark / direct** | https://harshguptaindex1210-dot.github.io/kill-enemy/ |
 
-Share message: *Play Kill Enemy — free browser battle royale: https://harshguptaindex1210-dot.github.io/kill-enemy/*
+The short link redirects to the game automatically. On a phone in portrait you may see “Rotate your device to landscape” — turn the phone sideways to play.
+
+Share message: *Play Kill Enemy — free browser battle royale: https://harshguptaindex1210-dot.github.io/*
+
+> The short redirect is maintained in the separate repo [`harshguptaindex1210-dot.github.io`](https://github.com/harshguptaindex1210-dot/harshguptaindex1210-dot.github.io) (not in this workspace). This repo deploys the game to `/kill-enemy/` on GitHub Pages.
 
 ## What it is
 

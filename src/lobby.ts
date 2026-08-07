@@ -11,10 +11,8 @@ import {
   gunSkinById,
 } from './cosmetics';
 import { isTouchDevice, safeScrollToTop } from './platform';
+import { GAME_SHARE_TEXT, GAME_SHARE_URL } from './siteUrl';
 import './lobby.css';
-
-const GAME_URL = 'https://harshguptaindex1210-dot.github.io/kill-enemy/';
-const SHARE_TEXT = `Play Kill Enemy — free browser battle royale: ${GAME_URL}`;
 
 export interface LobbyCallbacks {
   onPlayLocal: () => void;
@@ -318,7 +316,7 @@ export function showLobby(
           <span><b style="color:#f44;">${stats.kills}</b> <span class="muted">Kills</span></span>
         </div>
         <p class="lobby-share" aria-label="Share game link">
-          <a class="lobby-share-link" href="${GAME_URL}" target="_blank" rel="noopener noreferrer">${GAME_URL}</a>
+          <a class="lobby-share-link" href="${GAME_SHARE_URL}" target="_blank" rel="noopener noreferrer">${GAME_SHARE_URL}</a>
           <button id="btn-share" class="lobby-btn lobby-btn-secondary lobby-share-btn" type="button">Copy link</button>
         </p>
       </header>
@@ -520,7 +518,7 @@ export function showLobby(
     const share = async (): Promise<boolean> => {
       if (navigator.share) {
         try {
-          await navigator.share({ title: 'Kill Enemy', text: SHARE_TEXT, url: GAME_URL });
+          await navigator.share({ title: 'Kill Enemy', text: GAME_SHARE_TEXT, url: GAME_SHARE_URL });
           return true;
         } catch {
           /* user dismissed */
@@ -528,7 +526,7 @@ export function showLobby(
       }
       if (navigator.clipboard?.writeText) {
         try {
-          await navigator.clipboard.writeText(SHARE_TEXT);
+          await navigator.clipboard.writeText(GAME_SHARE_TEXT);
           return true;
         } catch {
           /* restricted */
