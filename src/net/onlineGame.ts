@@ -29,6 +29,11 @@ import {
 } from '../heldWeapons';
 import type { SimEvent, SimUnit } from '../gameplay';
 import { summarizeMatch } from '../game';
+import {
+  mountTargetMeshes,
+  syncTargetMeshes,
+  type TargetMeshParts,
+} from '../targetVisuals';
 
 const ROBOT_GROUP_Y_OFFSET = -0.9;
 const MOUSE_SENSITIVITY = 0.002;
@@ -97,6 +102,7 @@ export class OnlineMatchGame {
   private minimap: ReturnType<typeof createMinimap>;
   private rigs = new Map<string, OnlineRig>();
   private lootMeshes = new Map<number, THREE.Mesh>();
+  private targetMeshes = new Map<string, TargetMeshParts>();
   private raf = 0;
   private lastTime = 0;
   private lastSnapTick = -1;
@@ -148,6 +154,7 @@ export class OnlineMatchGame {
     this.input = createInputManager(c);
     this.hud = createHUD();
     this.minimap = createMinimap();
+    this.buildTargetsFromSim();
 
     this.latencyEl = document.createElement('div');
     this.latencyEl.id = LATENCY_ID;
@@ -186,6 +193,7 @@ export class OnlineMatchGame {
     this.minimap.remove();
     for (const rig of this.rigs.values()) this.scene.remove(rig.group);
     for (const m of this.lootMeshes.values()) this.scene.remove(m);
+    for (const parts of this.targetMeshes.values()) this.scene.remove(parts.group);
     for (const fx of this.muzzleFlashPool) {
       this.scene.remove(fx.light);
       this.scene.remove(fx.tracer);
@@ -236,6 +244,19 @@ export class OnlineMatchGame {
           );
         } else if (victim === selfId) {
           this.opts.audio.play('hit');
+        }
+        break;
+      }
+      case 'target-hit': {
+        if (String(e.attackerId) === selfId) {
+          this.flashHitmarker(Boolean(e.destroyed));
+          this.opts.audio.play(e.destroyed ? 'clink' : 'hit');
+          addDamageNumber(
+            Number(e.damage),
+            window.innerWidth * 0.52,
+            window.innerHeight * 0.38,
+            Boolean(e.destroyed)
+          );
         }
         break;
       }
@@ -363,6 +384,7 @@ export class OnlineMatchGame {
     }
 
     this.syncPlayers(dt);
+    this.syncTargets(dt);
     this.updateCamera(dt);
     this.updateHUD(snap);
     this.updateMinimap(snap);
@@ -500,6 +522,20 @@ export class OnlineMatchGame {
     updateRobotAnim(rig.anim, dt);
   }
 
+  private buildTargetsFromSim() {
+    const sim = this.client.localServer?.sim;
+    if (!sim) return;
+    mountTargetMeshes(this.scene, sim.targets).forEach((parts, id) =>
+      this.targetMeshes.set(id, parts)
+    );
+  }
+
+  private syncTargets(_dt: number) {
+    const sim = this.client.localServer?.sim;
+    if (!sim) return;
+    syncTargetMeshes(this.targetMeshes, sim.targets, sim.time);
+  }
+
   private updateCamera(dt: number) {
     const self = this.getSelfPose();
     this.cameraPos.set(self.x, self.y, self.z);
@@ -520,9 +556,11 @@ export class OnlineMatchGame {
     const elapsedSec = snap ? Math.max(0, (snap.time_ms - this.zonePhaseStartMs) / 1000) : 0;
     const zoneTimeMs = Math.max(0, (phaseDur - elapsedSec) * 1000);
     const mp = human ? this.client.localServer!.sim.match.players[this.client.selfId] : null;
+    const sim = this.client.localServer?.sim;
 
     const data: HUDData = {
       kills: mp?.kills ?? 0,
+      targetsHit: sim?.getTargetHits(this.client.selfId) ?? 0,
       alive: snap?.alive ?? 0,
       health: human?.health ?? this.client.rollback.localState.health,
       armor: human?.armor ?? selfEnt?.ar ?? 0,

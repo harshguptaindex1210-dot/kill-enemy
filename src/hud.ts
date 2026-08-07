@@ -12,6 +12,7 @@ export function createHUD(): {
   el.innerHTML = `
     <div id="hud-top" style="position:absolute;top:12px;left:50%;transform:translateX(-50%);display:flex;gap:24px;background:rgba(0,0,0,0.5);padding:6px 16px;border-radius:4px;color:#fff;font-size:13px;">
       <span id="hud-kills">☠️ 0</span>
+      <span id="hud-targets">🎯 0</span>
       <span id="hud-alive">👥 0 Alive</span>
       <span id="hud-phase" style="color:#2dd4bf;">LOBBY</span>
       <span id="hud-timer">⏲ 0:00</span>
@@ -66,6 +67,7 @@ export function createHUD(): {
     update(data: HUDData) {
       el.style.display = 'block';
       document.getElementById('hud-kills')!.textContent = `☠️ ${data.kills}`;
+      document.getElementById('hud-targets')!.textContent = `🎯 ${data.targetsHit ?? 0}`;
       document.getElementById('hud-alive')!.textContent = `👥 ${data.alive} Alive`;
       document.getElementById('hud-phase')!.textContent = data.phaseLabel;
       document.getElementById('hud-timer')!.textContent = `⏲ ${data.matchTimer}`;
@@ -169,6 +171,7 @@ export function addDamageNumber(amount: number, x: number, y: number, isKill: bo
 
 export interface HUDData {
   kills: number;
+  targetsHit?: number;
   alive: number;
   health: number;
   armor: number;

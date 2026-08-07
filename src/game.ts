@@ -30,6 +30,7 @@ import {
   syncHeldWeaponKit,
   type HeldWeaponKit,
 } from './heldWeapons';
+import type { TargetMeshParts } from './targetVisuals';
 
 export interface MatchSummary {
   won: boolean;
@@ -155,6 +156,8 @@ export class MatchGame {
   private lootMeshes = new Map<number, THREE.Mesh>();
   private vehicleMeshes = new Map<number, THREE.Group>();
   private airdropMeshes = new Map<number, THREE.Group>();
+  private targetMeshes = new Map<string, TargetMeshParts>();
+  private targetVisuals: typeof import('./targetVisuals') | null = null;
   private beaconMesh: THREE.Group | null = null;
   private projMeshes = new Map<number, THREE.Mesh>();
   private explosionFx: { light: THREE.PointLight; mesh: THREE.Mesh; until: number }[] = [];
@@ -242,6 +245,7 @@ export class MatchGame {
     this.buildRigs();
     this.buildLoot();
     this.buildVehicles();
+    void this.loadTargets();
 
     this.bannerEl = document.createElement('div');
     this.bannerEl.id = 'phase-banner';
@@ -295,6 +299,7 @@ export class MatchGame {
     for (const m of this.lootMeshes.values()) this.scene.remove(m);
     for (const m of this.vehicleMeshes.values()) this.scene.remove(m);
     for (const m of this.airdropMeshes.values()) this.scene.remove(m);
+    for (const parts of this.targetMeshes.values()) this.scene.remove(parts.group);
     for (const m of this.projMeshes.values()) this.scene.remove(m);
     for (const m of this.pool) this.scene.remove(m);
     for (const fx of this.explosionFx) {
@@ -410,6 +415,13 @@ export class MatchGame {
     }
   }
 
+  private async loadTargets() {
+    this.targetVisuals = await import('./targetVisuals');
+    this.targetVisuals.mountTargetMeshes(this.scene, this.sim.targets).forEach((parts, id) =>
+      this.targetMeshes.set(id, parts)
+    );
+  }
+
   private humanUnit(): SimUnit {
     return this.sim.units.get(this.humanId)!;
   }
@@ -506,6 +518,14 @@ export class MatchGame {
             this.spawnDamageNumber(victim, Number(e.damage), Boolean(e.kill));
           } else if (victim === this.humanId) {
             this.audio.play('hit');
+          }
+          break;
+        }
+        case 'target-hit': {
+          if (String(e.attackerId) === this.humanId) {
+            this.showHitmarker(Boolean(e.destroyed));
+            this.audio.play(e.destroyed ? 'clink' : 'hit');
+            this.spawnTargetHitFeedback(String(e.targetId), Number(e.damage), Boolean(e.destroyed));
           }
           break;
         }
@@ -768,6 +788,7 @@ export class MatchGame {
 
     this.syncAirdrops();
     this.syncGrenades();
+    this.syncTargets(now);
     this.updateExplosionFx(now);
 
     const human = this.humanUnit();
@@ -836,6 +857,22 @@ export class MatchGame {
         mat.emissiveIntensity = 0;
       }
     }
+  }
+
+  private syncTargets(_now: number) {
+    this.targetVisuals?.syncTargetMeshes(this.targetMeshes, this.sim.targets, this.sim.time);
+  }
+
+  private spawnTargetHitFeedback(targetId: string, amount: number, destroyed: boolean) {
+    const target = this.sim.targets.find((t) => t.id === targetId);
+    if (!target) return;
+    const pos = target.position.clone();
+    pos.y += 1.2;
+    pos.project(this.camera);
+    if (pos.z > 1) return;
+    const x = (pos.x * 0.5 + 0.5) * window.innerWidth;
+    const y = (-pos.y * 0.5 + 0.5) * window.innerHeight;
+    addDamageNumber(amount, x, y, destroyed);
   }
 
   private syncAirdrops() {
@@ -988,6 +1025,7 @@ export class MatchGame {
 
     const data: HUDData = {
       kills: this.sim.match.players[this.humanId].kills,
+      targetsHit: this.sim.getTargetHits(this.humanId),
       alive: this.sim.match.aliveCount,
       health: human.health,
       armor: human.armor,

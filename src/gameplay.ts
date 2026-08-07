@@ -51,6 +51,13 @@ import {
 } from './airdrop';
 import { createVehicle, updateVehicle, type VehicleState, type VehicleType } from './vehicle';
 import { SKILL_DEFS, chassisById, type ChassisId, type SkillType } from './cosmetics';
+import {
+  applyTargetDamage,
+  createShootingTargets,
+  targetsForHitscan,
+  updateTargetRespawns,
+  type ShootingTarget,
+} from './targets';
 
 export type DamageCause = 'shot' | 'melee' | 'grenade' | 'zone' | 'vehicle';
 
@@ -67,7 +74,8 @@ export interface SimEvent {
     | 'heal'
     | 'step'
     | 'zone-incoming'
-    | 'skill';
+    | 'skill'
+    | 'target-hit';
   time: number;
   [key: string]: unknown;
 }
@@ -180,6 +188,8 @@ export class MatchSim {
   lootRespawns: { id: number; until: number }[] = [];
   vehicles: SimVehicle[] = [];
   airdrops: AirdropSystem;
+  targets: ShootingTarget[] = [];
+  targetHits = new Map<string, number>();
   events: SimEvent[] = [];
   time: number;
   seed: number;
@@ -223,6 +233,7 @@ export class MatchSim {
     }
 
     this.loot = generateLootData(config.lootPois ?? DEFAULT_POI_POSITIONS, this.rng);
+    this.targets = createShootingTargets();
     this.spawnVehicles();
   }
 
@@ -338,6 +349,7 @@ export class MatchSim {
     }
 
     this.updateCombat();
+    updateTargetRespawns(this.targets, this.time);
     this.updateHealing();
     this.updateZone(dt);
     this.updateGrenadeSim(dt);
@@ -516,7 +528,7 @@ export class MatchSim {
 
     const origin = this.aimOrigin(unit);
     const dir = this.aimDirection(unit);
-    const targets = this.aliveUnits
+    const unitTargets = this.aliveUnits
       .filter((t) => t.id !== unit.id)
       .map((t) => ({
         id: t.id,
@@ -525,8 +537,9 @@ export class MatchSim {
         // Forgiving hitscan radius so paced shots still connect in TPS.
         capsuleRadius: Math.max(CAPSULE_RADIUS, 1.15),
       }));
+    const shootTargets = targetsForHitscan(this.targets);
     const beforeFire = weapon.lastFireTime;
-    const results = fireWeapon(weapon, origin, dir, targets, now);
+    const results = fireWeapon(weapon, origin, dir, [...unitTargets, ...shootTargets], now);
     // Rate-limited frames must not emit shot SFX / tracers.
     if (weapon.lastFireTime === beforeFire) return;
     this.events.push({
@@ -538,9 +551,30 @@ export class MatchSim {
     });
     for (const r of results) {
       if (r.hit && r.entityId) {
-        this.applyDamage(unit.id, r.entityId, r.damage, 'shot');
+        if (r.entityId.startsWith('target_')) this.hitTarget(unit.id, r.entityId, r.damage);
+        else this.applyDamage(unit.id, r.entityId, r.damage, 'shot');
       }
     }
+  }
+
+  hitTarget(attackerId: string, targetId: string, rawDamage: number) {
+    const target = this.targets.find((t) => t.id === targetId);
+    if (!target) return;
+    const result = applyTargetDamage(target, rawDamage, this.time);
+    if (result.damage <= 0) return;
+    this.targetHits.set(attackerId, (this.targetHits.get(attackerId) ?? 0) + 1);
+    this.events.push({
+      type: 'target-hit',
+      time: this.time,
+      attackerId,
+      targetId,
+      damage: result.damage,
+      destroyed: result.destroyed,
+    });
+  }
+
+  getTargetHits(unitId: string): number {
+    return this.targetHits.get(unitId) ?? 0;
   }
 
   private tryMelee(unit: SimUnit) {
@@ -648,7 +682,7 @@ export class MatchSim {
       if (!unit.alive) continue;
       const res = updateMeleeSwing(unit.melee, this.time);
       if (res === 'hit') {
-        const targets = this.aliveUnits
+        const unitTargets = this.aliveUnits
           .filter((t) => t.id !== unit.id)
           .map((t) => ({
             id: t.id,
@@ -656,9 +690,14 @@ export class MatchSim {
             capsuleRadius: CAPSULE_RADIUS,
             capsuleHeight: CAPSULE_HEIGHT,
           }));
-        const hit = checkMeleeHit(unit.melee, unit.player.position, unit.player.yaw, targets);
+        const practiceTargets = targetsForHitscan(this.targets);
+        const hit = checkMeleeHit(unit.melee, unit.player.position, unit.player.yaw, [
+          ...unitTargets,
+          ...practiceTargets,
+        ]);
         if (hit.hit && hit.targetId) {
-          this.applyDamage(unit.id, hit.targetId, hit.damage, 'melee');
+          if (hit.targetId.startsWith('target_')) this.hitTarget(unit.id, hit.targetId, hit.damage);
+          else this.applyDamage(unit.id, hit.targetId, hit.damage, 'melee');
         }
       }
     }
