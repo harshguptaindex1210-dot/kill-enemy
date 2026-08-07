@@ -14,6 +14,7 @@ import {
   buyCarSkin,
   buyChassis,
   buyGunSkin,
+  enforceFounderIdentity,
   equipCarSkin,
   equipChassis,
   equipGunSkin,
@@ -107,15 +108,19 @@ function init() {
   }
   let stats: PlayerStats = loadStats();
   let profile: PlayerProfile = loadProfile();
-  if (isReservedFounderOwner(profile)) {
-    const boostedStats = ensureMaxLevelStats(stats);
-    if (boostedStats !== stats) {
-      stats = boostedStats;
-      saveStats(stats);
+  function applyFounderProfileState(nextProfile: PlayerProfile) {
+    profile = enforceFounderIdentity(nextProfile);
+    if (isReservedFounderOwner(profile)) {
+      const boostedStats = ensureMaxLevelStats(stats);
+      if (boostedStats !== stats) {
+        stats = boostedStats;
+        saveStats(stats);
+      }
     }
+    profile = syncLevelUnlocks(profile, stats.level);
+    saveProfile(profile);
   }
-  profile = syncLevelUnlocks(profile, stats.level);
-  saveProfile(profile);
+  applyFounderProfileState(profile);
   let shopMessage = '';
   const audio = new AudioManager();
   audio.setVolume(settings.volume);
@@ -161,8 +166,7 @@ function init() {
       const session = nakama.getSession() ?? (await nakama.authenticateGuest());
       const remote = await nakama.loadProfileFromServer(session.user_id!);
       if (remote) {
-        profile = syncLevelUnlocks(mergeProfiles(profile, remote), stats.level);
-        saveProfile(profile);
+        applyFounderProfileState(mergeProfiles(profile, remote));
       }
     } catch {
       // offline — local profile only
@@ -182,16 +186,7 @@ function init() {
   }
 
   function persistProfile(next: PlayerProfile) {
-    profile = next;
-    if (isReservedFounderOwner(profile)) {
-      const boostedStats = ensureMaxLevelStats(stats);
-      if (boostedStats !== stats) {
-        stats = boostedStats;
-        saveStats(stats);
-      }
-    }
-    profile = syncLevelUnlocks(profile, stats.level);
-    saveProfile(profile);
+    applyFounderProfileState(next);
     lobbyScene?.setCosmetics(lobbyCosmetics());
     void pushProfileOnline();
   }
@@ -221,6 +216,7 @@ function init() {
   }
 
   function launchMatch() {
+    applyFounderProfileState(profile);
     stopLobbyScene();
     game?.dispose();
     audio.resume();
@@ -272,6 +268,7 @@ function init() {
   }
 
   async function launchOnlineMatch() {
+    applyFounderProfileState(profile);
     const { OnlineMatchGame: OnlineGame } = await loadOnlineStack();
     stopLobbyScene();
     onlineGame?.dispose();

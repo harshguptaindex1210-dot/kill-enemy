@@ -31,6 +31,8 @@ const NAME_MAX = 20;
 export const RESERVED_FOUNDER_NAME = 'HARSH FOUNDERCEO_01';
 const RESERVED_FOUNDER_NAME_KEY = RESERVED_FOUNDER_NAME.toLowerCase();
 const FOUNDER_OWNER_KEY = 'raf_owner';
+const RESERVED_NAME_ERROR =
+  'Name reserved: only the founder owner profile can use HARSH FOUNDERCEO_01 on this device.';
 
 export function defaultProfile(): PlayerProfile {
   return {
@@ -194,7 +196,13 @@ export function setProfileName(
   if (storedToken) {
     if (ownerToken !== storedToken) {
       if (currentIsReserved && !ownerToken) ownerToken = storedToken;
-      else return { error: 'Name reserved (save failed)' };
+      else return { error: RESERVED_NAME_ERROR };
+    }
+  } else if (ownerToken) {
+    try {
+      storage.setItem(FOUNDER_OWNER_KEY, ownerToken);
+    } catch {
+      // ignore
     }
   } else {
     ownerToken =
@@ -221,10 +229,41 @@ export function isReservedFounderOwner(
   if (!ownerToken) return false;
   try {
     const stored = token(storage.getItem(FOUNDER_OWNER_KEY));
-    return !!stored && stored === ownerToken;
+    if (stored) return stored === ownerToken;
+    storage.setItem(FOUNDER_OWNER_KEY, ownerToken);
+    return true;
   } catch {
     return false;
   }
+}
+
+/**
+ * Canonicalizes founder owner profile data on this device so local + remote sync
+ * cannot drift to non-canonical founder casing/spacing or lose the owner token.
+ */
+export function enforceFounderIdentity(
+  profile: PlayerProfile,
+  storage: StorageLike = defaultStorage()
+): PlayerProfile {
+  const profileToken = token(profile.ownerToken);
+  let storedToken = '';
+  try {
+    storedToken = token(storage.getItem(FOUNDER_OWNER_KEY));
+  } catch {
+    storedToken = '';
+  }
+  const resolvedToken = storedToken || profileToken;
+  if (!resolvedToken) return profile;
+  if (profileToken && storedToken && profileToken !== storedToken) return profile;
+  if (!storedToken) {
+    try {
+      storage.setItem(FOUNDER_OWNER_KEY, resolvedToken);
+    } catch {
+      // ignore
+    }
+  }
+  if (profile.name === RESERVED_FOUNDER_NAME && profileToken === resolvedToken) return profile;
+  return { ...profile, name: RESERVED_FOUNDER_NAME, ownerToken: resolvedToken };
 }
 
 export function addFriend(
@@ -273,8 +312,10 @@ export function mergeProfiles(local: PlayerProfile, remote: PlayerProfile): Play
   const friends = Array.from(new Set([...remote.friends, ...local.friends])).slice(0, 50);
   const pick = <T extends string>(remoteVal: T, localVal: T, owned: T[]) =>
     owned.includes(remoteVal) ? remoteVal : owned.includes(localVal) ? localVal : owned[0]!;
+  const mergedName = remote.name !== 'Pilot' ? remote.name : local.name;
+  const mergedOwnerToken = token(remote.ownerToken) || token(local.ownerToken) || undefined;
   return sanitizeProfile({
-    name: remote.name !== 'Pilot' ? remote.name : local.name,
+    name: mergedName,
     credits: Math.max(local.credits, remote.credits),
     chassisId: pick(remote.chassisId, local.chassisId, ownedChassis),
     ownedChassis,
@@ -285,6 +326,7 @@ export function mergeProfiles(local: PlayerProfile, remote: PlayerProfile): Play
     equippedSedanSkin: pick(remote.equippedSedanSkin, local.equippedSedanSkin, ownedCarSkins),
     equippedBuggySkin: pick(remote.equippedBuggySkin, local.equippedBuggySkin, ownedCarSkins),
     friends,
+    ownerToken: mergedOwnerToken,
   });
 }
 

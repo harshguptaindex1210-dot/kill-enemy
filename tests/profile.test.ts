@@ -17,6 +17,7 @@ import {
   setProfileName,
   RESERVED_FOUNDER_NAME,
   addFriend,
+  enforceFounderIdentity,
   removeFriend,
 } from '../src/profile';
 import { CAR_SKINS, GUN_SKINS } from '../src/cosmetics';
@@ -100,7 +101,7 @@ describe('profile cosmetics', () => {
     const store = memStorage();
     const founderClaim = setProfileName(
       defaultProfile(),
-      `  ${RESERVED_FOUNDER_NAME.toLowerCase()}  `,
+      '  harsh   founderceo_01  ',
       store
     );
     expect('profile' in founderClaim).toBe(true);
@@ -109,7 +110,7 @@ describe('profile cosmetics', () => {
       expect(isReservedFounderOwner(founderClaim.profile, store)).toBe(true);
       const blocked = setProfileName(defaultProfile(), RESERVED_FOUNDER_NAME, store);
       expect('error' in blocked).toBe(true);
-      if ('error' in blocked) expect(blocked.error).toMatch(/reserved|failed|already/i);
+      if ('error' in blocked) expect(blocked.error).toMatch(/reserved|founder owner/i);
     }
   });
 
@@ -132,6 +133,32 @@ describe('profile cosmetics', () => {
     }
   });
 
+  it('hydrates owner storage key from reserved owner token', () => {
+    const store = memStorage();
+    const profile = { ...defaultProfile(), name: RESERVED_FOUNDER_NAME, ownerToken: 'owner_abc123' };
+    expect(isReservedFounderOwner(profile, store)).toBe(true);
+    expect(store.getItem('raf_owner')).toBe('owner_abc123');
+  });
+
+  it('canonicalizes founder identity to exact reserved name', () => {
+    const store = memStorage();
+    store.setItem('raf_owner', 'owner_abc123');
+    const normalized = enforceFounderIdentity(
+      { ...defaultProfile(), name: 'harsh founderceo_01', ownerToken: 'owner_abc123' },
+      store
+    );
+    expect(normalized.name).toBe(RESERVED_FOUNDER_NAME);
+    expect(normalized.ownerToken).toBe('owner_abc123');
+  });
+
+  it('does not overwrite foreign founder token conflicts', () => {
+    const store = memStorage();
+    store.setItem('raf_owner', 'owner_primary');
+    const foreign = { ...defaultProfile(), name: RESERVED_FOUNDER_NAME, ownerToken: 'owner_other' };
+    const normalized = enforceFounderIdentity(foreign, store);
+    expect(normalized).toEqual(foreign);
+  });
+
   it('grants founder owner max-level stats safely', () => {
     const store = memStorage();
     const founderClaim = setProfileName(defaultProfile(), RESERVED_FOUNDER_NAME, store);
@@ -142,6 +169,19 @@ describe('profile cosmetics', () => {
       expect(boosted.level).toBe(MAX_PLAYER_LEVEL);
       expect(boosted.xp).toBe(xpForLevel(MAX_PLAYER_LEVEL));
     }
+  });
+
+  it('keeps founder owner token when merging remote profile', () => {
+    const local = {
+      ...defaultProfile(),
+      name: RESERVED_FOUNDER_NAME,
+      ownerToken: 'local_owner_token',
+      credits: 25,
+    };
+    const remote = { ...defaultProfile(), name: RESERVED_FOUNDER_NAME, ownerToken: 'remote_owner_token' };
+    const merged = mergeProfiles(local, remote);
+    expect(merged.name).toBe(RESERVED_FOUNDER_NAME);
+    expect(merged.ownerToken).toBe('remote_owner_token');
   });
 
   it('keeps 20-char cap when renaming profile', () => {
