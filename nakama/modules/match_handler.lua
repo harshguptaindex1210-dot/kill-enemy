@@ -224,7 +224,9 @@ end
 
 -- ── movement (mirrors src/netcode.ts + src/player.ts) ─────────────────────
 local function apply_input(p, input, dt)
-  p.yaw = wrap_angle(p.yaw + (input.mouseX or 0) * MOUSE_SENS)
+  -- Keep yaw integration sign aligned with src/player.ts and src/netcode.ts:
+  -- positive mouseX turns right (yaw decreases), negative mouseX turns left.
+  p.yaw = wrap_angle(p.yaw - (input.mouseX or 0) * MOUSE_SENS)
   p.pitch = clamp((input.pitch or p.pitch) - (input.mouseY or 0) * MOUSE_SENS, -1.5, 1.5)
 
   local speed = (input.sprint and SPRINT_SPEED) or WALK_SPEED
@@ -313,7 +315,7 @@ local function bot_input(state, p)
     -- Always push forward in combat; never kite backward when player closes in.
     -- turn toward target
     local target_yaw = math.atan2(-dx, -dz)
-    input.mouseX = (wrap_angle(target_yaw - p.yaw)) / 0.002
+    input.mouseX = -(wrap_angle(target_yaw - p.yaw)) / 0.002
     if not p.last_shot_ms or state.time_ms - p.last_shot_ms >= BOT_FIRE_INTERVAL then
       input.fire = true
       p.last_shot_ms = state.time_ms
@@ -322,7 +324,7 @@ local function bot_input(state, p)
     local dist = math.max(dist2d(p.x, p.z, tx, tz), 0.1)
     if dist > 5 then input.forward = true end
     local target_yaw = math.atan2(-(tx - p.x), -(tz - p.z))
-    input.mouseX = (wrap_angle(target_yaw - p.yaw)) / 0.002
+    input.mouseX = -(wrap_angle(target_yaw - p.yaw)) / 0.002
   end
   return input
 end
