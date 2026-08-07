@@ -597,6 +597,65 @@
   box-shadow: 0 0 0 2px var(--lobby-accent-dim);
 }
 
+.lobby-founder-lock {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.lobby-founder-row {
+  display: flex;
+}
+
+.lobby-founder-row input {
+  width: 100%;
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.35);
+  color: #fff;
+  font-size: 0.82rem;
+  font-family: inherit;
+}
+
+.lobby-founder-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.lobby-founder-actions .lobby-btn-secondary,
+.lobby-founder-actions .lobby-btn-danger {
+  width: 100%;
+  font-size: 0.68rem;
+  min-height: 38px;
+  padding: 8px 10px;
+}
+
+.lobby-founder-actions button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.lobby-founder-status {
+  margin: 0;
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+
+.lobby-founder-status.is-trusted {
+  color: #4ade80;
+}
+
+.lobby-founder-status.is-unprotected {
+  color: #fbbf24;
+}
+
+.lobby-founder-status.is-locked {
+  color: #f87171;
+}
+
 .lobby-stats {
   display: grid;
   grid-template-columns: auto 1fr;
@@ -799,6 +858,10 @@
 
   .lobby-hero {
     padding: 22px 10px 16px;
+  }
+
+  .lobby-founder-actions {
+    grid-template-columns: 1fr;
   }
 }
 

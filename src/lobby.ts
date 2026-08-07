@@ -27,9 +27,19 @@ export interface LobbyCallbacks {
   onBuyCarSkin: (skinId: string) => void;
   onEquipCarSkin: (skinId: string) => void;
   onRename: (name: string) => void;
+  onSetFounderPin: (pin: string) => void | Promise<void>;
+  onVerifyFounderPin: (pin: string) => void | Promise<void>;
+  onLockFounder: () => void;
   onAddFriend: (username: string) => void;
   onRemoveFriend: (username: string) => void;
   onInviteFriend: (username: string) => void;
+}
+
+export interface FounderPanelState {
+  isFounderName: boolean;
+  pinConfigured: boolean;
+  verified: boolean;
+  trustState: 'locked' | 'trusted' | 'unprotected';
 }
 
 export interface LobbyActivity {
@@ -190,7 +200,13 @@ export function showLobby(
   callbacks: LobbyCallbacks,
   activity: LobbyActivity = { history: [], leaderboard: [] },
   queue: QueueStatus = { active: false, message: '' },
-  shopMessage = ''
+  shopMessage = '',
+  founder: FounderPanelState = {
+    isFounderName: false,
+    pinConfigured: false,
+    verified: false,
+    trustState: 'locked',
+  }
 ) {
   const existing = document.getElementById('lobby-overlay');
   if (existing) existing.remove();
@@ -314,6 +330,19 @@ export function showLobby(
   const equippedPistol = gunSkinById(profile.equippedPistolSkin);
   const equippedSedan = carSkinById(profile.equippedSedanSkin);
   const equippedBuggy = carSkinById(profile.equippedBuggySkin);
+  const founderStatusText = !founder.isFounderName
+    ? 'Founder status: locked (not using reserved founder profile)'
+    : founder.trustState === 'trusted'
+      ? 'Founder status: unlocked / trusted'
+      : founder.trustState === 'unprotected'
+        ? 'Founder status: no PIN set yet (unprotected)'
+        : 'Founder status: locked (PIN required)';
+  const founderStatusClass =
+    founder.trustState === 'trusted'
+      ? 'lobby-founder-status is-trusted'
+      : founder.trustState === 'unprotected'
+        ? 'lobby-founder-status is-unprotected'
+        : 'lobby-founder-status is-locked';
 
   overlay.className = 'lobby-overlay';
   overlay.innerHTML = `
@@ -360,6 +389,17 @@ export function showLobby(
         <div class="lobby-name-row">
           <input id="inp-name" maxlength="20" value="${escapeHtml(profile.name)}" placeholder="Name" aria-label="Player name" />
           <button id="btn-rename" class="lobby-btn lobby-btn-primary" type="button" style="width:auto;padding:8px 14px;min-height:40px;font-size:0.75rem;">Save</button>
+        </div>
+        <div class="lobby-founder-lock">
+          <p id="founder-status" class="${founderStatusClass}">${escapeHtml(founderStatusText)}</p>
+          <div class="lobby-founder-row">
+            <input id="inp-founder-pin" type="password" inputmode="numeric" maxlength="12" placeholder="Founder PIN (4-12 digits)" aria-label="Founder PIN" />
+          </div>
+          <div class="lobby-founder-actions">
+            <button id="btn-founder-set-pin" class="lobby-btn lobby-btn-secondary" type="button">Set / Update PIN</button>
+            <button id="btn-founder-verify-pin" class="lobby-btn lobby-btn-secondary" type="button"${!founder.pinConfigured ? ' disabled' : ''}>Verify PIN</button>
+            <button id="btn-founder-lock" class="lobby-btn lobby-btn-danger" type="button"${!founder.pinConfigured && !founder.verified ? ' disabled' : ''}>Lock / Logout Founder</button>
+          </div>
         </div>
         ${shopMessage ? `<p id="shop-msg" class="lobby-shop-msg">${escapeHtml(shopMessage)}</p>` : ''}
       </section>
@@ -598,6 +638,23 @@ export function showLobby(
     if ((e as KeyboardEvent).key === 'Enter') {
       const inp = e.target as HTMLInputElement;
       callbacks.onRename(inp.value);
+    }
+  });
+  const getFounderPin = () =>
+    (document.getElementById('inp-founder-pin') as HTMLInputElement | null)?.value ?? '';
+  document.getElementById('btn-founder-set-pin')?.addEventListener('click', () => {
+    void callbacks.onSetFounderPin(getFounderPin());
+  });
+  document.getElementById('btn-founder-verify-pin')?.addEventListener('click', () => {
+    void callbacks.onVerifyFounderPin(getFounderPin());
+  });
+  document.getElementById('btn-founder-lock')?.addEventListener('click', () => {
+    callbacks.onLockFounder();
+  });
+  document.getElementById('inp-founder-pin')?.addEventListener('keydown', (e) => {
+    if ((e as KeyboardEvent).key === 'Enter') {
+      if (founder.pinConfigured) void callbacks.onVerifyFounderPin(getFounderPin());
+      else void callbacks.onSetFounderPin(getFounderPin());
     }
   });
 

@@ -36,7 +36,7 @@ for (const file of refs) {
   console.log(`  initial: ${file}  raw=${buf.length}  gzip=${gzipSync(buf).length}`);
 }
 
-const rawLimit = 658000;
+const rawLimit = 662000;
 const gzLimit = 200000;
 console.log(`Bundle JS raw (initial): ${totalRaw} (limit ${rawLimit})`);
 console.log(`Bundle JS gzip (initial): ${totalGz} (limit ${gzLimit})`);

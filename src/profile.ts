@@ -23,6 +23,9 @@ export interface PlayerProfile {
   equippedBuggySkin: string;
   friends: string[];
   ownerToken?: string;
+  founderPinHash?: string;
+  founderPinSalt?: string;
+  founderTrustToken?: string;
 }
 
 const PROFILE_KEY = 'robot_arena_profile_v1';
@@ -31,6 +34,8 @@ const NAME_MAX = 20;
 export const RESERVED_FOUNDER_NAME = 'HARSH FOUNDERCEO_01';
 const RESERVED_FOUNDER_NAME_KEY = RESERVED_FOUNDER_NAME.toLowerCase();
 const FOUNDER_OWNER_KEY = 'raf_owner';
+const FOUNDER_TRUST_KEY = 'raf_founder_trust';
+const PIN_REQUIRED_ERROR = 'PIN required: verify founder PIN in Profile lock section.';
 const RESERVED_NAME_ERROR =
   'Name reserved: only the founder owner profile can use HARSH FOUNDERCEO_01 on this device.';
 
@@ -66,6 +71,35 @@ function normalizeNameForReservation(name: string): string {
 
 function token(raw: unknown): string {
   return typeof raw === 'string' ? raw.trim().slice(0, 64) : '';
+}
+
+function pinHash(raw: unknown): string {
+  return typeof raw === 'string' ? raw.trim().slice(0, 128) : '';
+}
+
+function trustBlob(raw: unknown): { ownerToken: string; trustToken: string } | null {
+  const value = typeof raw === 'string' ? raw.trim().slice(0, 140) : '';
+  if (!value) return null;
+  const splitAt = value.indexOf(':');
+  if (splitAt <= 0) return null;
+  const ownerToken = token(value.slice(0, splitAt));
+  const trustToken = token(value.slice(splitAt + 1));
+  if (!ownerToken || !trustToken) return null;
+  return { ownerToken, trustToken };
+}
+
+function isFounderTrusted(
+  ownerToken: string,
+  founderTrustToken: string,
+  storage: StorageLike = defaultStorage()
+): boolean {
+  if (!ownerToken || !founderTrustToken) return false;
+  try {
+    const stored = trustBlob(storage.getItem(FOUNDER_TRUST_KEY));
+    return !!stored && stored.ownerToken === ownerToken && stored.trustToken === founderTrustToken;
+  } catch {
+    return false;
+  }
 }
 
 export function sanitizeProfile(raw: unknown): PlayerProfile {
@@ -118,6 +152,9 @@ export function sanitizeProfile(raw: unknown): PlayerProfile {
         : d.equippedBuggySkin,
     friends,
     ownerToken: token(r.ownerToken) || undefined,
+    founderPinHash: pinHash(r.founderPinHash) || undefined,
+    founderPinSalt: token(r.founderPinSalt) || undefined,
+    founderTrustToken: token(r.founderTrustToken) || undefined,
   };
 }
 
@@ -216,6 +253,11 @@ export function setProfileName(
     }
   }
 
+  const currentPinHash = pinHash(profile.founderPinHash);
+  const currentTrustToken = token(profile.founderTrustToken);
+  const trusted = isFounderTrusted(ownerToken, currentTrustToken, storage);
+  if (currentPinHash && !trusted) return { error: PIN_REQUIRED_ERROR };
+
   nextName = RESERVED_FOUNDER_NAME;
   return { profile: { ...profile, name: nextName, ownerToken } };
 }
@@ -225,6 +267,13 @@ export function isReservedFounderOwner(
   storage: StorageLike = defaultStorage()
 ): boolean {
   if (normalizeNameForReservation(profile.name) !== RESERVED_FOUNDER_NAME_KEY) return false;
+  return isFounderOwnerProfile(profile, storage);
+}
+
+export function isFounderOwnerProfile(
+  profile: PlayerProfile,
+  storage: StorageLike = defaultStorage()
+): boolean {
   const ownerToken = token(profile.ownerToken);
   if (!ownerToken) return false;
   try {
@@ -314,6 +363,12 @@ export function mergeProfiles(local: PlayerProfile, remote: PlayerProfile): Play
     owned.includes(remoteVal) ? remoteVal : owned.includes(localVal) ? localVal : owned[0]!;
   const mergedName = remote.name !== 'Pilot' ? remote.name : local.name;
   const mergedOwnerToken = token(remote.ownerToken) || token(local.ownerToken) || undefined;
+  const mergedFounderPinHash =
+    pinHash(remote.founderPinHash) || pinHash(local.founderPinHash) || undefined;
+  const mergedFounderPinSalt =
+    token(remote.founderPinSalt) || token(local.founderPinSalt) || undefined;
+  const mergedFounderTrustToken =
+    token(remote.founderTrustToken) || token(local.founderTrustToken) || undefined;
   return sanitizeProfile({
     name: mergedName,
     credits: Math.max(local.credits, remote.credits),
@@ -327,6 +382,9 @@ export function mergeProfiles(local: PlayerProfile, remote: PlayerProfile): Play
     equippedBuggySkin: pick(remote.equippedBuggySkin, local.equippedBuggySkin, ownedCarSkins),
     friends,
     ownerToken: mergedOwnerToken,
+    founderPinHash: mergedFounderPinHash,
+    founderPinSalt: mergedFounderPinSalt,
+    founderTrustToken: mergedFounderTrustToken,
   });
 }
 

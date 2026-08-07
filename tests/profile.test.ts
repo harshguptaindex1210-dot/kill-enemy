@@ -20,6 +20,13 @@ import {
   enforceFounderIdentity,
   removeFriend,
 } from '../src/profile';
+import {
+  founderTrustStatus,
+  isFounderVerified,
+  lockFounderProfile,
+  setFounderPin,
+  verifyFounderPin,
+} from '../src/founderPin';
 import { CAR_SKINS, GUN_SKINS } from '../src/cosmetics';
 import { MAX_PLAYER_LEVEL, defaultStats, ensureMaxLevelStats, xpForLevel } from '../src/persistence';
 import type { StorageLike } from '../src/settings';
@@ -159,16 +166,78 @@ describe('profile cosmetics', () => {
     expect(normalized).toEqual(foreign);
   });
 
-  it('grants founder owner max-level stats safely', () => {
+  it('grants founder owner max-level stats safely', async () => {
     const store = memStorage();
     const founderClaim = setProfileName(defaultProfile(), RESERVED_FOUNDER_NAME, store);
     expect('profile' in founderClaim).toBe(true);
     if ('profile' in founderClaim) {
       expect(isReservedFounderOwner(founderClaim.profile, store)).toBe(true);
+      expect(isFounderVerified(founderClaim.profile, store)).toBe(false);
+      const pinSet = await setFounderPin(founderClaim.profile, '1234', store);
+      expect('profile' in pinSet).toBe(true);
+      if ('profile' in pinSet) expect(isFounderVerified(pinSet.profile, store)).toBe(true);
       const boosted = ensureMaxLevelStats(defaultStats());
       expect(boosted.level).toBe(MAX_PLAYER_LEVEL);
       expect(boosted.xp).toBe(xpForLevel(MAX_PLAYER_LEVEL));
     }
+  });
+
+  it('sets founder PIN, verifies PIN, and fails invalid PIN', async () => {
+    const store = memStorage();
+    const founderClaim = setProfileName(defaultProfile(), RESERVED_FOUNDER_NAME, store);
+    expect('profile' in founderClaim).toBe(true);
+    if (!('profile' in founderClaim)) return;
+    const pinSet = await setFounderPin(founderClaim.profile, '2468', store);
+    expect('profile' in pinSet).toBe(true);
+    if (!('profile' in pinSet)) return;
+    expect(pinSet.profile.founderPinHash).toBeTruthy();
+    expect(pinSet.profile.founderPinHash).not.toBe('2468');
+    const locked = lockFounderProfile(pinSet.profile, store);
+    expect(isFounderVerified(locked, store)).toBe(false);
+    const bad = await verifyFounderPin(locked, '1357', store);
+    expect('error' in bad).toBe(true);
+    if ('error' in bad) expect(bad.error).toBe('invalid PIN');
+    const good = await verifyFounderPin(locked, '2468', store);
+    expect('profile' in good).toBe(true);
+    if ('profile' in good) {
+      expect(isFounderVerified(good.profile, store)).toBe(true);
+      expect(founderTrustStatus(good.profile, store)).toBe('trusted');
+    }
+  });
+
+  it('rejects reserved founder name while PIN lock is active', async () => {
+    const store = memStorage();
+    const founderClaim = setProfileName(defaultProfile(), RESERVED_FOUNDER_NAME, store);
+    expect('profile' in founderClaim).toBe(true);
+    if (!('profile' in founderClaim)) return;
+    const pinSet = await setFounderPin(founderClaim.profile, '2468', store);
+    expect('profile' in pinSet).toBe(true);
+    if (!('profile' in pinSet)) return;
+    const renamedAway = setProfileName(pinSet.profile, 'Nova', store);
+    expect('profile' in renamedAway).toBe(true);
+    if (!('profile' in renamedAway)) return;
+    const locked = lockFounderProfile(renamedAway.profile, store);
+    const blocked = setProfileName(locked, RESERVED_FOUNDER_NAME, store);
+    expect('error' in blocked).toBe(true);
+    if ('error' in blocked) expect(blocked.error).toMatch(/PIN required/i);
+    const unlocked = await verifyFounderPin(locked, '2468', store);
+    expect('profile' in unlocked).toBe(true);
+    if (!('profile' in unlocked)) return;
+    const reclaim = setProfileName(unlocked.profile, RESERVED_FOUNDER_NAME, store);
+    expect('profile' in reclaim).toBe(true);
+  });
+
+  it('lock/logout revokes founder-only verification state', async () => {
+    const store = memStorage();
+    const founderClaim = setProfileName(defaultProfile(), RESERVED_FOUNDER_NAME, store);
+    expect('profile' in founderClaim).toBe(true);
+    if (!('profile' in founderClaim)) return;
+    const pinSet = await setFounderPin(founderClaim.profile, '9999', store);
+    expect('profile' in pinSet).toBe(true);
+    if (!('profile' in pinSet)) return;
+    expect(isFounderVerified(pinSet.profile, store)).toBe(true);
+    const locked = lockFounderProfile(pinSet.profile, store);
+    expect(isFounderVerified(locked, store)).toBe(false);
   });
 
   it('keeps founder owner token when merging remote profile', () => {
