@@ -108,34 +108,9 @@ function init() {
   }
   let stats: PlayerStats = loadStats();
   let profile: PlayerProfile = loadProfile();
-  const founderTrustKey = 'raf_founder_trust';
-  const founderToken = (value: unknown) =>
-    typeof value === 'string' ? value.trim().slice(0, 64) : '';
-  const founderPinConfigured = (p: PlayerProfile) =>
-    !!(typeof p.founderPinHash === 'string' && p.founderPinHash.trim()) &&
-    !!(typeof p.founderPinSalt === 'string' && p.founderPinSalt.trim());
-  const founderTrustedOnDevice = (p: PlayerProfile) => {
-    const ownerToken = founderToken(p.ownerToken);
-    const trustToken = founderToken(p.founderTrustToken);
-    if (!ownerToken || !trustToken) return false;
-    try {
-      const raw = localStorage.getItem(founderTrustKey);
-      const value = typeof raw === 'string' ? raw.trim().slice(0, 140) : '';
-      const splitAt = value.indexOf(':');
-      if (splitAt <= 0) return false;
-      return (
-        founderToken(value.slice(0, splitAt)) === ownerToken &&
-        founderToken(value.slice(splitAt + 1)) === trustToken
-      );
-    } catch {
-      return false;
-    }
-  };
-  const founderVerifiedForGameplay = (p: PlayerProfile) =>
-    isReservedFounderOwner(p) && founderPinConfigured(p) && founderTrustedOnDevice(p);
   function applyFounderProfileState(nextProfile: PlayerProfile) {
     profile = enforceFounderIdentity(nextProfile);
-    if (founderVerifiedForGameplay(profile)) {
+    if (isReservedFounderOwner(profile)) {
       const boostedStats = ensureMaxLevelStats(stats);
       if (boostedStats !== stats) {
         stats = boostedStats;
@@ -447,39 +422,6 @@ function init() {
         }
         showLobbyUI();
       },
-      async onSetFounderPin(pin: string) {
-        const { setFounderPin } = await import('./founderPin');
-        const result = await setFounderPin(profile, pin);
-        if ('error' in result) shopMessage = `Founder PIN setup failed: ${result.error}`;
-        else {
-          persistProfile(result.profile);
-          shopMessage = 'Founder PIN saved. Founder session is now trusted on this device.';
-        }
-        showLobbyUI();
-      },
-      async onVerifyFounderPin(pin: string) {
-        const { verifyFounderPin } = await import('./founderPin');
-        const result = await verifyFounderPin(profile, pin);
-        if ('error' in result) {
-          shopMessage =
-            result.error === 'invalid PIN'
-              ? 'Incorrect founder PIN. Founder account remains locked.'
-              : `Founder unlock failed: ${result.error}`;
-        }
-        else {
-          persistProfile(result.profile);
-          shopMessage = 'Founder PIN verified. Founder account unlocked on this device.';
-        }
-        showLobbyUI();
-      },
-      onLockFounder() {
-        void (async () => {
-          const { lockFounderProfile } = await import('./founderPin');
-          persistProfile(lockFounderProfile(profile));
-          shopMessage = 'Founder locked on this device.';
-          showLobbyUI();
-        })();
-      },
       onEquipChassis(id: string) {
         const next = equipChassis(profile, id as ChassisId);
         if (next) {
@@ -554,11 +496,6 @@ function init() {
 
   async function showLobbyUI(forcedQueueMessage?: string) {
     await syncProfileOnline();
-    if (isReservedFounderOwner(profile) && !founderPinConfigured(profile)) {
-      const { ensureFounderDefaultPin } = await import('./founderPin');
-      const nextProfile = await ensureFounderDefaultPin(profile);
-      if (nextProfile !== profile) persistProfile(nextProfile);
-    }
     const [{ showLobby }, history, leaderboard] = await Promise.all([
       import('./lobby'),
       loadLocalHistory(),
@@ -583,15 +520,7 @@ function init() {
       shopMessage,
       {
         isFounderName: isReservedFounderOwner(profile),
-        pinConfigured: founderPinConfigured(profile),
-        verified: founderVerifiedForGameplay(profile),
-        trustState: !isReservedFounderOwner(profile)
-          ? 'locked'
-          : !founderPinConfigured(profile)
-            ? 'unprotected'
-            : founderTrustedOnDevice(profile)
-              ? 'trusted'
-              : 'locked',
+        trustState: isReservedFounderOwner(profile) ? 'trusted' : 'locked',
       }
     );
     void startLobbyScene();
