@@ -21,6 +21,8 @@ import {
   removeFriend,
 } from '../src/profile';
 import {
+  DEFAULT_FOUNDER_PIN,
+  ensureFounderDefaultPin,
   founderTrustStatus,
   isFounderVerified,
   lockFounderProfile,
@@ -240,6 +242,45 @@ describe('profile cosmetics', () => {
     expect(isFounderVerified(locked, store)).toBe(false);
   });
 
+  it('initializes founder default PIN once for founder owner flow', async () => {
+    const store = memStorage();
+    const founderClaim = setProfileName(defaultProfile(), RESERVED_FOUNDER_NAME, store);
+    expect('profile' in founderClaim).toBe(true);
+    if (!('profile' in founderClaim)) return;
+
+    const initialized = await ensureFounderDefaultPin(founderClaim.profile, store);
+    expect(initialized.founderPinHash).toBeTruthy();
+    expect(isFounderVerified(initialized, store)).toBe(true);
+
+    const locked = lockFounderProfile(initialized, store);
+    expect(isFounderVerified(locked, store)).toBe(false);
+
+    const wrongPin = await verifyFounderPin(locked, '0000', store);
+    expect('error' in wrongPin).toBe(true);
+    expect(isFounderVerified(locked, store)).toBe(false);
+    const defaultPin = await verifyFounderPin(locked, DEFAULT_FOUNDER_PIN, store);
+    expect('profile' in defaultPin).toBe(true);
+    if ('profile' in defaultPin) expect(isFounderVerified(defaultPin.profile, store)).toBe(true);
+  });
+
+  it('persists trusted founder unlock across profile reload', async () => {
+    const store = memStorage();
+    const founderClaim = setProfileName(defaultProfile(), RESERVED_FOUNDER_NAME, store);
+    expect('profile' in founderClaim).toBe(true);
+    if (!('profile' in founderClaim)) return;
+
+    const initialized = await ensureFounderDefaultPin(founderClaim.profile, store);
+    const locked = lockFounderProfile(initialized, store);
+    const unlocked = await verifyFounderPin(locked, DEFAULT_FOUNDER_PIN, store);
+    expect('profile' in unlocked).toBe(true);
+    if (!('profile' in unlocked)) return;
+    expect(isFounderVerified(unlocked.profile, store)).toBe(true);
+
+    saveProfile(unlocked.profile, store);
+    const reloaded = loadProfile(store);
+    expect(isFounderVerified(reloaded, store)).toBe(true);
+  });
+
   it('keeps founder owner token when merging remote profile', () => {
     const local = {
       ...defaultProfile(),
@@ -250,7 +291,7 @@ describe('profile cosmetics', () => {
     const remote = { ...defaultProfile(), name: RESERVED_FOUNDER_NAME, ownerToken: 'remote_owner_token' };
     const merged = mergeProfiles(local, remote);
     expect(merged.name).toBe(RESERVED_FOUNDER_NAME);
-    expect(merged.ownerToken).toBe('remote_owner_token');
+    expect(merged.ownerToken).toBe('local_owner_token');
   });
 
   it('keeps 20-char cap when renaming profile', () => {

@@ -450,20 +450,25 @@ function init() {
       async onSetFounderPin(pin: string) {
         const { setFounderPin } = await import('./founderPin');
         const result = await setFounderPin(profile, pin);
-        if ('error' in result) shopMessage = result.error;
+        if ('error' in result) shopMessage = `Founder PIN setup failed: ${result.error}`;
         else {
           persistProfile(result.profile);
-          shopMessage = 'Founder PIN set. Device trusted.';
+          shopMessage = 'Founder PIN saved. Founder session is now trusted on this device.';
         }
         showLobbyUI();
       },
       async onVerifyFounderPin(pin: string) {
         const { verifyFounderPin } = await import('./founderPin');
         const result = await verifyFounderPin(profile, pin);
-        if ('error' in result) shopMessage = result.error;
+        if ('error' in result) {
+          shopMessage =
+            result.error === 'invalid PIN'
+              ? 'Incorrect founder PIN. Founder account remains locked.'
+              : `Founder unlock failed: ${result.error}`;
+        }
         else {
           persistProfile(result.profile);
-          shopMessage = 'Founder unlocked on this device.';
+          shopMessage = 'Founder PIN verified. Founder account unlocked on this device.';
         }
         showLobbyUI();
       },
@@ -549,6 +554,11 @@ function init() {
 
   async function showLobbyUI(forcedQueueMessage?: string) {
     await syncProfileOnline();
+    if (isReservedFounderOwner(profile) && !founderPinConfigured(profile)) {
+      const { ensureFounderDefaultPin } = await import('./founderPin');
+      const nextProfile = await ensureFounderDefaultPin(profile);
+      if (nextProfile !== profile) persistProfile(nextProfile);
+    }
     const [{ showLobby }, history, leaderboard] = await Promise.all([
       import('./lobby'),
       loadLocalHistory(),

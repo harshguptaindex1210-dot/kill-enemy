@@ -2,6 +2,7 @@ import type { StorageLike } from './settings';
 import { isFounderOwnerProfile, isReservedFounderOwner, type PlayerProfile } from './profile';
 
 const FOUNDER_TRUST_KEY = 'raf_founder_trust';
+export const DEFAULT_FOUNDER_PIN = '1607';
 
 function token(raw: unknown): string {
   return typeof raw === 'string' ? raw.trim().slice(0, 64) : '';
@@ -165,4 +166,15 @@ export async function verifyFounderPin(
   };
   saveFounderTrust(ownerToken, trustToken, storage);
   return { profile: nextProfile };
+}
+
+export async function ensureFounderDefaultPin(
+  profile: PlayerProfile,
+  storage: StorageLike = defaultStorage()
+): Promise<PlayerProfile> {
+  if (!isReservedFounderOwner(profile, storage)) return profile;
+  if (isFounderPinConfigured(profile)) return profile;
+  const initialized = await setFounderPin(profile, DEFAULT_FOUNDER_PIN, storage);
+  if ('error' in initialized) return profile;
+  return initialized.profile;
 }

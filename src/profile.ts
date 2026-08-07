@@ -362,13 +362,13 @@ export function mergeProfiles(local: PlayerProfile, remote: PlayerProfile): Play
   const pick = <T extends string>(remoteVal: T, localVal: T, owned: T[]) =>
     owned.includes(remoteVal) ? remoteVal : owned.includes(localVal) ? localVal : owned[0]!;
   const mergedName = remote.name !== 'Pilot' ? remote.name : local.name;
-  const mergedOwnerToken = token(remote.ownerToken) || token(local.ownerToken) || undefined;
+  const mergedOwnerToken = token(local.ownerToken) || token(remote.ownerToken) || undefined;
   const mergedFounderPinHash =
     pinHash(remote.founderPinHash) || pinHash(local.founderPinHash) || undefined;
   const mergedFounderPinSalt =
     token(remote.founderPinSalt) || token(local.founderPinSalt) || undefined;
   const mergedFounderTrustToken =
-    token(remote.founderTrustToken) || token(local.founderTrustToken) || undefined;
+    token(local.founderTrustToken) || token(remote.founderTrustToken) || undefined;
   return sanitizeProfile({
     name: mergedName,
     credits: Math.max(local.credits, remote.credits),
