@@ -243,9 +243,18 @@ export class MatchGame {
 
     this.zoneSys = new ZoneSystem(scene);
     this.input = createInputManager(c, {
-      getInvertLookHorizontal: () => this.settings.invertLookHorizontal,
-      onInvertLookHorizontalChange: (invert) => {
-        this.settings.invertLookHorizontal = invert;
+      getTouchSettings: () => ({
+        invertLookHorizontal: this.settings.invertLookHorizontal,
+        invertLookVertical: this.settings.invertLookVertical,
+        leftFireButton: this.settings.leftFireButton,
+        touchSprintMode: this.settings.touchSprintMode,
+        touchButtonPreset: this.settings.touchButtonPreset,
+        touchLayoutPreset: this.settings.touchLayoutPreset,
+        hudOpacity: this.settings.hudOpacity,
+        hudScale: this.settings.hudScale,
+      }),
+      onTouchSettingsChange: (changes) => {
+        this.settings = { ...this.settings, ...changes };
         saveSettings(this.settings);
       },
     });
@@ -449,11 +458,13 @@ export class MatchGame {
     let input = undefined;
     if (this.sim.match.phase === 'playing' && human.alive) {
       const raw = this.input.getInput();
-      const sens = this.settings.sensitivity;
+      const mobileLook = isMobileDevice();
+      const sensX = mobileLook ? this.settings.touchSensitivityX : this.settings.sensitivity;
+      const sensY = mobileLook ? this.settings.touchSensitivityY : this.settings.sensitivity;
       input = {
         ...raw,
-        mouseX: raw.mouseX * sens,
-        mouseY: raw.mouseY * sens,
+        mouseX: raw.mouseX * sensX,
+        mouseY: raw.mouseY * sensY,
         aim: raw.aim || this.settings.cameraMode === 'fps',
       };
     } else {

@@ -1,12 +1,29 @@
 import type { PlayerInput } from './player';
+import type { Settings } from './settings';
 import { isTouchDevice, safeRequestPointerLock } from './platform';
 import { shouldUseMouseLook, touchDragToLookDelta, TOUCH_LOOK_SCALE } from './touchLook';
 
+type TouchRuntimeSettings = Pick<
+  Settings,
+  | 'invertLookHorizontal'
+  | 'invertLookVertical'
+  | 'leftFireButton'
+  | 'touchSprintMode'
+  | 'touchButtonPreset'
+  | 'touchLayoutPreset'
+  | 'hudOpacity'
+  | 'hudScale'
+>;
+
 export interface InputManagerOptions {
-  /** Live invert flag for touch horizontal look (desktop mouse is never inverted). */
+  /** Legacy compatibility toggle. */
   getInvertLookHorizontal?: () => boolean;
-  /** Persist invert toggles from the in-match mobile HUD control. */
+  /** Legacy compatibility callback. */
   onInvertLookHorizontalChange?: (invert: boolean) => void;
+  /** Live touch-settings view so runtime changes apply immediately. */
+  getTouchSettings?: () => TouchRuntimeSettings;
+  /** Persist touch setting changes from in-match controls. */
+  onTouchSettingsChange?: (changes: Partial<TouchRuntimeSettings>) => void;
 }
 
 export interface InputManager {
@@ -108,6 +125,107 @@ export function createInputManager(
   let touchEndHandler: ((e: TouchEvent) => void) | null = null;
   let touchStartHandler: ((e: TouchEvent) => void) | null = null;
   let firstTouchHandler: (() => void) | null = null;
+  let lastTouchUiSignature = '';
+
+  const touchDefaults: TouchRuntimeSettings = {
+    invertLookHorizontal: false,
+    invertLookVertical: false,
+    leftFireButton: true,
+    touchSprintMode: 'auto',
+    touchButtonPreset: 'standard',
+    touchLayoutPreset: 'thumbs',
+    hudOpacity: 0.78,
+    hudScale: 1.06,
+  };
+
+  const resolveTouchSettings = (): TouchRuntimeSettings => {
+    const legacyInvert = options.getInvertLookHorizontal?.() === true;
+    const fromSettings = options.getTouchSettings?.();
+    return {
+      ...touchDefaults,
+      ...fromSettings,
+      invertLookHorizontal: fromSettings?.invertLookHorizontal ?? legacyInvert,
+    };
+  };
+
+  const saveTouchSettings = (changes: Partial<TouchRuntimeSettings>) => {
+    options.onTouchSettingsChange?.(changes);
+    if (typeof changes.invertLookHorizontal === 'boolean') {
+      options.onInvertLookHorizontalChange?.(changes.invertLookHorizontal);
+    }
+  };
+
+  const applyTouchUiSettings = () => {
+    if (!touchOverlay) return;
+    const touchSettings = resolveTouchSettings();
+    const signature = JSON.stringify(touchSettings);
+    if (signature === lastTouchUiSignature) return;
+    lastTouchUiSignature = signature;
+
+    const joystickArea = touchOverlay.querySelector('#touch-joystick-area') as HTMLDivElement | null;
+    const joystickKnob = touchOverlay.querySelector('#touch-joystick-knob') as HTMLDivElement | null;
+    const actionsArea = touchOverlay.querySelector('#touch-actions-area') as HTMLDivElement | null;
+    const weaponsArea = touchOverlay.querySelector('#touch-weapons-area') as HTMLDivElement | null;
+    const leftFire = touchOverlay.querySelector('#tb-fire-left') as HTMLButtonElement | null;
+    const actionButtons = touchOverlay.querySelectorAll(
+      '#tb-skill,#tb-jump,#tb-reload,#tb-aim,#tb-fire,#tb-fire-left'
+    );
+
+    const compact = touchSettings.touchButtonPreset === 'compact';
+    const thumbsLayout = touchSettings.touchLayoutPreset === 'thumbs';
+    const scale = Math.min(1.3, Math.max(0.8, touchSettings.hudScale));
+    const opacity = Math.min(1, Math.max(0.35, touchSettings.hudOpacity));
+
+    if (joystickArea) {
+      joystickArea.style.width = `${Math.round((compact ? 110 : 126) * scale)}px`;
+      joystickArea.style.height = joystickArea.style.width;
+      joystickArea.style.left = thumbsLayout ? '18px' : '30px';
+      joystickArea.style.bottom = thumbsLayout ? '18px' : '30px';
+    }
+    if (joystickKnob) {
+      const knob = Math.round((compact ? 44 : 50) * scale);
+      joystickKnob.style.width = `${knob}px`;
+      joystickKnob.style.height = `${knob}px`;
+      joystickKnob.style.marginLeft = `${Math.round(-knob / 2)}px`;
+      joystickKnob.style.marginTop = `${Math.round(-knob / 2)}px`;
+    }
+    if (actionsArea) {
+      actionsArea.style.right = thumbsLayout ? '14px' : '20px';
+      actionsArea.style.bottom = thumbsLayout ? '14px' : '30px';
+      actionsArea.style.gap = compact ? '9px' : '12px';
+    }
+    if (weaponsArea) {
+      weaponsArea.style.top = thumbsLayout ? '84px' : '100px';
+      weaponsArea.style.right = thumbsLayout ? '14px' : '15px';
+      weaponsArea.style.gap = compact ? '4px' : '6px';
+    }
+    if (leftFire) {
+      leftFire.style.display = touchSettings.leftFireButton ? 'flex' : 'none';
+      leftFire.style.left = thumbsLayout ? '14px' : '22px';
+      leftFire.style.bottom = thumbsLayout ? '144px' : '170px';
+    }
+
+    const actionSize = Math.round((compact ? 46 : 52) * scale);
+    const fireSize = Math.round((compact ? 66 : 74) * scale);
+    actionButtons.forEach((btn) => {
+      const el = btn as HTMLButtonElement;
+      const isFire = el.id === 'tb-fire' || el.id === 'tb-fire-left';
+      const size = isFire ? fireSize : actionSize;
+      el.style.width = `${size}px`;
+      el.style.height = `${size}px`;
+      el.style.fontSize = `${Math.round(isFire ? size * 0.36 : size * 0.34)}px`;
+    });
+
+    touchOverlay.style.opacity = String(opacity);
+    const hud = document.getElementById('game-hud');
+    if (hud) {
+      hud.style.opacity = String(opacity);
+      hud.style.transform = `scale(${scale})`;
+      hud.style.transformOrigin = '50% 12%';
+    }
+    const minimap = document.getElementById('minimap');
+    if (minimap) minimap.style.opacity = String(Math.min(1, opacity + 0.06));
+  };
 
   function mountTouchUI() {
     if (touchOverlay) return;
@@ -117,9 +235,58 @@ export function createInputManager(
     touchOverlay.style.cssText =
       'position:fixed;inset:0;pointer-events:none;z-index:9996;user-select:none;-webkit-user-select:none;touch-action:none;';
 
-    touchOverlay.innerHTML = `<div id="touch-joystick-area" style="position:absolute;bottom:30px;left:30px;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,0.12);border:2px solid rgba(255,255,255,0.3);pointer-events:auto;touch-action:none;"><div id="touch-joystick-knob" style="position:absolute;top:50%;left:50%;width:50px;height:50px;margin-top:-25px;margin-left:-25px;border-radius:50%;background:rgba(0,220,255,0.7);box-shadow:0 0 10px rgba(0,240,255,0.5);pointer-events:none;"></div></div><div id="touch-actions-area" style="position:absolute;bottom:30px;right:20px;display:flex;flex-direction:column;gap:12px;align-items:flex-end;pointer-events:auto;touch-action:none;"><div style="display:flex;gap:10px;align-items:center;"><button id="tb-skill" style="width:52px;height:52px;border-radius:50%;background:rgba(0,240,255,0.6);border:2px solid #fff;color:#fff;font-size:20px;font-weight:bold;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.5);">⚡</button><button id="tb-jump" style="width:52px;height:52px;border-radius:50%;background:rgba(50,220,100,0.6);border:2px solid #fff;color:#fff;font-size:20px;font-weight:bold;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.5);">⬆️</button></div><div style="display:flex;gap:10px;align-items:center;"><button id="tb-reload" style="width:52px;height:52px;border-radius:50%;background:rgba(255,180,0,0.6);border:2px solid #fff;color:#fff;font-size:18px;font-weight:bold;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.5);">🔄</button><button id="tb-aim" style="width:52px;height:52px;border-radius:50%;background:rgba(50,150,255,0.6);border:2px solid #fff;color:#fff;font-size:20px;font-weight:bold;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.5);">🎯</button><button id="tb-fire" style="width:72px;height:72px;border-radius:50%;background:rgba(255,50,50,0.75);border:3px solid #fff;color:#fff;font-size:28px;font-weight:bold;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(255,0,0,0.6);">🔥</button></div></div><div id="touch-weapons-area" style="position:absolute;top:100px;right:15px;display:flex;gap:6px;pointer-events:auto;touch-action:none;"><button id="tb-w1" style="padding:6px 12px;background:rgba(0,0,0,0.6);border:1px solid #4af;color:#4af;border-radius:4px;font-size:12px;font-weight:bold;">Rifle</button><button id="tb-w2" style="padding:6px 12px;background:rgba(0,0,0,0.6);border:1px solid #fa0;color:#fa0;border-radius:4px;font-size:12px;font-weight:bold;">Pistol</button><button id="tb-w3" style="padding:6px 12px;background:rgba(0,0,0,0.6);border:1px solid #aaa;color:#aaa;border-radius:4px;font-size:12px;font-weight:bold;">Melee</button></div><button id="tb-invert-look" type="button" style="position:absolute;top:96px;left:12px;padding:6px 8px;background:#000a;border:1px solid #fff6;color:#fff;font:bold 11px sans-serif;pointer-events:auto;touch-action:none;">Invert: Off</button>`;
+    touchOverlay.innerHTML = `<div id="touch-joystick-area"><div id="touch-joystick-knob"></div></div><button id="tb-fire-left">🔥</button><div id="touch-actions-area"><div><button id="tb-skill">⚡</button><button id="tb-jump">⬆️</button></div><div><button id="tb-reload">↻</button><button id="tb-aim">🎯</button><button id="tb-fire">🔥</button></div></div><div id="touch-weapons-area"><button id="tb-w1">R1</button><button id="tb-w2">P2</button><button id="tb-w3">M3</button></div><button id="tb-invert-look" type="button">Invert H: Off</button>`;
 
     document.body.appendChild(touchOverlay);
+    const setStyle = (id: string, css: string) => {
+      const el = touchOverlay!.querySelector(id) as HTMLElement | null;
+      if (el) el.style.cssText = css;
+    };
+    setStyle(
+      '#touch-joystick-area',
+      'position:absolute;bottom:30px;left:30px;width:126px;height:126px;border-radius:50%;background:rgba(255,255,255,.12);border:2px solid rgba(255,255,255,.3);pointer-events:auto;touch-action:none;'
+    );
+    setStyle(
+      '#touch-joystick-knob',
+      'position:absolute;top:50%;left:50%;width:50px;height:50px;margin-top:-25px;margin-left:-25px;border-radius:50%;background:rgba(0,220,255,.7);box-shadow:0 0 10px rgba(0,240,255,.5);pointer-events:none;'
+    );
+    setStyle(
+      '#touch-actions-area',
+      'position:absolute;bottom:30px;right:20px;display:flex;flex-direction:column;gap:12px;align-items:flex-end;pointer-events:auto;touch-action:none;'
+    );
+    touchOverlay.querySelectorAll('#touch-actions-area > div').forEach((el) => {
+      (el as HTMLElement).style.cssText = 'display:flex;gap:10px;align-items:center;';
+    });
+    setStyle(
+      '#touch-weapons-area',
+      'position:absolute;top:100px;right:15px;display:flex;gap:6px;pointer-events:auto;touch-action:none;'
+    );
+    setStyle(
+      '#tb-invert-look',
+      'position:absolute;top:96px;left:12px;padding:6px 8px;background:#000a;border:1px solid #fff6;color:#fff;font:bold 11px sans-serif;pointer-events:auto;touch-action:none;'
+    );
+    const paintRoundBtn = (id: string, bg: string, border = '2px solid #fff') => {
+      setStyle(
+        id,
+        `width:52px;height:52px;border-radius:50%;background:${bg};border:${border};color:#fff;font-size:20px;font-weight:bold;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.5);`
+      );
+    };
+    paintRoundBtn('#tb-skill', 'rgba(0,240,255,.6)');
+    paintRoundBtn('#tb-jump', 'rgba(50,220,100,.6)');
+    paintRoundBtn('#tb-reload', 'rgba(255,180,0,.6)');
+    paintRoundBtn('#tb-aim', 'rgba(50,150,255,.6)');
+    paintRoundBtn('#tb-fire', 'rgba(255,50,50,.75)', '3px solid #fff');
+    paintRoundBtn('#tb-fire-left', 'rgba(255,50,50,.72)', '3px solid #fff');
+    setStyle('#tb-fire-left', `${(touchOverlay.querySelector('#tb-fire-left') as HTMLElement).style.cssText};position:absolute;left:22px;bottom:170px;pointer-events:auto;touch-action:none;box-shadow:0 4px 12px rgba(255,0,0,.6);`);
+    setStyle('#tb-fire', `${(touchOverlay.querySelector('#tb-fire') as HTMLElement).style.cssText};box-shadow:0 4px 12px rgba(255,0,0,.6);`);
+    touchOverlay.querySelectorAll('#touch-weapons-area button').forEach((el) => {
+      (el as HTMLElement).style.cssText =
+        'padding:6px 12px;background:rgba(0,0,0,.6);border-radius:4px;font-size:12px;font-weight:bold;';
+    });
+    setStyle('#tb-w1', `${(touchOverlay.querySelector('#tb-w1') as HTMLElement).style.cssText};border:1px solid #4af;color:#4af;`);
+    setStyle('#tb-w2', `${(touchOverlay.querySelector('#tb-w2') as HTMLElement).style.cssText};border:1px solid #fa0;color:#fa0;`);
+    setStyle('#tb-w3', `${(touchOverlay.querySelector('#tb-w3') as HTMLElement).style.cssText};border:1px solid #aaa;color:#aaa;`);
+    applyTouchUiSettings();
 
     // Setup Joystick Dragging
     const joystickArea = touchOverlay.querySelector('#touch-joystick-area') as HTMLDivElement;
@@ -145,12 +312,15 @@ export function createInputManager(
 
       const normX = dx / maxRadius;
       const normY = dy / maxRadius;
+      const normMag = dist / maxRadius;
+      const touchSettings = resolveTouchSettings();
+      const autoSprint = touchSettings.touchSprintMode === 'auto';
 
       touchForward = normY < -0.25;
       touchBackward = normY > 0.25;
       touchLeft = normX < -0.25;
       touchRight = normX > 0.25;
-      touchSprint = dist / maxRadius > 0.8;
+      touchSprint = autoSprint ? normY < -0.45 && normMag > 0.55 : normMag > 0.8;
     };
 
     const resetJoystick = () => {
@@ -184,8 +354,14 @@ export function createInputManager(
           cameraLastY = t.clientY;
           touchLookActive = true;
           lastTouchLookAtMs = Date.now();
-          const invert = options.getInvertLookHorizontal?.() === true;
-          const look = touchDragToLookDelta(dx, dy, TOUCH_LOOK_SCALE, invert);
+          const touchSettings = resolveTouchSettings();
+          const look = touchDragToLookDelta(
+            dx,
+            dy,
+            TOUCH_LOOK_SCALE,
+            touchSettings.invertLookHorizontal,
+            touchSettings.invertLookVertical
+          );
           mouseX += look.mouseX;
           mouseY += look.mouseY;
         }
@@ -230,15 +406,25 @@ export function createInputManager(
     window.addEventListener('touchstart', touchStartHandler);
 
     // Touch Button Handlers
-    const btnFire = touchOverlay.querySelector('#tb-fire') as HTMLButtonElement;
-    btnFire.addEventListener('touchstart', (e) => {
-      e.preventDefault();
-      touchFirePressed = true;
-    });
-    btnFire.addEventListener('touchend', (e) => {
-      e.preventDefault();
-      touchFirePressed = false;
-    });
+    const bindFireButton = (id: string) => {
+      const btn = touchOverlay!.querySelector(id) as HTMLButtonElement;
+      const down = (e: Event) => {
+        e.preventDefault();
+        touchFirePressed = true;
+      };
+      const up = (e: Event) => {
+        e.preventDefault();
+        touchFirePressed = false;
+      };
+      btn.addEventListener('touchstart', down);
+      btn.addEventListener('touchend', up);
+      btn.addEventListener('touchcancel', up);
+      btn.addEventListener('mousedown', down);
+      btn.addEventListener('mouseup', up);
+      btn.addEventListener('mouseleave', up);
+    };
+    bindFireButton('#tb-fire');
+    bindFireButton('#tb-fire-left');
 
     const btnAim = touchOverlay.querySelector('#tb-aim') as HTMLButtonElement;
     btnAim.addEventListener('touchstart', (e) => {
@@ -289,8 +475,8 @@ export function createInputManager(
 
     const btnInvert = touchOverlay.querySelector('#tb-invert-look') as HTMLButtonElement;
     const syncInvertLabel = () => {
-      const on = options.getInvertLookHorizontal?.() === true;
-      btnInvert.textContent = on ? 'Invert: On' : 'Invert: Off';
+      const on = resolveTouchSettings().invertLookHorizontal;
+      btnInvert.textContent = on ? 'Invert H: On' : 'Invert H: Off';
       btnInvert.style.borderColor = on ? '#2dd4bf' : '#fff6';
       btnInvert.style.color = on ? '#2dd4bf' : '#fff';
     };
@@ -298,8 +484,9 @@ export function createInputManager(
     const toggleInvert = (e: Event) => {
       e.preventDefault();
       e.stopPropagation();
-      const next = !(options.getInvertLookHorizontal?.() === true);
-      options.onInvertLookHorizontalChange?.(next);
+      const next = !resolveTouchSettings().invertLookHorizontal;
+      saveTouchSettings({ invertLookHorizontal: next });
+      applyTouchUiSettings();
       syncInvertLabel();
     };
     btnInvert.addEventListener('touchstart', toggleInvert);
@@ -321,6 +508,7 @@ export function createInputManager(
   }
 
   function getInput(): PlayerInput {
+    if (touchOverlay) applyTouchUiSettings();
     const input: PlayerInput = {
       forward: keys.has('KeyW') || keys.has('ArrowUp') || touchForward,
       backward: keys.has('KeyS') || keys.has('ArrowDown') || touchBackward,

@@ -164,9 +164,18 @@ export class OnlineMatchGame {
 
     this.zoneSys = new ZoneSystem(scene);
     this.input = createInputManager(c, {
-      getInvertLookHorizontal: () => this.opts.settings.invertLookHorizontal,
-      onInvertLookHorizontalChange: (invert) => {
-        this.opts.settings.invertLookHorizontal = invert;
+      getTouchSettings: () => ({
+        invertLookHorizontal: this.opts.settings.invertLookHorizontal,
+        invertLookVertical: this.opts.settings.invertLookVertical,
+        leftFireButton: this.opts.settings.leftFireButton,
+        touchSprintMode: this.opts.settings.touchSprintMode,
+        touchButtonPreset: this.opts.settings.touchButtonPreset,
+        touchLayoutPreset: this.opts.settings.touchLayoutPreset,
+        hudOpacity: this.opts.settings.hudOpacity,
+        hudScale: this.opts.settings.hudScale,
+      }),
+      onTouchSettingsChange: (changes) => {
+        this.opts.settings = { ...this.opts.settings, ...changes };
         saveSettings(this.opts.settings);
       },
     });
@@ -354,7 +363,9 @@ export class OnlineMatchGame {
     const frameMs = now - this.lastTime;
     this.lastTime = now;
     this.trackQuality(now, frameMs);
-    const sens = this.opts.settings.sensitivity;
+    const mobileLook = isMobileDevice();
+    const sensX = mobileLook ? this.opts.settings.touchSensitivityX : this.opts.settings.sensitivity;
+    const sensY = mobileLook ? this.opts.settings.touchSensitivityY : this.opts.settings.sensitivity;
     const snap = this.client.interp.latest;
     const phase = snap?.phase ?? 'lobby';
     const playing = phase === 'playing';
@@ -364,7 +375,7 @@ export class OnlineMatchGame {
 
     let rawInput = this.input.getInput();
     if (active) {
-      this.pitch -= rawInput.mouseY * sens * MOUSE_SENSITIVITY;
+      this.pitch -= rawInput.mouseY * sensY * MOUSE_SENSITIVITY;
       this.pitch = Math.max(-MAX_PITCH, Math.min(MAX_PITCH, this.pitch));
     } else {
       rawInput = {
@@ -391,8 +402,8 @@ export class OnlineMatchGame {
       sprint: rawInput.sprint,
       jump: rawInput.jump,
       aim: this.lastAim,
-      mouseX: rawInput.mouseX * sens,
-      mouseY: rawInput.mouseY * sens,
+      mouseX: rawInput.mouseX * sensX,
+      mouseY: rawInput.mouseY * sensY,
       fire: rawInput.fire,
       reload: rawInput.reload,
     });

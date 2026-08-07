@@ -54,6 +54,13 @@ describe('touchDragToLookDelta', () => {
     expect(inverted.mouseX).toBe(-normal.mouseX);
     expect(inverted.mouseY).toBe(normal.mouseY);
   });
+
+  it('invertVertical flips only pitch axis', () => {
+    const normal = touchDragToLookDelta(30, 14, TOUCH_LOOK_SCALE, false, false);
+    const inverted = touchDragToLookDelta(30, 14, TOUCH_LOOK_SCALE, false, true);
+    expect(inverted.mouseX).toBe(normal.mouseX);
+    expect(inverted.mouseY).toBe(-normal.mouseY);
+  });
 });
 
 describe('phone look chain (demo online / local MatchSim path)', () => {

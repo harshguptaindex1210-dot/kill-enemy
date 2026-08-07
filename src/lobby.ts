@@ -209,6 +209,20 @@ export function showLobby(
 
   const row = (label: string, sel: string) =>
     `<label style="display:flex;justify-content:space-between;align-items:center;gap:10px;">${label}${sel}</label>`;
+  const range = (
+    id: string,
+    value: number,
+    min: number,
+    max: number,
+    step: number,
+    suffix = ''
+  ) =>
+    `<span style="display:flex;align-items:center;gap:8px;min-width:58%;">
+      <input id="${id}" type="range" min="${min}" max="${max}" step="${step}" value="${value}" style="flex:1;" />
+      <b id="${id}-value" style="min-width:54px;text-align:right;color:#fff;font-size:0.75rem;">${value.toFixed(2)}${suffix}</b>
+    </span>`;
+  const toggle = (id: string, checked: boolean, onLabel = 'On', offLabel = 'Off') =>
+    `<select id="${id}"><option value="false"${!checked ? ' selected' : ''}>${offLabel}</option><option value="true"${checked ? ' selected' : ''}>${onLabel}</option></select>`;
 
   const historyMarkup =
     activity.history.length === 0
@@ -408,14 +422,18 @@ export function showLobby(
               select(
                 'sel-sensitivity',
                 [
-                  ['0.5', 'Slow'],
-                  ['1', 'Normal'],
-                  ['1.5', 'Fast'],
-                  ['2', 'Very Fast'],
+                  ['0.5', '0.5x'],
+                  ['0.8', '0.8x'],
+                  ['1', '1.0x'],
+                  ['1.2', '1.2x'],
+                  ['1.5', '1.5x'],
+                  ['2', '2.0x'],
                 ],
                 String(settings.sensitivity)
               )
             )}
+            ${row('Touch Look X', range('rng-touch-sens-x', settings.touchSensitivityX, 0.35, 3, 0.05, 'x'))}
+            ${row('Touch Look Y', range('rng-touch-sens-y', settings.touchSensitivityY, 0.35, 3, 0.05, 'x'))}
             ${row(
               'Camera',
               select(
@@ -428,14 +446,48 @@ export function showLobby(
               )
             )}
             ${row(
-              'Invert Look',
+              'Invert Horizontal',
+              toggle('sel-invert-look-horizontal', settings.invertLookHorizontal)
+            )}
+            ${row(
+              'Invert Vertical',
+              toggle('sel-invert-look-vertical', settings.invertLookVertical)
+            )}
+            ${row(
+              'Left Fire Button',
+              toggle('sel-left-fire', settings.leftFireButton, 'Enabled', 'Disabled')
+            )}
+            ${row(
+              'Sprint Mode',
               select(
-                'sel-invert-look',
+                'sel-touch-sprint',
                 [
-                  ['false', 'Off'],
-                  ['true', 'On'],
+                  ['auto', 'Auto Sprint'],
+                  ['hold', 'Hold Sprint'],
                 ],
-                String(settings.invertLookHorizontal)
+                settings.touchSprintMode
+              )
+            )}
+            ${row(
+              'Button Size',
+              select(
+                'sel-touch-buttons',
+                [
+                  ['compact', 'Compact'],
+                  ['standard', 'Standard'],
+                ],
+                settings.touchButtonPreset
+              )
+            )}
+            ${row(
+              'Touch Layout',
+              select(
+                'sel-touch-layout',
+                [
+                  ['thumbs', 'Thumbs (Recommended)'],
+                  ['classic', 'Classic'],
+                ],
+                settings.touchLayoutPreset
               )
             )}
             ${row(
@@ -448,6 +500,12 @@ export function showLobby(
                 ],
                 settings.minimapSize
               )
+            )}
+            ${row('HUD Opacity', range('rng-hud-opacity', settings.hudOpacity, 0.35, 1, 0.05))}
+            ${row('HUD Scale', range('rng-hud-scale', settings.hudScale, 0.8, 1.3, 0.05, 'x'))}
+            ${row(
+              'Gyro Aim',
+              toggle('sel-gyro', settings.gyroAim, 'On (Soon)', 'Off')
             )}
             ${row(
               'Volume',
@@ -619,15 +677,52 @@ export function showLobby(
     document.getElementById(id)?.addEventListener('change', (e) => {
       const target = e.target as HTMLSelectElement;
       let value: string | number | boolean = target.value;
-      if (field === 'sensitivity' || field === 'volume') value = parseFloat(target.value);
-      else if (field === 'invertLookHorizontal') value = target.value === 'true';
+      if (
+        field === 'sensitivity' ||
+        field === 'volume' ||
+        field === 'touchSensitivityX' ||
+        field === 'touchSensitivityY' ||
+        field === 'hudOpacity' ||
+        field === 'hudScale'
+      ) {
+        value = parseFloat(target.value);
+      } else if (
+        field === 'invertLookHorizontal' ||
+        field === 'invertLookVertical' ||
+        field === 'leftFireButton' ||
+        field === 'gyroAim'
+      ) {
+        value = target.value === 'true';
+      }
       callbacks.onSettingsChange({ [field]: value } as Partial<Settings>);
     });
   };
+  const wireRange = (id: string, field: keyof Settings, suffix = '') => {
+    const input = document.getElementById(id) as HTMLInputElement | null;
+    const valueEl = document.getElementById(`${id}-value`);
+    if (!input) return;
+    const push = () => {
+      const v = parseFloat(input.value);
+      if (valueEl) valueEl.textContent = `${v.toFixed(2)}${suffix}`;
+      callbacks.onSettingsChange({ [field]: v } as Partial<Settings>);
+    };
+    input.addEventListener('input', push);
+    input.addEventListener('change', push);
+  };
   wire('sel-quality', 'quality');
   wire('sel-sensitivity', 'sensitivity');
+  wireRange('rng-touch-sens-x', 'touchSensitivityX', 'x');
+  wireRange('rng-touch-sens-y', 'touchSensitivityY', 'x');
   wire('sel-camera', 'cameraMode');
-  wire('sel-invert-look', 'invertLookHorizontal');
+  wire('sel-invert-look-horizontal', 'invertLookHorizontal');
+  wire('sel-invert-look-vertical', 'invertLookVertical');
+  wire('sel-left-fire', 'leftFireButton');
+  wire('sel-touch-sprint', 'touchSprintMode');
+  wire('sel-touch-buttons', 'touchButtonPreset');
+  wire('sel-touch-layout', 'touchLayoutPreset');
   wire('sel-minimap', 'minimapSize');
+  wireRange('rng-hud-opacity', 'hudOpacity');
+  wireRange('rng-hud-scale', 'hudScale', 'x');
+  wire('sel-gyro', 'gyroAim');
   wire('sel-volume', 'volume');
 }

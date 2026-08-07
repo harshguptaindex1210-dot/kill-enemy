@@ -610,6 +610,10 @@
   font-family: inherit;
 }
 
+.lobby-settings input[type='range'] {
+  accent-color: #2dd4bf;
+}
+
 .lobby-section {
   width: 100%;
 }

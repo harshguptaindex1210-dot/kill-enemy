@@ -22,10 +22,20 @@ describe('settings (#33)', () => {
     const s = defaultSettings();
     expect(s.quality).toBe('medium');
     expect(s.sensitivity).toBe(1);
+    expect(s.touchSensitivityX).toBe(1);
+    expect(s.touchSensitivityY).toBe(1);
     expect(s.volume).toBe(0.7);
     expect(s.cameraMode).toBe('tps');
     expect(s.minimapSize).toBe('small');
     expect(s.invertLookHorizontal).toBe(false);
+    expect(s.invertLookVertical).toBe(false);
+    expect(s.leftFireButton).toBe(true);
+    expect(s.touchSprintMode).toBe('auto');
+    expect(s.touchButtonPreset).toBe('standard');
+    expect(s.touchLayoutPreset).toBe('thumbs');
+    expect(s.hudOpacity).toBe(0.9);
+    expect(s.hudScale).toBe(1);
+    expect(s.gyroAim).toBe(false);
   });
 
   it('round-trips a valid settings object through storage', () => {
@@ -34,20 +44,40 @@ describe('settings (#33)', () => {
       {
         quality: 'low',
         sensitivity: 1.5,
+        touchSensitivityX: 1.25,
+        touchSensitivityY: 0.95,
         volume: 0.4,
         cameraMode: 'fps',
         minimapSize: 'large',
         invertLookHorizontal: true,
+        invertLookVertical: true,
+        leftFireButton: false,
+        touchSprintMode: 'hold',
+        touchButtonPreset: 'compact',
+        touchLayoutPreset: 'classic',
+        hudOpacity: 0.66,
+        hudScale: 1.2,
+        gyroAim: true,
       },
       store
     );
     const loaded = loadSettings(store);
     expect(loaded.quality).toBe('low');
     expect(loaded.sensitivity).toBe(1.5);
+    expect(loaded.touchSensitivityX).toBe(1.25);
+    expect(loaded.touchSensitivityY).toBe(0.95);
     expect(loaded.volume).toBe(0.4);
     expect(loaded.cameraMode).toBe('fps');
     expect(loaded.minimapSize).toBe('large');
     expect(loaded.invertLookHorizontal).toBe(true);
+    expect(loaded.invertLookVertical).toBe(true);
+    expect(loaded.leftFireButton).toBe(false);
+    expect(loaded.touchSprintMode).toBe('hold');
+    expect(loaded.touchButtonPreset).toBe('compact');
+    expect(loaded.touchLayoutPreset).toBe('classic');
+    expect(loaded.hudOpacity).toBe(0.66);
+    expect(loaded.hudScale).toBe(1.2);
+    expect(loaded.gyroAim).toBe(true);
   });
 
   it('returns defaults for empty storage', () => {
@@ -64,6 +94,7 @@ describe('settings (#33)', () => {
     const s = sanitizeSettings({
       quality: 'ultra',
       sensitivity: 'fast',
+      touchSensitivityX: 'fast',
       volume: 'loud',
       cameraMode: 'side',
       minimapSize: 'huge',
@@ -74,13 +105,21 @@ describe('settings (#33)', () => {
   it('clamps sensitivity and volume to valid ranges', () => {
     const s = sanitizeSettings({
       sensitivity: 10,
+      touchSensitivityX: 10,
+      touchSensitivityY: -2,
       volume: 2,
+      hudOpacity: 4,
+      hudScale: 9,
       quality: 'medium',
       cameraMode: 'tps',
       minimapSize: 'small',
     });
     expect(s.sensitivity).toBe(3);
+    expect(s.touchSensitivityX).toBe(3);
+    expect(s.touchSensitivityY).toBe(0.35);
     expect(s.volume).toBe(1);
+    expect(s.hudOpacity).toBe(1);
+    expect(s.hudScale).toBe(1.3);
   });
 
   it('returns defaults when storage is unavailable', () => {

@@ -12,12 +12,14 @@ export function touchDragToLookDelta(
   dx: number,
   dy: number,
   scale: number = TOUCH_LOOK_SCALE,
-  invertHorizontal: boolean = false
+  invertHorizontal: boolean = false,
+  invertVertical: boolean = false
 ): { mouseX: number; mouseY: number } {
   const mouseX = dx * scale;
+  const mouseY = dy * scale;
   return {
     mouseX: invertHorizontal ? -mouseX : mouseX,
-    mouseY: dy * scale,
+    mouseY: invertVertical ? -mouseY : mouseY,
   };
 }
 
