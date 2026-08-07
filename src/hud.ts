@@ -199,17 +199,25 @@ export function createMinimap(onToggleFullscreen?: () => void): {
   update: (data: MinimapData) => void;
   remove: () => void;
 } {
+  const minimapAnchorTop = 'calc(env(safe-area-inset-top, 0px) + 12px)';
+  const minimapAnchorRight = 'calc(env(safe-area-inset-right, 0px) + 12px)';
   const canvas = document.createElement('canvas');
   canvas.id = 'minimap';
   canvas.width = 160;
   canvas.height = 160;
   canvas.style.cssText =
-    'position:fixed;top:14px;right:12px;z-index:9997;border:2px solid rgba(45,212,191,0.45);border-radius:4px;background:#0f1f35;cursor:pointer;transition:all 0.2s;';
+    `position:fixed;top:${minimapAnchorTop};right:${minimapAnchorRight};z-index:9997;border:2px solid rgba(45,212,191,0.45);border-radius:4px;background:#0f1f35;cursor:pointer;transition:all 0.2s;`;
   canvas.addEventListener('click', () => onToggleFullscreen?.());
   document.body.appendChild(canvas);
   const ctx = canvas.getContext('2d')!;
   let lastCanvasSize = 0;
   let lastFullscreen = false;
+  const setAnchoredPosition = () => {
+    canvas.style.top = minimapAnchorTop;
+    canvas.style.right = minimapAnchorRight;
+    canvas.style.transform = 'none';
+    canvas.style.zIndex = '9997';
+  };
 
   return {
     update(data: MinimapData) {
@@ -229,15 +237,14 @@ export function createMinimap(onToggleFullscreen?: () => void): {
           canvas.style.transform = 'translate(50%, -50%)';
           canvas.style.zIndex = '9999';
         } else {
-          canvas.style.top = '14px';
-          canvas.style.right = '12px';
-          canvas.style.transform = 'none';
-          canvas.style.zIndex = '9997';
+          setAnchoredPosition();
         }
       }
       const s = size / (data.mapExtent ?? MAP_SIZE);
       const ox = size / 2 - data.px * s;
       const oz = size / 2 - data.pz * s;
+      const playerX = data.px * s + ox;
+      const playerZ = data.pz * s + oz;
 
       ctx.fillStyle = '#0f1f35';
       ctx.fillRect(0, 0, size, size);
@@ -273,18 +280,27 @@ export function createMinimap(onToggleFullscreen?: () => void): {
         ctx.fill();
       }
 
-      ctx.fillStyle = '#2dd4bf';
-      ctx.beginPath();
-      ctx.arc(ox, oz, 4, 0, Math.PI * 2);
-      ctx.fill();
-
       ctx.strokeStyle = '#2dd4bf';
       ctx.lineWidth = 2;
       ctx.beginPath();
       const aimYaw = data.aimYaw ?? data.pyaw;
-      ctx.moveTo(ox, oz);
-      ctx.lineTo(ox - Math.sin(aimYaw) * 15, oz - Math.cos(aimYaw) * 15);
+      ctx.moveTo(playerX, playerZ);
+      ctx.lineTo(playerX - Math.sin(aimYaw) * 15, playerZ - Math.cos(aimYaw) * 15);
       ctx.stroke();
+
+      // Draw local player marker last, with contrast ring + core for visibility.
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(playerX, playerZ, 5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#0f172a';
+      ctx.beginPath();
+      ctx.arc(playerX, playerZ, 3.6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#2dd4bf';
+      ctx.beginPath();
+      ctx.arc(playerX, playerZ, 2.4, 0, Math.PI * 2);
+      ctx.fill();
     },
     remove() {
       canvas.remove();
