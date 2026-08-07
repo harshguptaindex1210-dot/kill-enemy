@@ -1,0 +1,208 @@
+/* Phone-only landscape gate — html[data-phone-device] set by orientation.ts */
+
+#rotate-device-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 100010;
+  box-sizing: border-box;
+  padding: 24px;
+  padding-left: max(24px, env(safe-area-inset-left));
+  padding-right: max(24px, env(safe-area-inset-right));
+  padding-top: max(24px, env(safe-area-inset-top));
+  padding-bottom: max(24px, env(safe-area-inset-bottom));
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: #eef3f8;
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  background: radial-gradient(ellipse at center, #122038 0%, #05060c 70%);
+}
+
+.rotate-device-content {
+  max-width: 320px;
+}
+
+.rotate-device-icon {
+  margin: 0 auto 20px;
+  animation: rotate-phone-hint 2.4s ease-in-out infinite;
+}
+
+.rotate-device-content h1 {
+  margin: 0 0 10px;
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.rotate-device-content p {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: #94a3b8;
+}
+
+@keyframes rotate-phone-hint {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  40%,
+  60% {
+    transform: rotate(90deg);
+  }
+}
+
+@media (orientation: portrait) and (max-width: 900px) {
+  html[data-phone-device='true'] #rotate-device-overlay {
+    display: flex;
+  }
+
+  html[data-phone-device='true'][data-phone-portrait='true'] #game,
+  html[data-phone-device='true'][data-phone-portrait='true'] #lobby-overlay,
+  html[data-phone-device='true'][data-phone-portrait='true'] #game-hud,
+  html[data-phone-device='true'][data-phone-portrait='true'] #touch-controls-overlay {
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+}
+
+/* Landscape phone lobby — wider, shorter viewport */
+@media (orientation: landscape) and (max-height: 500px) and (max-width: 900px) {
+  html[data-phone-device='true'] .lobby-overlay {
+    padding: 8px 12px 16px;
+    justify-content: flex-start;
+  }
+
+  html[data-phone-device='true'] .lobby-hero {
+    padding: 10px 12px 8px;
+  }
+
+  html[data-phone-device='true'] .lobby-hero h1 {
+    font-size: clamp(1.1rem, 4.5vw, 1.5rem);
+    letter-spacing: 0.12em;
+    margin-bottom: 6px;
+  }
+
+  html[data-phone-device='true'] .lobby-hero-tagline {
+    font-size: 0.75rem;
+    margin-bottom: 8px;
+  }
+
+  html[data-phone-device='true'] .lobby-modes {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  html[data-phone-device='true'] .lobby-mode-card {
+    padding: 10px;
+  }
+
+  html[data-phone-device='true'] .lobby-btn-primary,
+  html[data-phone-device='true'] .lobby-btn-secondary,
+  html[data-phone-device='true'] .lobby-btn-danger {
+    min-height: 40px;
+    font-size: 0.85rem;
+    padding: 8px 12px;
+  }
+
+  html[data-phone-device='true'] .lobby-hero-stats {
+    gap: 6px 12px;
+    font-size: 0.72rem;
+  }
+
+  html[data-phone-device='true'] .lobby-quick-controls {
+    font-size: 0.68rem;
+    margin-top: 6px;
+  }
+
+  html[data-phone-device='true'] .lobby-panels {
+    gap: 10px;
+  }
+
+  html[data-phone-device='true'] .lobby-panel {
+    padding: 10px 12px;
+  }
+}
+
+/* Landscape phone in-game HUD + touch controls */
+@media (orientation: landscape) and (max-height: 500px) and (max-width: 900px) {
+  html[data-phone-device='true'] #hud-top {
+    top: 6px !important;
+    gap: 10px !important;
+    padding: 4px 10px !important;
+    font-size: 11px !important;
+  }
+
+  html[data-phone-device='true'] #hud-compass {
+    top: 40px !important;
+    font-size: 10px !important;
+    padding: 2px 8px !important;
+  }
+
+  html[data-phone-device='true'] #hud-killfeed {
+    top: 44px !important;
+    max-width: min(180px, calc(100vw - 160px)) !important;
+  }
+
+  html[data-phone-device='true'] #hud-bottom {
+    bottom: 10px !important;
+    padding: 6px 12px !important;
+    gap: 10px !important;
+    font-size: 10px !important;
+  }
+
+  html[data-phone-device='true'] #hud-prompt {
+    bottom: 88px !important;
+    font-size: 12px !important;
+  }
+
+  html[data-phone-device='true'] #hud-respawn {
+    bottom: 72px !important;
+    padding: 10px 24px !important;
+    font-size: 14px !important;
+  }
+
+  html[data-phone-device='true'] #touch-joystick-area {
+    width: 96px !important;
+    height: 96px !important;
+    bottom: max(10px, env(safe-area-inset-bottom)) !important;
+    left: max(10px, env(safe-area-inset-left)) !important;
+  }
+
+  html[data-phone-device='true'] #touch-joystick-knob {
+    width: 40px !important;
+    height: 40px !important;
+    margin-top: -20px !important;
+    margin-left: -20px !important;
+  }
+
+  html[data-phone-device='true'] #touch-actions-area {
+    bottom: max(10px, env(safe-area-inset-bottom)) !important;
+    right: max(10px, env(safe-area-inset-right)) !important;
+    gap: 8px !important;
+  }
+
+  html[data-phone-device='true'] #touch-actions-area button {
+    width: 44px !important;
+    height: 44px !important;
+    font-size: 16px !important;
+  }
+
+  html[data-phone-device='true'] #tb-fire {
+    width: 58px !important;
+    height: 58px !important;
+    font-size: 22px !important;
+  }
+
+  html[data-phone-device='true'] #touch-weapons-area {
+    top: 52px !important;
+    right: max(10px, env(safe-area-inset-right)) !important;
+    gap: 4px !important;
+  }
+
+  html[data-phone-device='true'] #touch-weapons-area button {
+    padding: 4px 8px !important;
+    font-size: 10px !important;
+  }
+}

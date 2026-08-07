@@ -1,5 +1,6 @@
 import type { PlayerInput } from './player';
 import { isTouchDevice, safeRequestPointerLock } from './platform';
+import { touchDragToLookDelta } from './touchLook';
 
 export interface InputManager {
   getInput: () => PlayerInput;
@@ -189,8 +190,9 @@ export function createInputManager(canvas: HTMLCanvasElement): InputManager {
           const dy = t.clientY - cameraLastY;
           cameraLastX = t.clientX;
           cameraLastY = t.clientY;
-          mouseX += dx * 2.2;
-          mouseY += dy * 2.2;
+          const look = touchDragToLookDelta(dx, dy);
+          mouseX += look.mouseX;
+          mouseY += look.mouseY;
         }
       }
     }, { passive: false });

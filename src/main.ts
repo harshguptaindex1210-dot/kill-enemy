@@ -34,7 +34,7 @@ import {
   canSyncWithNakama,
   onlineUnavailableMessage,
 } from './net/nakamaConfig';
-import { isMobileDevice } from './platform';
+import { isMobileDevice, isPhoneDevice } from './platform';
 
 const STATS_KEY = 'robot_arena_stats_v1';
 
@@ -511,9 +511,18 @@ function showBootError(message?: string) {
   el.classList.add('visible');
 }
 
-try {
+async function boot() {
+  if (isPhoneDevice()) {
+    const [{ initPhoneLandscapeMode }] = await Promise.all([
+      import('./orientation'),
+      import('./orientation.css'),
+    ]);
+    initPhoneLandscapeMode();
+  }
   init();
-} catch (err) {
+}
+
+boot().catch((err) => {
   const detail = err instanceof Error ? err.message : String(err);
   console.error('Kill Enemy failed to start:', err);
   showBootError(

@@ -17,6 +17,89 @@ export function isMobileDevice(): boolean {
   );
 }
 
+/** Tablets and iPadOS desktop UA — excluded from forced phone landscape. */
+export function isTabletDevice(): boolean {
+  if (typeof window === 'undefined') return false;
+  const ua = navigator.userAgent;
+  if (/iPad|Tablet|PlayBook|Silk/i.test(ua)) return true;
+  if (/Android/i.test(ua) && !/Mobile/i.test(ua)) return true;
+  if (
+    typeof navigator.platform === 'string' &&
+    navigator.platform === 'MacIntel' &&
+    navigator.maxTouchPoints > 1
+  ) {
+    return true;
+  }
+  return false;
+}
+
+/** iPhone / Android phone only — not desktop or tablets. */
+export function isPhoneDevice(): boolean {
+  if (typeof window === 'undefined') return false;
+  if (isTabletDevice()) return false;
+  const ua = navigator.userAgent;
+  return /iPhone|iPod/i.test(ua) || (/Android/i.test(ua) && /Mobile/i.test(ua));
+}
+
+/** Tablets and iPadOS desktop UA — excluded from forced phone landscape. */
+export function isTabletDevice(): boolean {
+  if (typeof window === 'undefined') return false;
+  const ua = navigator.userAgent;
+  if (/iPad|Tablet|PlayBook|Silk/i.test(ua)) return true;
+  if (/Android/i.test(ua) && !/Mobile/i.test(ua)) return true;
+  if (
+    typeof navigator.platform === 'string' &&
+    navigator.platform === 'MacIntel' &&
+    navigator.maxTouchPoints > 1
+  ) {
+    return true;
+  }
+  return false;
+}
+
+/** iPhone / Android phone only — not desktop or tablets. */
+export function isPhoneDevice(): boolean {
+  if (typeof window === 'undefined') return false;
+  if (isTabletDevice()) return false;
+  const ua = navigator.userAgent;
+  return /iPhone|iPod/i.test(ua) || (/Android/i.test(ua) && /Mobile/i.test(ua));
+}
+
+export function isLandscapeOrientation(): boolean {
+  if (typeof window === 'undefined') return true;
+  if (typeof window.matchMedia === 'function') {
+    return window.matchMedia('(orientation: landscape)').matches;
+  }
+  return window.innerWidth > window.innerHeight;
+}
+
+export async function tryLockPhoneLandscape(): Promise<boolean> {
+  try {
+    const orientation = screen.orientation as ScreenOrientation & {
+      lock?: (mode: 'landscape' | 'portrait' | 'natural') => Promise<void>;
+    };
+    if (typeof orientation?.lock === 'function') {
+      await orientation.lock('landscape');
+      return true;
+    }
+  } catch {
+    /* unsupported, denied, or needs user gesture */
+  }
+  return false;
+}
+
+export function bindPhoneLandscapeLock(): void {
+  if (!isPhoneDevice()) return;
+  const lock = () => {
+    void tryLockPhoneLandscape();
+  };
+  document.getElementById('rotate-device-overlay')?.addEventListener('click', lock);
+  document.getElementById('rotate-device-overlay')?.addEventListener('touchstart', lock, {
+    passive: true,
+  });
+  document.addEventListener('pointerdown', lock, { once: true });
+}
+
 /** Pointer lock is desktop-only; iOS Safari rejects or no-ops the call. */
 export function safeRequestPointerLock(el: Element): void {
   if (isTouchDevice()) return;
