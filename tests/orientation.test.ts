@@ -1,4 +1,6 @@
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import {
   isPhoneFromProbe,
   shouldShowRotateOverlay,
@@ -85,5 +87,14 @@ describe('shouldShowRotateOverlay', () => {
         })
       )
     ).toBe(false);
+  });
+});
+
+describe('orientation markup', () => {
+  it('index.html includes early phone portrait gate', () => {
+    const html = readFileSync(resolve(__dirname, '../index.html'), 'utf8');
+    expect(html).toMatch(/id="rotate-device-overlay"/);
+    expect(html).toMatch(/@media\s*\(\s*orientation:\s*portrait\s*\)\s*and\s*\(\s*max-width:\s*900px\s*\)/);
+    expect(html).toMatch(/dataset\.phoneDevice/);
   });
 });

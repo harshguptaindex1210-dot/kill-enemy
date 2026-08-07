@@ -58,6 +58,32 @@
       #boot-error.visible {
         display: flex;
       }
+      #rotate-device-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 100010;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        color: #eef3f8;
+        font-family: system-ui, sans-serif;
+        background: #05060c;
+        padding: 24px;
+        box-sizing: border-box;
+      }
+      @media (orientation: portrait) and (max-width: 900px) {
+        html[data-phone-device='true'] #rotate-device-overlay {
+          display: flex;
+        }
+        html[data-phone-device='true'][data-phone-portrait='true'] #game,
+        html[data-phone-device='true'][data-phone-portrait='true'] #lobby-overlay,
+        html[data-phone-device='true'][data-phone-portrait='true'] #game-hud,
+        html[data-phone-device='true'][data-phone-portrait='true'] #touch-controls-overlay {
+          visibility: hidden !important;
+          pointer-events: none !important;
+        }
+      }
     </style>
   </head>
   <body>
@@ -69,7 +95,32 @@
         </p>
       </div>
     </div>
+    <div id="rotate-device-overlay" role="dialog" aria-labelledby="rotate-device-title">
+      <div>
+        <h1 id="rotate-device-title" style="margin: 0 0 8px; font-size: 1.2rem">Rotate your device to landscape</h1>
+        <p style="margin: 0; opacity: 0.85">Turn your phone sideways to play.</p>
+      </div>
+    </div>
     <canvas id="game"></canvas>
+    <script>
+      (function () {
+        var ua = navigator.userAgent;
+        if (/iPad|Tablet|PlayBook|Silk/i.test(ua)) return;
+        if (/Android/i.test(ua) && !/Mobile/i.test(ua)) return;
+        if (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) return;
+        if (!(/iPhone|iPod/i.test(ua) || (/Android/i.test(ua) && /Mobile/i.test(ua)))) return;
+        document.documentElement.dataset.phoneDevice = 'true';
+        function sync() {
+          var landscape = window.matchMedia('(orientation: landscape)').matches;
+          document.documentElement.dataset.phonePortrait = landscape ? 'false' : 'true';
+        }
+        sync();
+        window.matchMedia('(orientation: portrait)').addEventListener('change', sync);
+        window.matchMedia('(orientation: landscape)').addEventListener('change', sync);
+        window.addEventListener('resize', sync);
+        window.addEventListener('orientationchange', sync);
+      })();
+    </script>
     <script type="module" src="/src/main.ts"></script>
     <script>
       window.addEventListener('error', function (event) {
