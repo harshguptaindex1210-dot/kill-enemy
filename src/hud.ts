@@ -203,9 +203,8 @@ export function createMinimap(onToggleFullscreen?: () => void): {
   canvas.id = 'minimap';
   canvas.width = 160;
   canvas.height = 160;
-  canvas.title = 'Click to toggle fullscreen minimap (N)';
   canvas.style.cssText =
-    'position:fixed;top:50px;right:12px;z-index:9997;border:2px solid rgba(45,212,191,0.45);border-radius:4px;background:#0f1f35;cursor:pointer;transition:all 0.2s;';
+    'position:fixed;top:14px;right:12px;z-index:9997;border:2px solid rgba(45,212,191,0.45);border-radius:4px;background:#0f1f35;cursor:pointer;transition:all 0.2s;';
   canvas.addEventListener('click', () => onToggleFullscreen?.());
   document.body.appendChild(canvas);
   const ctx = canvas.getContext('2d')!;
@@ -230,7 +229,7 @@ export function createMinimap(onToggleFullscreen?: () => void): {
           canvas.style.transform = 'translate(50%, -50%)';
           canvas.style.zIndex = '9999';
         } else {
-          canvas.style.top = '50px';
+          canvas.style.top = '14px';
           canvas.style.right = '12px';
           canvas.style.transform = 'none';
           canvas.style.zIndex = '9997';

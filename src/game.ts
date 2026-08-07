@@ -19,7 +19,7 @@ import { SKILL_DEFS, type ChassisId } from './cosmetics';
 import type { AudioManager } from './audio';
 import { saveSettings, type Settings } from './settings';
 import { formatPlacement, formatTimer, formatCompassBearing } from './feedback';
-import { safeRequestPointerLock, isMobileDevice } from './platform';
+import { safeRequestPointerLock, isMobileDevice, isTouchDevice } from './platform';
 import { calculateXP } from './match';
 import { recordMatchResult } from './net/leaderboard';
 import {
@@ -72,9 +72,8 @@ interface UnitRig {
   held?: HeldWeaponKit;
 }
 
-const HUD_INTERVAL_MS = isMobileDevice() ? 100 : 50;
+const HUD_INTERVAL_MS = isMobileDevice() ? 110 : 50;
 export const LOCAL_MATCH_BOTS = 9;
-export const LOCAL_MATCH_PLAYERS = LOCAL_MATCH_BOTS + 1;
 
 const ROBOT_GROUP_Y_OFFSET = -0.9;
 const INTERACT_RANGE_LOOT = 2.5;
@@ -214,6 +213,7 @@ export class MatchGame {
   };
 
   private opts: MatchGameOptions;
+  private mBtn: HTMLButtonElement | null = null;
 
   constructor(opts: MatchGameOptions) {
     this.opts = opts;
@@ -288,6 +288,18 @@ export class MatchGame {
       '<svg viewBox="0 0 20 20"><g stroke="#fff" stroke-width="2"><line x1="10" y1="0" x2="10" y2="5"/><line x1="10" y1="15" x2="10" y2="20"/><line x1="0" y1="10" x2="5" y2="10"/><line x1="15" y1="10" x2="20" y2="10"/></g></svg>';
     document.body.appendChild(this.hitmarkerEl);
 
+    if (isTouchDevice()) {
+      this.mBtn = document.createElement('button');
+      this.mBtn.textContent = 'E';
+      this.mBtn.style.cssText =
+        'display:none;position:fixed;right:12px;bottom:120px;z-index:10003';
+      this.mBtn.ontouchstart = (e) => {
+        e.preventDefault();
+        this.usePressed = true;
+      };
+      document.body.appendChild(this.mBtn);
+    }
+
     window.addEventListener('keydown', this.onKeyDown);
     window.addEventListener('keyup', this.onKeyUp);
     window.addEventListener('resize', this.onResize);
@@ -315,6 +327,8 @@ export class MatchGame {
     this.bannerEl.remove();
     this.crosshairEl.remove();
     this.hitmarkerEl.remove();
+    this.mBtn?.remove();
+    this.mBtn = null;
     this.hud.remove();
     this.minimap.remove();
     for (const rig of this.rigs.values()) this.scene.remove(rig.group);
@@ -1079,6 +1093,10 @@ export class MatchGame {
       showRespawn: this.dead && this.sim.match.phase === 'playing',
     };
     this.hud.update(data);
+    if (this.mBtn) {
+      const show = human.alive && this.sim.match.phase === 'playing';
+      this.mBtn.style.display = show ? 'block' : 'none';
+    }
   }
 
   private phaseLabel(): string {

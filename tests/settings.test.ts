@@ -42,7 +42,7 @@ describe('settings (#33)', () => {
     const store = memStorage();
     saveSettings(
       {
-        quality: 'low',
+        quality: 'high',
         sensitivity: 1.5,
         touchSensitivityX: 1.25,
         touchSensitivityY: 0.95,
@@ -62,7 +62,7 @@ describe('settings (#33)', () => {
       store
     );
     const loaded = loadSettings(store);
-    expect(loaded.quality).toBe('low');
+    expect(loaded.quality).toBe('high');
     expect(loaded.sensitivity).toBe(1.5);
     expect(loaded.touchSensitivityX).toBe(1.25);
     expect(loaded.touchSensitivityY).toBe(0.95);
@@ -120,6 +120,11 @@ describe('settings (#33)', () => {
     expect(s.volume).toBe(1);
     expect(s.hudOpacity).toBe(1);
     expect(s.hudScale).toBe(1.3);
+  });
+
+  it('accepts high quality preset during sanitize', () => {
+    const s = sanitizeSettings({ quality: 'high' });
+    expect(s.quality).toBe('high');
   });
 
   it('returns defaults when storage is unavailable', () => {

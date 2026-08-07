@@ -11,8 +11,8 @@ export interface RendererOptions {
 function rendererPixelRatio(quality: QualityPreset, mobile: boolean): number {
   if (quality === 'low') return 1;
   const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
-  if (mobile) return Math.min(dpr, 1.5);
-  return Math.min(dpr, 2);
+  if (mobile) return Math.min(dpr, quality === 'high' ? 1.6 : 1.35);
+  return Math.min(dpr, quality === 'high' ? 2.25 : 2);
 }
 
 function createWebGLRenderer(canvas: HTMLCanvasElement): THREE.WebGLRenderer {
@@ -61,15 +61,15 @@ export function createRenderer(
   options: RendererOptions = {}
 ): THREE.WebGLRenderer {
   const mobile = options.mobile ?? isMobileDevice();
-  const effectiveQuality: QualityPreset = mobile && quality === 'medium' ? 'low' : quality;
+  const effectiveQuality: QualityPreset = mobile && quality === 'high' ? 'medium' : quality;
   const pixelRatio = rendererPixelRatio(effectiveQuality, mobile);
 
   const renderer = createWebGLRenderer(canvas);
   renderer.setSize(canvas.width, canvas.height);
   renderer.setPixelRatio(pixelRatio);
-  renderer.shadowMap.enabled = effectiveQuality === 'medium' && !mobile;
+  renderer.shadowMap.enabled = effectiveQuality !== 'low' && !mobile;
 
-  if (effectiveQuality === 'medium' && !mobile) {
+  if (effectiveQuality !== 'low' && !mobile) {
     renderer.shadowMap.type = THREE.PCFShadowMap;
   }
 

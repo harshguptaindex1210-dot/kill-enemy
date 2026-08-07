@@ -68,7 +68,7 @@ describe('createRenderer', () => {
     const { createRenderer } = await import('../src/renderer');
     const renderer = createRenderer(canvas, 'medium');
 
-    expect(renderer.setPixelRatio).toHaveBeenCalledWith(1);
+    expect(renderer.setPixelRatio).toHaveBeenCalledWith(1.35);
     expect(renderer.shadowMap.enabled).toBe(false);
   });
 });

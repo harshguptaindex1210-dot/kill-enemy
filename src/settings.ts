@@ -1,7 +1,7 @@
 import { isMobileDevice } from './platform';
 
 export interface Settings {
-  quality: 'low' | 'medium';
+  quality: 'low' | 'medium' | 'high';
   sensitivity: number;
   /** Touch look horizontal multiplier for phone aiming. */
   touchSensitivityX: number;
@@ -65,7 +65,8 @@ export function sanitizeSettings(raw: unknown): Settings {
   if (!raw || typeof raw !== 'object') return d;
   const r = raw as Record<string, unknown>;
   return {
-    quality: r.quality === 'low' || r.quality === 'medium' ? r.quality : d.quality,
+    quality:
+      r.quality === 'low' || r.quality === 'medium' || r.quality === 'high' ? r.quality : d.quality,
     sensitivity:
       typeof r.sensitivity === 'number' && isFinite(r.sensitivity)
         ? Math.min(Math.max(r.sensitivity, 0.2), 3)

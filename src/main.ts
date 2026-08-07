@@ -34,7 +34,7 @@ import {
   canSyncWithNakama,
   onlineUnavailableMessage,
 } from './net/nakamaConfig';
-import { isMobileDevice, isPhoneDevice } from './platform';
+import { isPhoneDevice } from './platform';
 
 const STATS_KEY = 'robot_arena_stats_v1';
 
@@ -95,7 +95,7 @@ function init() {
 
   let settings: Settings = loadSettings();
   const urlQuality = new URLSearchParams(location.search).get('quality');
-  if (urlQuality === 'low' || urlQuality === 'medium') {
+  if (urlQuality === 'low' || urlQuality === 'medium' || urlQuality === 'high') {
     settings = { ...settings, quality: urlQuality };
   }
   let stats: PlayerStats = loadStats();
@@ -205,7 +205,7 @@ function init() {
       canvas,
       settings,
       audio,
-      botCount: isMobileDevice() ? 6 : 9,
+      botCount: 9,
       cosmetics: matchCosmetics(profile),
       callbacks: {
         onFinished(summary) {
@@ -365,7 +365,7 @@ function init() {
     launchMatch();
   }
 
-  function applyQuality(quality: 'low' | 'medium') {
+  function applyQuality(quality: 'low' | 'medium' | 'high') {
     document.documentElement.dataset.quality = quality;
   }
 

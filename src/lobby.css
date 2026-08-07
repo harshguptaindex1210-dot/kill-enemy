@@ -259,6 +259,35 @@
   line-height: 1.45;
 }
 
+.lobby-preset-panel {
+  padding-top: 12px;
+}
+
+.lobby-presets {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.lobby-preset {
+  width: 100%;
+  min-height: 42px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(0, 0, 0, 0.32);
+  color: #e5eef7;
+  font-family: inherit;
+  font-size: 0.77rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.lobby-preset.is-active {
+  border-color: rgba(45, 212, 191, 0.58);
+  background: rgba(45, 212, 191, 0.17);
+  color: #5eead4;
+}
+
 .lobby-body {
   display: flex;
   flex-direction: column;
@@ -770,6 +799,10 @@
 
   .lobby-modes {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .lobby-presets {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .lobby-body {

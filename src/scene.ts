@@ -10,9 +10,9 @@ import {
 import { MAP_BOUND, MAP_SIZE, POI_RADIUS } from './constants';
 import { isMobileDevice } from './platform';
 
-export type QualityPreset = 'low' | 'medium';
+export type QualityPreset = 'low' | 'medium' | 'high';
 
-const TREE_COUNTS: Record<QualityPreset, number> = { low: 0, medium: 100 };
+const TREE_COUNTS: Record<QualityPreset, number> = { low: 0, medium: 80, high: 80 };
 
 export interface SceneBundle {
   scene: THREE.Scene;
@@ -66,9 +66,7 @@ export function createScene(
 
   const dirLight = new THREE.DirectionalLight(0xffe8c0, 2.1);
   dirLight.position.set(120, 180, 80);
-  if (quality === 'medium') {
-    configureSunShadow(dirLight, MAP_BOUND, 1024, false);
-  }
+  if (quality !== 'low') configureSunShadow(dirLight, MAP_BOUND, 1024, false);
   scene.add(dirLight);
 
   const fillLight = new THREE.DirectionalLight(0x88c8e8, 0.35);
@@ -88,7 +86,7 @@ export function createScene(
   });
   const ground = new THREE.Mesh(groundGeo, groundMat);
   ground.rotation.x = -Math.PI / 2;
-  ground.receiveShadow = quality === 'medium';
+  ground.receiveShadow = quality !== 'low';
   scene.add(ground);
 
   // Grid helper
@@ -129,7 +127,7 @@ export function createScene(
       minDist: 30,
       maxDist: MAP_BOUND - 40,
       skipNear: skipNearPoi,
-      castShadow: quality === 'medium' && !isMobileDevice(),
+      castShadow: quality !== 'low' && !isMobileDevice(),
     });
   }
 
@@ -169,8 +167,8 @@ export function createScene(
     const mainGeo = new THREE.BoxGeometry(30, mainH, 25);
     const main = new THREE.Mesh(mainGeo, wallMat);
     main.position.y = mainH / 2;
-    main.castShadow = quality === 'medium';
-    main.receiveShadow = quality === 'medium';
+    main.castShadow = quality !== 'low';
+    main.receiveShadow = quality !== 'low';
     group.add(main);
 
     // Roof
@@ -179,7 +177,7 @@ export function createScene(
     group.add(roof);
 
     // Windows — skip on low preset to cut draw calls
-    if (quality === 'medium') {
+    if (quality !== 'low') {
       const winMat = new THREE.MeshStandardMaterial({
         color: 0xffe08a,
         emissive: 0xffc04d,
@@ -199,7 +197,7 @@ export function createScene(
     const sideH = 12 + Math.random() * 8;
     const side = new THREE.Mesh(new THREE.BoxGeometry(15, sideH, 15), accentMat);
     side.position.set(22, sideH / 2, 5);
-    side.castShadow = quality === 'medium';
+    side.castShadow = quality !== 'low';
     group.add(side);
 
     // Ground pad

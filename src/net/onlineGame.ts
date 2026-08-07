@@ -31,7 +31,8 @@ import type { SimEvent, SimUnit } from '../gameplay';
 import { summarizeMatch } from '../game';
 import { mountTargetMeshes, syncTargetMeshes, type TargetMeshParts } from '../targetVisuals';
 
-const HUD_INTERVAL_MS = isMobileDevice() ? 100 : 50;
+const HUD_INTERVAL_MS = isMobileDevice() ? 110 : 50;
+const MINIMAP_INTERVAL_MS = isMobileDevice() ? 150 : 50;
 
 const ROBOT_GROUP_Y_OFFSET = -0.9;
 const MOUSE_SENSITIVITY = 0.002;
@@ -124,6 +125,8 @@ export class OnlineMatchGame {
   private lastPhaseBanner = '';
   private hudNext = 0;
   private minimapNext = 0;
+  private hudIntervalMs = HUD_INTERVAL_MS;
+  private minimapIntervalMs = MINIMAP_INTERVAL_MS;
   private fpsSamples: number[] = [];
   private fpsSampleAt = -Infinity;
   private qualityDowngraded = false;
@@ -418,11 +421,11 @@ export class OnlineMatchGame {
     this.syncTargets(dt);
     this.updateCamera(dt);
     if (now >= this.hudNext) {
-      this.hudNext = now + HUD_INTERVAL_MS;
+      this.hudNext = now + this.hudIntervalMs;
       this.updateHUD(snap);
     }
     if (now >= this.minimapNext) {
-      this.minimapNext = now + HUD_INTERVAL_MS;
+      this.minimapNext = now + this.minimapIntervalMs;
       this.updateMinimap(snap);
     }
     this.renderer.render(this.scene, this.camera);
@@ -442,6 +445,8 @@ export class OnlineMatchGame {
     this.qualityDowngraded = true;
     this.renderer.shadowMap.enabled = false;
     this.renderer.setPixelRatio(1);
+    this.hudIntervalMs = 140;
+    this.minimapIntervalMs = 220;
     this.scene.traverse((obj) => {
       if (obj instanceof THREE.Mesh || obj instanceof THREE.InstancedMesh) {
         obj.castShadow = false;

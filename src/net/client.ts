@@ -14,7 +14,6 @@ import {
 import { LocalServer } from './localServer';
 import { InputBatcher, InterpolationBuffer, type InterpolatedEntity } from './interpolation';
 import { RollbackEngine, type InputFrame } from '../netcode';
-import { isMobileDevice } from '../platform';
 import {
   TICK_MS,
   encodeInput,
@@ -88,7 +87,7 @@ export class MatchClient {
           onSnapshot: (snap) => this.handleSnapshot(snap),
           onEvents: this.cb.onEvents,
         },
-        { botCount: isMobileDevice() ? 6 : 9 }
+        { botCount: 9 }
       );
       return;
     }

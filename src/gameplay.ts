@@ -367,10 +367,10 @@ export class MatchSim {
     );
     const THINK_MS = inCombat
       ? isMobileDevice()
-        ? 50
+        ? 80
         : 0
       : isMobileDevice()
-        ? 150
+        ? 220
         : 80;
     if (brain.lastInput && THINK_MS > 0 && this.time - brain.lastThinkMs < THINK_MS) {
       return brain.lastInput;

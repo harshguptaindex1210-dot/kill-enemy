@@ -94,6 +94,9 @@ describe('lobby responsive layout (#46)', () => {
     expect(document.querySelector('.lobby-modes')).toBeTruthy();
     expect(document.querySelector('.lobby-mode-card-primary #btn-online')).toBeTruthy();
     expect(document.querySelector('.lobby-mode-card #btn-local')).toBeTruthy();
+    expect(document.getElementById('btn-preset-low')).toBeTruthy();
+    expect(document.getElementById('btn-preset-medium')).toBeTruthy();
+    expect(document.getElementById('btn-preset-high')).toBeTruthy();
   });
 
   it('escapes profile name so markup cannot break out of the name input', () => {

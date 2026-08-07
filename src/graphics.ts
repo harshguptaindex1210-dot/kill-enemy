@@ -4,7 +4,7 @@ import type { QualityPreset } from './scene';
 /** ACES tone mapping + sRGB output — richer PBR response, no extra bundle cost. */
 export function applyRendererLook(renderer: THREE.WebGLRenderer, quality: QualityPreset): void {
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = quality === 'medium' ? 1.12 : 1.0;
+  renderer.toneMappingExposure = quality === 'high' ? 1.18 : quality === 'medium' ? 1.12 : 1.0;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
 }
 

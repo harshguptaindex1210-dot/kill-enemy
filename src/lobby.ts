@@ -320,9 +320,9 @@ export function showLobby(
     <div class="lobby-layout">
     <div class="lobby-shell">
       <header id="lobby-hero" class="lobby-hero">
-        <div class="lobby-hero-badge">SEASON 1 · 10-PLAYER BR</div>
+        <div class="lobby-hero-badge">SEASON 1 · 10-PLAYER BATTLE ROYALE</div>
         <h1>KILL ENEMY</h1>
-        <p class="lobby-tagline">Drop into the robot apocalypse — loot, drive, survive</p>
+        <p class="lobby-tagline">Drop in, loot fast, drive hard, and survive the last-circle chaos.</p>
         <div class="lobby-hero-stats">
           <span><b>Lv ${stats.level}</b> <span class="muted">Pilot</span></span>
           <span><b style="color:#fa0;">${profile.credits}</b> <span class="muted">Credits</span></span>
@@ -353,6 +353,14 @@ export function showLobby(
           <p class="lobby-mode-desc">Instant match vs AI bots. No account required.</p>
           <button id="btn-local" class="lobby-btn lobby-btn-secondary" type="button" style="width:100%;"${queue.active ? ' disabled' : ''}>Play Local</button>
         </article>
+      </section>
+      <section class="lobby-panel lobby-preset-panel" aria-label="Performance presets">
+        <b class="lobby-panel-title">Device Presets</b>
+        <div class="lobby-presets">
+          <button id="btn-preset-low" class="lobby-preset${settings.quality === 'low' ? ' is-active' : ''}" type="button">Low · Max FPS (Phone)</button>
+          <button id="btn-preset-medium" class="lobby-preset${settings.quality === 'medium' ? ' is-active' : ''}" type="button">Medium · Balanced (iPhone/Laptop)</button>
+          <button id="btn-preset-high" class="lobby-preset${settings.quality === 'high' ? ' is-active' : ''}" type="button">High · Visual Quality (Laptop)</button>
+        </div>
       </section>
       <p class="lobby-quick-controls" aria-label="Quick controls">${touchControlsHint}</p>
       ${shopMessage ? `<p id="shop-msg" class="lobby-shop-msg">${escapeHtml(shopMessage)}</p>` : ''}
@@ -411,8 +419,9 @@ export function showLobby(
               select(
                 'sel-quality',
                 [
-                  ['low', 'Low'],
-                  ['medium', 'Medium'],
+                  ['low', 'Low (Performance)'],
+                  ['medium', 'Medium (Balanced)'],
+                  ['high', 'High (Quality)'],
                 ],
                 settings.quality
               )
@@ -725,4 +734,15 @@ export function showLobby(
   wireRange('rng-hud-scale', 'hudScale', 'x');
   wire('sel-gyro', 'gyroAim');
   wire('sel-volume', 'volume');
+
+  const presetMap: Record<string, Settings['quality']> = {
+    'btn-preset-low': 'low',
+    'btn-preset-medium': 'medium',
+    'btn-preset-high': 'high',
+  };
+  for (const [id, quality] of Object.entries(presetMap)) {
+    document.getElementById(id)?.addEventListener('click', () => {
+      callbacks.onSettingsChange({ quality });
+    });
+  }
 }
