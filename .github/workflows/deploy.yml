@@ -30,6 +30,8 @@ jobs:
 
       - name: Build (+ INV-3 initial bundle gate)
         run: npm run build
+        env:
+          VITE_ONLINE_DEMO: 'true'
 
       - uses: actions/configure-pages@v5
 

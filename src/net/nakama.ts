@@ -1,6 +1,7 @@
 import { Client, Session } from '@heroiclabs/nakama-js';
 import type { Socket } from '@heroiclabs/nakama-js';
 import { sanitizeProfile, type PlayerProfile } from '../profile';
+import { getNakamaConfig } from './nakamaConfig';
 import { MATCHMAKER_MAX, MATCHMAKER_MIN, MATCHMAKER_QUERY } from './matchmaking';
 
 let client: Client | null = null;
@@ -11,9 +12,17 @@ export type NakamaSocket = Socket;
 
 export function getClient(): Client {
   if (!client) {
-    client = new Client('defaultkey', '127.0.0.1', '7350', false);
+    const { host, port, useSSL, serverKey } = getNakamaConfig();
+    client = new Client(serverKey, host, port, useSSL);
   }
   return client;
+}
+
+/** Clears cached client/socket (tests or config hot-swap). */
+export function resetNakamaClient() {
+  client = null;
+  session = null;
+  socket = null;
 }
 
 export async function authenticateGuest(): Promise<Session> {
@@ -55,7 +64,8 @@ export async function connectSocket(s: Session): Promise<Socket> {
     } catch {}
     socket = null;
   }
-  socket = getClient().createSocket(false, false);
+  const { useSSL } = getNakamaConfig();
+  socket = getClient().createSocket(useSSL, false);
   await socket.connect(s, false);
   return socket;
 }

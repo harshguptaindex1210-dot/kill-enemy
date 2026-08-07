@@ -28,6 +28,10 @@ import type { LobbySceneHandle } from './lobbyScene';
 import type { OnlineMatchGame } from './net/onlineGame';
 import type { MatchClient } from './net/client';
 import type { NakamaSocket } from './net/nakama';
+import {
+  allowDemoOnlineFallback,
+  onlineUnavailableMessage,
+} from './net/nakamaConfig';
 
 const STATS_KEY = 'robot_arena_stats_v1';
 
@@ -290,6 +294,19 @@ function init() {
     await launchOnlineMatch();
   }
 
+  async function launchDemoOnlineMatch() {
+    const { MatchClient: Client } = await loadOnlineStack();
+    onlineClient = new Client('local', {
+      onSnapshot: () => {},
+      onDisconnect: () => {
+        showAdThenLobby();
+      },
+    });
+    await onlineClient.connect();
+    await onlineClient.startMatch();
+    await launchOnlineMatch();
+  }
+
   async function startOnlineQueue() {
     if (queueActive) return;
     queueActive = true;
@@ -306,10 +323,14 @@ function init() {
       nakama.onMatchmakerMatched(s, (matchId) => {
         void joinOnlineMatch(matchId);
       });
-    } catch {
+    } catch (err) {
       queueActive = false;
       queueTicket = null;
-      showLobbyUI('Online unavailable — try Play Local');
+      if (allowDemoOnlineFallback()) {
+        await launchDemoOnlineMatch();
+        return;
+      }
+      showLobbyUI(onlineUnavailableMessage(err));
     }
   }
 

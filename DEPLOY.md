@@ -51,8 +51,9 @@ Score ranking: better placement → higher Nakama score (`1000 - placement`).
 
 | Setting | Default | Where |
 |---------|---------|--------|
-| Host / port | `127.0.0.1:7350` | `src/net/nakama.ts` `getClient()` |
-| Server key | `defaultkey` | Dev only — change for production |
+| Host / port | `127.0.0.1:7350` (override via `VITE_NAKAMA_*`) | `src/net/nakamaConfig.ts` |
+| Server key | `defaultkey` | Dev only — set `VITE_NAKAMA_KEY` for production |
+| Demo online | `VITE_ONLINE_DEMO=true` on GitHub Pages | Falls back to in-browser bots when Nakama unreachable |
 | DB | `postgres://nakama:nakama@postgres:5432/nakama` | `docker-compose.yml` |
 
 ## Production notes
