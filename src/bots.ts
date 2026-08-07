@@ -270,7 +270,7 @@ export function decideBotInput(ctx: BotContext): PlayerInput {
     weapon1: false,
     weapon2: false,
     weapon3: false,
-    mouseX: -(yawDelta + aimNoise) / SENSITIVITY,
+    mouseX: (yawDelta + aimNoise) / SENSITIVITY,
     mouseY: -pitchDelta / SENSITIVITY,
   };
 }

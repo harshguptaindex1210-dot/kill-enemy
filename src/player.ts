@@ -122,7 +122,7 @@ export function createPlayer(startPos: THREE.Vector3 = new THREE.Vector3(0, 0.9,
       pState = 'stand';
     }
 
-    pYaw -= input.mouseX * MOUSE_SENSITIVITY;
+    pYaw += input.mouseX * MOUSE_SENSITIVITY;
     pPitch -= input.mouseY * MOUSE_SENSITIVITY;
     pPitch = Math.max(-MAX_PITCH, Math.min(MAX_PITCH, pPitch));
 

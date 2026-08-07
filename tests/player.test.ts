@@ -208,6 +208,33 @@ describe('player', () => {
     expect(p.cameraMode).toBe('tps');
   });
 
+  it('positive mouseX increases yaw (look right)', () => {
+    const p = createPlayer();
+    const dt = 1 / 60;
+    p.update(
+      {
+        forward: false,
+        backward: false,
+        left: false,
+        right: false,
+        sprint: false,
+        crouch: false,
+        jump: false,
+        aim: false,
+        fire: false,
+        reload: false,
+        weapon1: false,
+        weapon2: false,
+        weapon3: false,
+        mouseX: 100,
+        mouseY: 0,
+      },
+      dt,
+      0
+    );
+    expect(p.yaw).toBeGreaterThan(0);
+  });
+
   it('eye height changes with crouch', () => {
     const p = createPlayer();
     const eyeStand = p.getEyeHeight();

@@ -178,8 +178,8 @@ describe('#39 reconciliation replay', () => {
 
   it('predicts forward relative to yaw so server does not fight the client', () => {
     const engine = new RollbackEngine('p1', new THREE.Vector3(0, 0.9, 0));
-    // Rotate yaw to +pi/2 via mouseX (sensitivity 0.002; negative mouseX increases yaw).
-    const mouseX = -Math.PI / 2 / 0.002;
+    // Rotate yaw to +pi/2 via mouseX (sensitivity 0.002; positive mouseX increases yaw).
+    const mouseX = Math.PI / 2 / 0.002;
     engine.applyInput(frame(1, { forward: true, mouseX }), 1 / 20, 0);
     expect(engine.yaw).toBeCloseTo(Math.PI / 2, 3);
     // Forward vector = (-sin(yaw), 0, -cos(yaw)) = (-1, 0, 0) at yaw=+pi/2.
