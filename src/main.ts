@@ -25,6 +25,7 @@ import {
 import { carColorFor, chassisById, gunColorFor } from './cosmetics';
 import type { ChassisId } from './cosmetics';
 import type { LobbySceneHandle } from './lobbyScene';
+import type { SimEvent } from './gameplay';
 import type { OnlineMatchGame } from './net/onlineGame';
 import type { MatchClient } from './net/client';
 import type { NakamaSocket } from './net/nakama';
@@ -109,6 +110,7 @@ function init() {
   let queueTicket: string | null = null;
   let queueActive = false;
   let lobbyScene: LobbySceneHandle | null = null;
+  const onlineEventBridge = { sink: null as ((events: SimEvent[]) => void) | null };
 
   function lobbyCosmetics() {
     const chassis = chassisById(profile.chassisId);
@@ -276,6 +278,7 @@ function init() {
         },
       },
     });
+    onlineEventBridge.sink = (events) => onlineGame!.handleEvents(events);
     onlineGame.start();
   }
 
@@ -288,6 +291,7 @@ function init() {
       onDisconnect: () => {
         showAdThenLobby();
       },
+      onEvents: (events) => onlineEventBridge.sink?.(events),
     });
     await onlineClient.connect();
     await onlineClient.joinExistingMatch(matchId);
@@ -301,6 +305,7 @@ function init() {
       onDisconnect: () => {
         showAdThenLobby();
       },
+      onEvents: (events) => onlineEventBridge.sink?.(events),
     });
     await onlineClient.connect();
     await onlineClient.startMatch();
@@ -339,6 +344,7 @@ function init() {
     game = null;
     onlineGame?.dispose();
     onlineGame = null;
+    onlineEventBridge.sink = null;
     onlineClient?.dispose();
     onlineClient = null;
     await resetQueue();

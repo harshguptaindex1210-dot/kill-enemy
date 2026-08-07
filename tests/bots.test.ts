@@ -182,10 +182,22 @@ describe('bot AI', () => {
     expect(sawLeft && sawRight).toBe(true);
   });
 
+  it('steers away from nearby ally bots', () => {
+    const c = ctx({
+      brain: createBotBrain('hard'),
+      time: 10000,
+      enemy: { position: new THREE.Vector3(0, 0, -20) },
+      allyPositions: [new THREE.Vector3(2, 0, 0)],
+    });
+    const input = decideBotInput(c);
+    expect(input.left || input.right).toBe(true);
+    expect(input.forward).toBe(false);
+  });
+
   it('hard profile is more accurate / faster than easy', () => {
     expect(BOT_PROFILES.hard.aimError).toBeLessThan(BOT_PROFILES.easy.aimError);
     expect(BOT_PROFILES.hard.fireIntervalMs).toBeLessThan(BOT_PROFILES.easy.fireIntervalMs);
-    expect(BOT_PROFILES.easy.fireIntervalMs).toBeGreaterThanOrEqual(3000);
+    expect(BOT_PROFILES.easy.fireIntervalMs).toBeGreaterThanOrEqual(2500);
     expect(BOT_PROFILES.hard.fireIntervalMs).toBeGreaterThanOrEqual(1600);
   });
 

@@ -18,7 +18,7 @@ export const BOT_PROFILES: Record<BotDifficulty, BotProfile> = {
     difficulty: 'easy',
     aimError: 0.42,
     reactionMs: 1400,
-    fireIntervalMs: 4500,
+    fireIntervalMs: 2800,
     strafe: false,
     moveSpeed: 5,
     preferredRange: 22,
@@ -27,7 +27,7 @@ export const BOT_PROFILES: Record<BotDifficulty, BotProfile> = {
     difficulty: 'medium',
     aimError: 0.28,
     reactionMs: 900,
-    fireIntervalMs: 3800,
+    fireIntervalMs: 2200,
     strafe: true,
     moveSpeed: 5.5,
     preferredRange: 18,
@@ -36,7 +36,7 @@ export const BOT_PROFILES: Record<BotDifficulty, BotProfile> = {
     difficulty: 'hard',
     aimError: 0.18,
     reactionMs: 650,
-    fireIntervalMs: 3000,
+    fireIntervalMs: 1800,
     strafe: true,
     moveSpeed: 6,
     preferredRange: 15,
@@ -55,6 +55,8 @@ export interface BotBrain {
   strafeTimer: number;
   lastThinkMs: number;
   lastInput: PlayerInput | null;
+  /** Fixed offset so bots ring the target instead of stacking on one spot. */
+  flankAngle: number;
 }
 
 export function createBotBrain(difficulty: BotDifficulty): BotBrain {
@@ -68,6 +70,7 @@ export function createBotBrain(difficulty: BotDifficulty): BotBrain {
     strafeTimer: 0,
     lastThinkMs: 0,
     lastInput: null,
+    flankAngle: Math.random() * Math.PI * 2,
   };
 }
 
@@ -84,6 +87,8 @@ export interface BotContext {
   safeRadius: number;
   weaponReady: boolean;
   needsReload: boolean;
+  /** Other bot positions within separation range — used to avoid stacking. */
+  allyPositions?: THREE.Vector3[];
 }
 
 const SENSITIVITY = 0.002;
@@ -92,6 +97,8 @@ const ZONE_MARGIN = 25;
 const LOOT_RANGE = 40;
 const ROAM_RANGE = 80;
 const HEAD_HEIGHT = 1.4;
+const SEPARATION_RANGE = 18;
+const SEPARATION_RADIUS = 7;
 
 function wrapAngle(a: number): number {
   while (a > Math.PI) a -= Math.PI * 2;
@@ -143,14 +150,28 @@ export function decideBotInput(ctx: BotContext): PlayerInput {
   };
 
   if (goal === 'combat' && ctx.enemy) {
-    const dist = toPoint(ctx.enemy.position);
-    distToTarget = dist;
+    const enemy = ctx.enemy.position;
+    const dx = enemy.x - pos.x;
+    const dz = enemy.z - pos.z;
+    const toEnemyLen = Math.hypot(dx, dz);
+    const flankDist = p.preferredRange;
+    const awayX = toEnemyLen > 0.1 ? -dx / toEnemyLen : Math.sin(brain.flankAngle);
+    const awayZ = toEnemyLen > 0.1 ? -dz / toEnemyLen : Math.cos(brain.flankAngle);
+    const slotX = awayX * Math.cos(brain.flankAngle) - awayZ * Math.sin(brain.flankAngle);
+    const slotZ = awayX * Math.sin(brain.flankAngle) + awayZ * Math.cos(brain.flankAngle);
+    const flankPoint = new THREE.Vector3(
+      enemy.x + slotX * flankDist,
+      pos.y,
+      enemy.z + slotZ * flankDist
+    );
+    const moveTarget = toEnemyLen > p.preferredRange + 2 ? flankPoint : enemy;
+    const moveDist = toPoint(moveTarget);
+    distToTarget = moveDist;
     desiredRange = p.preferredRange;
-    const yawErr = wrapAngle(targetYaw - ctx.yaw);
-    // Only walk forward when roughly facing the target — prevents running away while turning.
-    forward = dist > 1.5 && Math.abs(yawErr) < 0.75;
+    const moveYawErr = wrapAngle(targetYaw - ctx.yaw);
+    forward = moveDist > 1.5 && Math.abs(moveYawErr) < 0.75;
     backward = false;
-    if (p.strafe && dist > p.preferredRange + 6 && ctx.time - brain.lastGoalChange > 400) {
+    if (p.strafe && toEnemyLen > p.preferredRange + 6 && ctx.time - brain.lastGoalChange > 400) {
       if (ctx.time - brain.strafeTimer > 1500) {
         brain.strafeTimer = ctx.time;
         brain.strafeDir = brain.strafeDir === 1 ? -1 : 1;
@@ -158,7 +179,16 @@ export function decideBotInput(ctx: BotContext): PlayerInput {
       strafeDir = brain.strafeDir;
     }
 
-    const pitchErr = Math.abs(wrapAngle(targetPitch - ctx.pitch));
+    // Aim at the enemy for fire checks and mouse deltas.
+    const aimYaw = angleTo(pos, enemy);
+    const aimDist = pos.distanceTo(enemy);
+    const vertical = enemy.y + HEAD_HEIGHT - (pos.y + 1.2);
+    const aimPitch = Math.max(-1.2, Math.min(1.2, Math.atan2(-vertical, Math.max(aimDist, 0.1))));
+    targetYaw = aimYaw;
+    targetPitch = aimPitch;
+
+    const yawErr = wrapAngle(aimYaw - ctx.yaw);
+    const pitchErr = Math.abs(aimPitch - ctx.pitch);
     const reactionDone = ctx.time - brain.lastGoalChange >= p.reactionMs;
     const cooldownDone = ctx.time - brain.lastShotTime >= p.fireIntervalMs;
     if (
@@ -167,7 +197,7 @@ export function decideBotInput(ctx: BotContext): PlayerInput {
       Math.abs(yawErr) < Math.max(0.28, p.aimError * 2.2) &&
       pitchErr < 0.4
     ) {
-      if (ctx.weaponReady && Math.random() < 0.55) {
+      if (ctx.weaponReady && Math.random() < 0.75) {
         fire = true;
         brain.lastShotTime = ctx.time;
         if (Math.random() < 0.2) skill = true;
@@ -190,6 +220,35 @@ export function decideBotInput(ctx: BotContext): PlayerInput {
     );
     distToTarget = toPoint(roamTarget);
     forward = distToTarget > 5;
+  }
+
+  // Steer away from nearby allies so squads don't collapse onto one point.
+  if (ctx.allyPositions?.length) {
+    let sepX = 0;
+    let sepZ = 0;
+    for (const ally of ctx.allyPositions) {
+      const sdx = pos.x - ally.x;
+      const sdz = pos.z - ally.z;
+      const sd = Math.hypot(sdx, sdz);
+      if (sd > 0.1 && sd < SEPARATION_RANGE) {
+        const push = (SEPARATION_RADIUS - sd) / SEPARATION_RADIUS;
+        sepX += (sdx / sd) * push;
+        sepZ += (sdz / sd) * push;
+      }
+    }
+    if (Math.hypot(sepX, sepZ) > 0.05) {
+      const sepYaw = Math.atan2(sepX, sepZ);
+      const sepErr = wrapAngle(sepYaw - ctx.yaw);
+      if (sepErr > 0.2) {
+        strafeDir = 1;
+        forward = false;
+      } else if (sepErr < -0.2) {
+        strafeDir = -1;
+        forward = false;
+      } else if (Math.abs(sepErr) < 0.35) {
+        forward = true;
+      }
+    }
   }
 
   const yawDelta = wrapAngle(targetYaw - ctx.yaw);

@@ -76,6 +76,10 @@ export class MatchClient {
     return this.selfEntity;
   }
 
+  get localServer(): LocalServer | null {
+    return this.local;
+  }
+
   async connect(): Promise<void> {
     if (this.mode === 'local') {
       this.local = new LocalServer(
@@ -104,6 +108,8 @@ export class MatchClient {
   async startMatch(): Promise<string> {
     if (this.mode === 'local') {
       this.local!.start();
+      // Bootstrap snapshot so the render loop has spawn pose before the first interval tick.
+      this.local!.step();
       this.matchId = 'local-match';
     } else {
       this.matchId = await createMatchViaSocket(this.socket!);
@@ -132,19 +138,27 @@ export class MatchClient {
   private flushInputs() {
     const frames = this.pending.flush();
     if (frames.length === 0) return;
-    // Merge frames: sum mouse deltas, take latest button/key state
     let merged = frames[frames.length - 1];
     if (frames.length > 1) {
       let sumMouseX = 0;
       let sumMouseY = 0;
+      let fire = false;
+      let reload = false;
+      let jump = false;
       for (const f of frames) {
         sumMouseX += f.mouseX ?? 0;
         sumMouseY += f.mouseY ?? 0;
+        if (f.fire) fire = true;
+        if (f.reload) reload = true;
+        if (f.jump) jump = true;
       }
       merged = {
         ...merged,
         mouseX: sumMouseX,
         mouseY: sumMouseY,
+        fire,
+        reload,
+        jump,
       };
     }
     const input = { ...merged, seq: ++this.seq };

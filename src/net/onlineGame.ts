@@ -3,13 +3,13 @@ import { createScene, type QualityPreset } from '../scene';
 import { MAP_SIZE, POI_RADIUS, ZONE_PHASE_DURATIONS } from '../constants';
 import { createRobotModel, updateRobotAnim, type RobotAnimState } from '../robot';
 import { ZoneSystem } from '../zone';
-import { createHUD, createMinimap, type HUDData, type MinimapData } from '../hud';
+import { createHUD, createMinimap, addKillFeedEntry, addCompassPing, addDamageNumber, type HUDData, type MinimapData } from '../hud';
 import { updateCamera } from '../camera';
 import { createInputManager, type InputManager } from '../input';
 import { MatchClient } from './client';
 import type { AudioManager } from '../audio';
 import type { Settings } from '../settings';
-import { formatTimer } from '../feedback';
+import { formatTimer, formatCompassBearing } from '../feedback';
 import { REWIND_MS, type WireSnapshot } from './protocol';
 import { shouldShowUnitRig } from '../vehicle';
 import {
@@ -18,6 +18,8 @@ import {
   syncHeldWeaponKit,
   type HeldWeaponKit,
 } from '../heldWeapons';
+import type { SimEvent, SimUnit } from '../gameplay';
+import { summarizeMatch } from '../game';
 
 const ROBOT_GROUP_Y_OFFSET = -0.9;
 const MOUSE_SENSITIVITY = 0.002;
@@ -100,6 +102,13 @@ export class OnlineMatchGame {
   private localHeld?: HeldWeaponKit;
   private zonePhaseIdx = 0;
   private zonePhaseStartMs = 0;
+  private bannerEl: HTMLElement;
+  private muzzleFlashPool: { light: THREE.PointLight; tracer: THREE.Mesh }[] = [];
+  private muzzleFlashGeo = new THREE.SphereGeometry(0.08, 4, 4);
+  private muzzleFlashMat = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+  private tracerGeo = new THREE.BoxGeometry(0.05, 0.05, 1.2);
+  private tracerMat = new THREE.MeshBasicMaterial({ color: 0xffff88 });
+  private lastPhaseBanner = '';
   private onResize = () => {
     const c = this.opts.canvas;
     c.width = window.innerWidth;
@@ -137,6 +146,12 @@ export class OnlineMatchGame {
       'position:fixed;bottom:8px;left:12px;color:#2dd4bf;font-family:sans-serif;font-size:12px;z-index:9999;pointer-events:none;';
     document.body.appendChild(this.latencyEl);
 
+    this.bannerEl = document.createElement('div');
+    this.bannerEl.id = 'phase-banner';
+    this.bannerEl.style.cssText =
+      'position:fixed;top:18%;left:50%;transform:translateX(-50%);color:#2dd4bf;font-family:sans-serif;font-size:28px;font-weight:bold;z-index:9998;pointer-events:none;display:none;text-shadow:0 2px 8px rgba(0,0,0,0.8);';
+    document.body.appendChild(this.bannerEl);
+
     window.addEventListener('resize', this.onResize);
     window.addEventListener('keydown', this.onKeyDown);
   }
@@ -156,25 +171,152 @@ export class OnlineMatchGame {
     window.removeEventListener('resize', this.onResize);
     window.removeEventListener('keydown', this.onKeyDown);
     this.latencyEl.remove();
+    this.bannerEl.remove();
     this.input.dispose();
     this.hud.remove();
     this.minimap.remove();
     for (const rig of this.rigs.values()) this.scene.remove(rig.group);
     for (const m of this.lootMeshes.values()) this.scene.remove(m);
+    for (const fx of this.muzzleFlashPool) {
+      this.scene.remove(fx.light);
+      this.scene.remove(fx.tracer);
+    }
+    this.muzzleFlashGeo.dispose();
+    this.muzzleFlashMat.dispose();
+    this.tracerGeo.dispose();
+    this.tracerMat.dispose();
     this.renderer.dispose();
+  }
+
+  /** Sim events from LocalServer / Nakama — audio and combat feedback. */
+  handleEvents(events: SimEvent[]) {
+    for (const e of events) this.processEvent(e);
+  }
+
+  private processEvent(e: SimEvent) {
+    const selfId = this.client.selfId;
+    switch (e.type) {
+      case 'shot': {
+        if (e.melee) this.opts.audio.play('melee');
+        else if (e.grenade) this.opts.audio.play('shot');
+        else this.opts.audio.play(e.weapon === 'pistol' ? 'pistol' : 'shot');
+        this.muzzleFlash(String(e.unitId));
+        if (String(e.unitId) !== selfId && !e.melee && !e.grenade) {
+          const yaw = typeof e.yaw === 'number' ? e.yaw : 0;
+          addCompassPing(formatCompassBearing(yaw));
+        }
+        break;
+      }
+      case 'explosion':
+        this.opts.audio.play('explosion');
+        break;
+      case 'bounce':
+        this.opts.audio.play('bounce');
+        break;
+      case 'hit': {
+        const attacker = String(e.attackerId);
+        const victim = String(e.victimId);
+        if (attacker === selfId) {
+          this.flashHitmarker(Boolean(e.kill));
+          this.opts.audio.play(e.kill ? 'clink' : 'hit');
+          addDamageNumber(
+            Number(e.damage),
+            window.innerWidth * 0.52,
+            window.innerHeight * 0.42,
+            Boolean(e.kill)
+          );
+        } else if (victim === selfId) {
+          this.opts.audio.play('hit');
+        }
+        break;
+      }
+      case 'kill': {
+        const killer = String(e.killerId ?? 'zone');
+        const victim = String(e.victimId);
+        const cause = String(e.cause ?? 'shot');
+        const icon = cause === 'melee' ? '🔪' : cause === 'grenade' ? '💣' : cause === 'zone' ? '☢️' : '🔫';
+        addKillFeedEntry(`${killer} ${icon} ${victim}`);
+        break;
+      }
+      case 'pickup':
+        if (e.unitId === selfId) this.opts.audio.play('pickup');
+        break;
+      case 'heal':
+        if (e.unitId === selfId) this.opts.audio.play('heal');
+        break;
+      case 'step':
+        if (e.unitId === selfId) this.opts.audio.play('step');
+        break;
+      case 'zone-incoming':
+        this.opts.audio.play('ui');
+        this.banner('⚠️ ZONE INCOMING', 2500);
+        break;
+      default:
+        break;
+    }
+  }
+
+  private banner(text: string, ms = 1800) {
+    this.bannerEl.textContent = text;
+    this.bannerEl.style.display = 'block';
+    clearTimeout((this.bannerEl as HTMLElement & { _t?: number })._t);
+    (this.bannerEl as HTMLElement & { _t?: number })._t = window.setTimeout(
+      () => (this.bannerEl.style.display = 'none'),
+      ms
+    );
+  }
+
+  private muzzleFlash(unitId: string) {
+    const rig = this.rigs.get(unitId);
+    if (!rig) return;
+    const fx = this.muzzleFlashPool.pop() ?? {
+      light: new THREE.PointLight(0xffaa00, 2, 4),
+      tracer: new THREE.Mesh(this.tracerGeo, this.tracerMat),
+    };
+    const pos = rig.group.position.clone();
+    pos.y += 1.2;
+    fx.light.position.copy(pos);
+    fx.tracer.position.copy(pos);
+    fx.tracer.rotation.y = rig.group.rotation.y;
+    this.scene.add(fx.light);
+    this.scene.add(fx.tracer);
+    window.setTimeout(() => {
+      this.scene.remove(fx.light);
+      this.scene.remove(fx.tracer);
+      this.muzzleFlashPool.push(fx);
+    }, 80);
+  }
+
+  private localHumanUnit(): SimUnit | null {
+    const sim = this.client.mode === 'local' ? this.client.localServer?.sim : null;
+    return sim?.units.get(this.client.selfId) ?? null;
+  }
+
+  private flashHitmarker(kill: boolean) {
+    const dmg = document.getElementById('hud-damage');
+    if (!dmg) return;
+    dmg.style.color = kill ? '#f66' : '#fff';
+    dmg.style.opacity = '1';
+    window.setTimeout(() => (dmg.style.opacity = '0'), 150);
   }
 
   private frame(now: number) {
     const dt = Math.min((now - this.lastTime) / 1000, 0.05);
     this.lastTime = now;
-    const rawInput = this.input.getInput();
     const sens = this.opts.settings.sensitivity;
     const snap = this.client.interp.latest;
-    const playing = snap?.phase === 'playing';
+    const phase = snap?.phase ?? 'lobby';
+    const playing = phase === 'playing';
+    const selfEnt = snap?.entities[this.client.selfId];
+    const alive = selfEnt ? selfEnt.al !== 0 : true;
+    const active = playing && alive;
 
-    if (playing) {
+    let rawInput = this.input.getInput();
+    if (active) {
       this.pitch -= rawInput.mouseY * sens * MOUSE_SENSITIVITY;
       this.pitch = Math.max(-MAX_PITCH, Math.min(MAX_PITCH, this.pitch));
+    } else {
+      rawInput = { ...rawInput, forward: false, backward: false, left: false, right: false, sprint: false, fire: false, reload: false, jump: false };
     }
 
     this.lastAim = rawInput.aim || this.opts.settings.cameraMode === 'fps';
@@ -197,6 +339,7 @@ export class OnlineMatchGame {
     if (snap) {
       this.renderTimeMs = snap.time_ms - REWIND_MS;
       if (snap.tick > this.lastSnapTick) this.syncSnapshot(snap);
+      this.updatePhaseFlow(snap);
     }
 
     this.syncPlayers(dt);
@@ -204,6 +347,52 @@ export class OnlineMatchGame {
     this.updateHUD(snap);
     this.updateMinimap(snap);
     this.renderer.render(this.scene, this.camera);
+  }
+
+  private updatePhaseFlow(snap: WireSnapshot) {
+    const phase = snap.phase;
+    if (phase === 'countdown') {
+      const sim = this.client.localServer?.sim;
+      const remain = sim
+        ? sim.match.countdownDuration - (sim.time - sim.match.phaseStart)
+        : 5000;
+      const label = `MATCH STARTS IN ${Math.max(1, Math.ceil(remain / 1000))}`;
+      if (label !== this.lastPhaseBanner) {
+        this.lastPhaseBanner = label;
+        this.banner(label, 1200);
+      }
+    } else if (phase === 'dropping') {
+      if (this.lastPhaseBanner !== 'JUMP!') {
+        this.lastPhaseBanner = 'JUMP!';
+        this.banner('JUMP!', 2000);
+      }
+    } else if ((phase === 'ended' || phase === 'results') && !this.finished) {
+      this.finishFromSnapshot(snap);
+    } else if (phase === 'playing') {
+      this.lastPhaseBanner = '';
+    }
+  }
+
+  private finishFromSnapshot(snap: WireSnapshot) {
+    const sim = this.client.localServer?.sim;
+    if (sim) {
+      const summary = summarizeMatch(sim);
+      this.finish({
+        won: summary.won,
+        kills: summary.kills,
+        damage: summary.damage,
+        placement: summary.placement,
+      });
+      return;
+    }
+    const mp = snap.entities[this.client.selfId];
+    this.finish({
+      won: snap.winner === this.client.selfId,
+      kills: 0,
+      damage: 0,
+      placement: snap.alive + 1,
+    });
+    void mp;
   }
 
   /** Zone, loot, and latency — only when a new authoritative tick arrives. */
@@ -315,22 +504,25 @@ export class OnlineMatchGame {
   private updateHUD(snap: WireSnapshot | null) {
     const selfEnt = snap?.entities[this.client.selfId];
     const self = this.getSelfPose();
+    const human = this.localHumanUnit();
+    const weapon = human ? human.weapons[human.inventory.weaponIndex] : null;
     const phaseDur = ZONE_PHASE_DURATIONS[snap?.zone.phase ?? 0] ?? 0;
     const elapsedSec =
       snap ? Math.max(0, (snap.time_ms - this.zonePhaseStartMs) / 1000) : 0;
     const zoneTimeMs = Math.max(0, (phaseDur - elapsedSec) * 1000);
+    const mp = human ? this.client.localServer!.sim.match.players[this.client.selfId] : null;
 
     const data: HUDData = {
-      kills: 0,
+      kills: mp?.kills ?? 0,
       alive: snap?.alive ?? 0,
-      health: this.client.rollback.localState.health,
-      armor: selfEnt?.ar ?? 0,
-      weapon: 'RIFLE',
-      ammo: 30,
-      reserve: 90,
-      reloading: false,
-      grenades: 2,
-      heals: 3,
+      health: human?.health ?? this.client.rollback.localState.health,
+      armor: human?.armor ?? selfEnt?.ar ?? 0,
+      weapon: weapon?.def.type.toUpperCase() ?? 'RIFLE',
+      ammo: weapon?.ammo ?? 30,
+      reserve: human?.inventory.ammo[weapon?.def.type ?? 'rifle'] ?? 90,
+      reloading: weapon?.reloading ?? false,
+      grenades: human?.grenadeCount ?? 2,
+      heals: human ? human.heals.medkit + human.heals.bandage : 3,
       matchTimer: formatTimer(snap?.time_ms ?? 0),
       phaseLabel: (snap?.phase ?? 'lobby').toUpperCase(),
       zoneTimer: formatTimer(zoneTimeMs),

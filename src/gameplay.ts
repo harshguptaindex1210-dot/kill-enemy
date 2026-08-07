@@ -229,13 +229,12 @@ export class MatchSim {
   private buildSpawnPoints(count: number): THREE.Vector3[] {
     const pts: THREE.Vector3[] = [];
     const spread = Math.min(count, 10);
-    // Tight ring so 10 players can find each other (was 300–400m — outside bot sight).
     for (let i = 0; i < count; i++) {
-      const a = (i / spread) * Math.PI * 2 + this.rng() * 0.15;
-      const radius = 55 + (i % 3) * 18;
+      const a = (i / spread) * Math.PI * 2 + this.rng() * 0.12;
+      const radius = 72 + (i % 4) * 24;
       const p = new THREE.Vector3(Math.cos(a) * radius, 0.9, Math.sin(a) * radius);
       if (this.obstacles.some((o) => Math.hypot(p.x - o.x, p.z - o.z) < o.r + 5)) {
-        p.set(40 + i * 8, 0.9, 40);
+        p.set(Math.cos(a) * 60, 0.9, Math.sin(a) * 60);
       }
       pts.push(p);
     }
@@ -360,6 +359,12 @@ export class MatchSim {
     const loot = this.nearestLoot(unit);
     const weapon = this.currentWeapon(unit);
     const zone = this.zone;
+    const allyPositions: THREE.Vector3[] = [];
+    for (const other of this.units.values()) {
+      if (other.id === unit.id || !other.alive || !other.isBot) continue;
+      const d = other.player.position.distanceTo(unit.player.position);
+      if (d < 20) allyPositions.push(other.player.position);
+    }
     const input = decideBotInput({
       brain,
       pos: unit.player.position,
@@ -373,6 +378,7 @@ export class MatchSim {
       safeRadius: zone.innerRadius,
       weaponReady: weapon ? weapon.ammo > 0 && !weapon.reloading : false,
       needsReload: weapon ? weapon.ammo === 0 : false,
+      allyPositions,
     });
     brain.lastInput = input;
     brain.lastThinkMs = this.time;
