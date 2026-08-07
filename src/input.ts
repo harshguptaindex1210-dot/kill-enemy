@@ -107,32 +107,7 @@ export function createInputManager(canvas: HTMLCanvasElement): InputManager {
     touchOverlay.style.cssText =
       'position:fixed;inset:0;pointer-events:none;z-index:9996;user-select:none;-webkit-user-select:none;touch-action:none;';
 
-    touchOverlay.innerHTML = `
-      <!-- Virtual Joystick (Left) -->
-      <div id="touch-joystick-area" style="position:absolute;bottom:30px;left:30px;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,0.12);border:2px solid rgba(255,255,255,0.3);pointer-events:auto;touch-action:none;">
-        <div id="touch-joystick-knob" style="position:absolute;top:50%;left:50%;width:50px;height:50px;margin-top:-25px;margin-left:-25px;border-radius:50%;background:rgba(0,220,255,0.7);box-shadow:0 0 10px rgba(0,240,255,0.5);pointer-events:none;"></div>
-      </div>
-
-      <!-- Action Buttons (Right) -->
-      <div id="touch-actions-area" style="position:absolute;bottom:30px;right:20px;display:flex;flex-direction:column;gap:12px;align-items:flex-end;pointer-events:auto;touch-action:none;">
-        <div style="display:flex;gap:10px;align-items:center;">
-          <button id="tb-skill" style="width:52px;height:52px;border-radius:50%;background:rgba(0,240,255,0.6);border:2px solid #fff;color:#fff;font-size:20px;font-weight:bold;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.5);">⚡</button>
-          <button id="tb-jump" style="width:52px;height:52px;border-radius:50%;background:rgba(50,220,100,0.6);border:2px solid #fff;color:#fff;font-size:20px;font-weight:bold;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.5);">⬆️</button>
-        </div>
-        <div style="display:flex;gap:10px;align-items:center;">
-          <button id="tb-reload" style="width:52px;height:52px;border-radius:50%;background:rgba(255,180,0,0.6);border:2px solid #fff;color:#fff;font-size:18px;font-weight:bold;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.5);">🔄</button>
-          <button id="tb-aim" style="width:52px;height:52px;border-radius:50%;background:rgba(50,150,255,0.6);border:2px solid #fff;color:#fff;font-size:20px;font-weight:bold;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.5);">🎯</button>
-          <button id="tb-fire" style="width:72px;height:72px;border-radius:50%;background:rgba(255,50,50,0.75);border:3px solid #fff;color:#fff;font-size:28px;font-weight:bold;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(255,0,0,0.6);">🔥</button>
-        </div>
-      </div>
-
-      <!-- Weapon Slots Bar (Top Right) -->
-      <div id="touch-weapons-area" style="position:absolute;top:100px;right:15px;display:flex;gap:6px;pointer-events:auto;touch-action:none;">
-        <button id="tb-w1" style="padding:6px 12px;background:rgba(0,0,0,0.6);border:1px solid #4af;color:#4af;border-radius:4px;font-size:12px;font-weight:bold;">Rifle</button>
-        <button id="tb-w2" style="padding:6px 12px;background:rgba(0,0,0,0.6);border:1px solid #fa0;color:#fa0;border-radius:4px;font-size:12px;font-weight:bold;">Pistol</button>
-        <button id="tb-w3" style="padding:6px 12px;background:rgba(0,0,0,0.6);border:1px solid #aaa;color:#aaa;border-radius:4px;font-size:12px;font-weight:bold;">Melee</button>
-      </div>
-    `;
+    touchOverlay.innerHTML = `<div id="touch-joystick-area" style="position:absolute;bottom:30px;left:30px;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,0.12);border:2px solid rgba(255,255,255,0.3);pointer-events:auto;touch-action:none;"><div id="touch-joystick-knob" style="position:absolute;top:50%;left:50%;width:50px;height:50px;margin-top:-25px;margin-left:-25px;border-radius:50%;background:rgba(0,220,255,0.7);box-shadow:0 0 10px rgba(0,240,255,0.5);pointer-events:none;"></div></div><div id="touch-actions-area" style="position:absolute;bottom:30px;right:20px;display:flex;flex-direction:column;gap:12px;align-items:flex-end;pointer-events:auto;touch-action:none;"><div style="display:flex;gap:10px;align-items:center;"><button id="tb-skill" style="width:52px;height:52px;border-radius:50%;background:rgba(0,240,255,0.6);border:2px solid #fff;color:#fff;font-size:20px;font-weight:bold;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.5);">⚡</button><button id="tb-jump" style="width:52px;height:52px;border-radius:50%;background:rgba(50,220,100,0.6);border:2px solid #fff;color:#fff;font-size:20px;font-weight:bold;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.5);">⬆️</button></div><div style="display:flex;gap:10px;align-items:center;"><button id="tb-reload" style="width:52px;height:52px;border-radius:50%;background:rgba(255,180,0,0.6);border:2px solid #fff;color:#fff;font-size:18px;font-weight:bold;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.5);">🔄</button><button id="tb-aim" style="width:52px;height:52px;border-radius:50%;background:rgba(50,150,255,0.6);border:2px solid #fff;color:#fff;font-size:20px;font-weight:bold;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.5);">🎯</button><button id="tb-fire" style="width:72px;height:72px;border-radius:50%;background:rgba(255,50,50,0.75);border:3px solid #fff;color:#fff;font-size:28px;font-weight:bold;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(255,0,0,0.6);">🔥</button></div></div><div id="touch-weapons-area" style="position:absolute;top:100px;right:15px;display:flex;gap:6px;pointer-events:auto;touch-action:none;"><button id="tb-w1" style="padding:6px 12px;background:rgba(0,0,0,0.6);border:1px solid #4af;color:#4af;border-radius:4px;font-size:12px;font-weight:bold;">Rifle</button><button id="tb-w2" style="padding:6px 12px;background:rgba(0,0,0,0.6);border:1px solid #fa0;color:#fa0;border-radius:4px;font-size:12px;font-weight:bold;">Pistol</button><button id="tb-w3" style="padding:6px 12px;background:rgba(0,0,0,0.6);border:1px solid #aaa;color:#aaa;border-radius:4px;font-size:12px;font-weight:bold;">Melee</button></div>`;
 
     document.body.appendChild(touchOverlay);
 
