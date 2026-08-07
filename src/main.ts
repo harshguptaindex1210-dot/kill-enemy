@@ -511,9 +511,18 @@ function showBootError(message?: string) {
   el.classList.add('visible');
 }
 
-try {
+async function boot() {
+  if (isPhoneDevice()) {
+    const [{ initPhoneLandscapeMode }] = await Promise.all([
+      import('./orientation'),
+      import('./orientation.css'),
+    ]);
+    initPhoneLandscapeMode();
+  }
   init();
-} catch (err) {
+}
+
+boot().catch((err) => {
   const detail = err instanceof Error ? err.message : String(err);
   console.error('Kill Enemy failed to start:', err);
   showBootError(
@@ -521,4 +530,4 @@ try {
       ? 'WebGL is unavailable on this device. Try closing other tabs or updating iOS Safari.'
       : 'The game failed to start. Try refreshing the page.'
   );
-}
+});
