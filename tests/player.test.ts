@@ -208,7 +208,7 @@ describe('player', () => {
     expect(p.cameraMode).toBe('tps');
   });
 
-  it('positive mouseX increases yaw (look right)', () => {
+  it('positive mouseX decreases yaw (look right)', () => {
     const p = createPlayer();
     const dt = 1 / 60;
     p.update(
@@ -232,7 +232,7 @@ describe('player', () => {
       dt,
       0
     );
-    expect(p.yaw).toBeGreaterThan(0);
+    expect(p.yaw).toBeLessThan(0);
   });
 
   it('eye height changes with crouch', () => {

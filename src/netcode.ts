@@ -68,7 +68,7 @@ export class RollbackEngine {
     if (this.inputs.length > MAX_UNACKED_INPUTS) {
       this.inputs = this.inputs.slice(-MAX_UNACKED_INPUTS);
     }
-    this.yaw = wrapAngle(this.yaw + input.mouseX * this.mouseSensitivity);
+    this.yaw = wrapAngle(this.yaw - input.mouseX * this.mouseSensitivity);
     this.step(this.localState, input, dt, groundY, this.yaw);
     this.tick++;
   }
@@ -95,7 +95,7 @@ export class RollbackEngine {
 
     for (const inp of this.inputs) {
       if (inp.seq > ack) {
-        replayYaw = wrapAngle(replayYaw + inp.mouseX * this.mouseSensitivity);
+        replayYaw = wrapAngle(replayYaw - inp.mouseX * this.mouseSensitivity);
         this.step(this.localState, inp, dt, groundY, replayYaw);
       }
     }
