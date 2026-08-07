@@ -51,8 +51,38 @@ describe('lobby responsive layout (#46)', () => {
     // Character / settings / shop live outside the first fold.
     expect(hero!.querySelector('#inp-name')).toBeNull();
     expect(document.getElementById('inp-name')).toBeTruthy();
+    expect(document.body.textContent).toMatch(/Profile \/ Player Name/i);
     expect(document.querySelector('.lobby-panels')).toBeTruthy();
     expect(document.querySelectorAll('.lobby-shop-grid').length).toBeGreaterThanOrEqual(3);
+  });
+
+  it('saves profile name from profile panel', () => {
+    const cb = callbacks();
+    showLobby(
+      { level: 1, xp: 0, wins: 0, kills: 0, matches: 0 },
+      defaultSettings(),
+      defaultProfile(),
+      cb
+    );
+    const input = document.getElementById('inp-name') as HTMLInputElement;
+    const save = document.getElementById('btn-rename') as HTMLButtonElement;
+    input.value = 'NovaOne';
+    save.click();
+    expect(cb.onRename).toHaveBeenCalledWith('NovaOne');
+  });
+
+  it('submits profile name on Enter key', () => {
+    const cb = callbacks();
+    showLobby(
+      { level: 1, xp: 0, wins: 0, kills: 0, matches: 0 },
+      defaultSettings(),
+      defaultProfile(),
+      cb
+    );
+    const input = document.getElementById('inp-name') as HTMLInputElement;
+    input.value = 'AcePilot';
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    expect(cb.onRename).toHaveBeenCalledWith('AcePilot');
   });
 
   it('keeps Cancel inside the hero while queueing', () => {

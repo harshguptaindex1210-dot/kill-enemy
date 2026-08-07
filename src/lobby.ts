@@ -324,7 +324,7 @@ export function showLobby(
         <h1>KILL ENEMY</h1>
         <p class="lobby-tagline">Drop in, loot fast, drive hard, and survive the last-circle chaos.</p>
         <div class="lobby-hero-stats">
-          <span><b>Lv ${stats.level}</b> <span class="muted">Pilot</span></span>
+          <span><b>Lv ${stats.level}</b> <span class="muted">${escapeHtml(profile.name)}</span></span>
           <span><b style="color:#fa0;">${profile.credits}</b> <span class="muted">Credits</span></span>
           <span><b style="color:#4f4;">${stats.wins}</b> <span class="muted">Wins</span></span>
           <span><b style="color:#f44;">${stats.kills}</b> <span class="muted">Kills</span></span>
@@ -354,6 +354,14 @@ export function showLobby(
           <button id="btn-local" class="lobby-btn lobby-btn-secondary" type="button" style="width:100%;"${queue.active ? ' disabled' : ''}>Play Local</button>
         </article>
       </section>
+      <section class="lobby-panel lobby-profile-panel" aria-label="Profile">
+        <b class="lobby-panel-title">Profile / Player Name</b>
+        <p class="lobby-profile-help">Your name is saved on this device and used in matches.</p>
+        <div class="lobby-name-row">
+          <input id="inp-name" maxlength="16" value="${escapeHtml(profile.name)}" placeholder="Enter player name" aria-label="Player name" />
+          <button id="btn-rename" class="lobby-btn lobby-btn-primary" type="button" style="width:auto;padding:8px 14px;min-height:40px;font-size:0.75rem;">Save</button>
+        </div>
+      </section>
       <section class="lobby-panel lobby-preset-panel" aria-label="Performance presets">
         <b class="lobby-panel-title">Device Presets</b>
         <div class="lobby-presets">
@@ -369,10 +377,6 @@ export function showLobby(
       <div class="lobby-panels">
         <section class="lobby-panel">
           <b class="lobby-panel-title">Character</b>
-          <div class="lobby-name-row">
-            <input id="inp-name" maxlength="16" value="${escapeHtml(profile.name)}" />
-            <button id="btn-rename" class="lobby-btn lobby-btn-primary" type="button" style="width:auto;padding:8px 14px;min-height:40px;font-size:0.75rem;">Save</button>
-          </div>
           <div class="lobby-stats">
             <span class="muted">Level</span><span>${stats.level}</span>
             <span class="muted">XP</span><span>${stats.xp}</span>
@@ -589,6 +593,12 @@ export function showLobby(
   document.getElementById('btn-rename')?.addEventListener('click', () => {
     const inp = document.getElementById('inp-name') as HTMLInputElement | null;
     if (inp) callbacks.onRename(inp.value);
+  });
+  document.getElementById('inp-name')?.addEventListener('keydown', (e) => {
+    if ((e as KeyboardEvent).key === 'Enter') {
+      const inp = e.target as HTMLInputElement;
+      callbacks.onRename(inp.value);
+    }
   });
 
   document.getElementById('btn-share')?.addEventListener('click', async () => {

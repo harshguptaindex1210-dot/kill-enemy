@@ -4,8 +4,10 @@ import {
   canBuyGunSkin,
   defaultProfile,
   grantMatchCredits,
+  loadProfile,
   matchCreditsReward,
   mergeProfiles,
+  saveProfile,
   sanitizeName,
   syncLevelUnlocks,
   equipGunSkin,
@@ -16,6 +18,17 @@ import {
   removeFriend,
 } from '../src/profile';
 import { CAR_SKINS, GUN_SKINS } from '../src/cosmetics';
+import type { StorageLike } from '../src/settings';
+
+function memStorage(): StorageLike {
+  const m = new Map<string, string>();
+  return {
+    getItem: (k) => m.get(k) ?? null,
+    setItem: (k, v) => {
+      m.set(k, v);
+    },
+  };
+}
 
 describe('profile cosmetics', () => {
   it('sanitizes name to 3–16 safe chars', () => {
@@ -66,6 +79,12 @@ describe('profile cosmetics', () => {
   it('renames profile', () => {
     const p = setProfileName(defaultProfile(), 'Nova');
     expect(p.name).toBe('Nova');
+  });
+
+  it('persists renamed profile to storage', () => {
+    const store = memStorage();
+    saveProfile(setProfileName(defaultProfile(), 'Nova Ace'), store);
+    expect(loadProfile(store).name).toBe('Nova Ace');
   });
 
   it('unlocks free car skins at level', () => {

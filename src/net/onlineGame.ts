@@ -56,6 +56,7 @@ export interface OnlineGameOptions {
   settings: Settings;
   audio: AudioManager;
   client: MatchClient;
+  playerName?: string;
   callbacks: OnlineGameCallbacks;
 }
 
@@ -296,7 +297,9 @@ export class OnlineMatchGame {
         const cause = String(e.cause ?? 'shot');
         const icon =
           cause === 'melee' ? '🔪' : cause === 'grenade' ? '💣' : cause === 'zone' ? '☢️' : '🔫';
-        addKillFeedEntry(`${killer} ${icon} ${victim}`);
+        const killerLabel = killer === selfId ? (this.opts.playerName ?? 'YOU') : killer;
+        const victimLabel = victim === selfId ? (this.opts.playerName ?? 'YOU') : victim;
+        addKillFeedEntry(`${killerLabel} ${icon} ${victimLabel}`);
         break;
       }
       case 'pickup':

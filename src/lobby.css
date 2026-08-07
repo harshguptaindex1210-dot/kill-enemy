@@ -263,6 +263,17 @@
   padding-top: 12px;
 }
 
+.lobby-profile-panel {
+  border-color: rgba(45, 212, 191, 0.3);
+}
+
+.lobby-profile-help {
+  margin: 0 0 10px;
+  color: var(--lobby-muted);
+  font-size: 0.75rem;
+  text-align: center;
+}
+
 .lobby-presets {
   display: grid;
   grid-template-columns: 1fr;

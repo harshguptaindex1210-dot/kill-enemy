@@ -260,6 +260,7 @@ function init() {
       settings,
       audio,
       client: onlineClient!,
+      playerName: profile.name,
       callbacks: {
         onFinished(summary) {
           const xpGained =
@@ -300,7 +301,7 @@ function init() {
         showAdThenLobby();
       },
       onEvents: (events) => onlineEventBridge.sink?.(events),
-    });
+    }, { playerName: profile.name });
     await onlineClient.connect();
     await onlineClient.joinExistingMatch(matchId);
     await launchOnlineMatch();
@@ -314,7 +315,7 @@ function init() {
         showAdThenLobby();
       },
       onEvents: (events) => onlineEventBridge.sink?.(events),
-    });
+    }, { playerName: profile.name });
     await onlineClient.connect();
     await onlineClient.startMatch();
     await launchOnlineMatch();

@@ -41,6 +41,7 @@ export interface MatchClientCallbacks {
 export class MatchClient {
   mode: MatchMode;
   private cb: MatchClientCallbacks;
+  private playerName?: string;
   private local: LocalServer | null = null;
   private socket: NakamaSocket | null = null;
   private session: Session | null = null;
@@ -58,9 +59,10 @@ export class MatchClient {
   private selfEntity = 'player';
   private disconnected = false;
 
-  constructor(mode: MatchMode, cb: MatchClientCallbacks) {
+  constructor(mode: MatchMode, cb: MatchClientCallbacks, options: { playerName?: string } = {}) {
     this.mode = mode;
     this.cb = cb;
+    this.playerName = options.playerName;
     this.rollback = new RollbackEngine(this.selfEntity, new THREE.Vector3(0, 0.9, 0));
   }
 
@@ -87,7 +89,7 @@ export class MatchClient {
           onSnapshot: (snap) => this.handleSnapshot(snap),
           onEvents: this.cb.onEvents,
         },
-        { botCount: 9 }
+        { botCount: 9, humanName: this.playerName }
       );
       return;
     }

@@ -237,6 +237,7 @@ export class MatchGame {
       seed: opts.seed,
       botCount: opts.botCount ?? LOCAL_MATCH_BOTS,
       humanChassisId: opts.cosmetics?.chassisId,
+      humanName: opts.cosmetics?.displayName,
       time: 0,
     });
     this.humanId = this.sim.humanId;

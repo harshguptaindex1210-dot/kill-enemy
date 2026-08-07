@@ -23,12 +23,16 @@ export class LocalServer {
   private listeners: LocalServerCallbacks;
   private humanId = 'player';
 
-  constructor(callbacks: LocalServerCallbacks, options: { seed?: number; botCount?: number } = {}) {
+  constructor(
+    callbacks: LocalServerCallbacks,
+    options: { seed?: number; botCount?: number; humanName?: string } = {}
+  ) {
     this.listeners = callbacks;
     this.sim = new MatchSim({
       seed: options.seed,
       botCount: options.botCount ?? 9,
       humanId: this.humanId,
+      humanName: options.humanName,
       time: 0,
     });
   }
