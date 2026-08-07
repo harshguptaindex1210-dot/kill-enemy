@@ -79,7 +79,7 @@ export function createInputManager(canvas: HTMLCanvasElement): InputManager {
 
   window.addEventListener('keydown', onKeyDown);
   window.addEventListener('keyup', onKeyUp);
-  canvas.addEventListener('mousemove', onMouseMove);
+  if (!isTouchDeviceFlag) canvas.addEventListener('mousemove', onMouseMove);
   window.addEventListener('mousedown', onMouseDown);
   window.addEventListener('mouseup', onMouseUp);
   document.addEventListener('pointerlockchange', onPointerLockChange);
@@ -184,6 +184,7 @@ export function createInputManager(canvas: HTMLCanvasElement): InputManager {
         if (t.identifier === joystickTouchId) {
           handleJoystickMove(t.clientX, t.clientY);
         } else if (t.identifier === cameraTouchId) {
+          e.preventDefault();
           const dx = t.clientX - cameraLastX;
           const dy = t.clientY - cameraLastY;
           cameraLastX = t.clientX;
@@ -192,7 +193,7 @@ export function createInputManager(canvas: HTMLCanvasElement): InputManager {
           mouseY += dy * 2.2;
         }
       }
-    });
+    }, { passive: false });
 
     const handleTouchEnd = (e: TouchEvent) => {
       for (let i = 0; i < e.changedTouches.length; i++) {
@@ -337,7 +338,7 @@ export function createInputManager(canvas: HTMLCanvasElement): InputManager {
     dispose: () => {
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
-      canvas.removeEventListener('mousemove', onMouseMove);
+      if (!isTouchDeviceFlag) canvas.removeEventListener('mousemove', onMouseMove);
       window.removeEventListener('mousedown', onMouseDown);
       window.removeEventListener('mouseup', onMouseUp);
       document.removeEventListener('pointerlockchange', onPointerLockChange);
