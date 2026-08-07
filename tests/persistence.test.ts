@@ -6,6 +6,9 @@ import {
   addXP,
   createWriteId,
   createStorageKey,
+  ensureMaxLevelStats,
+  MAX_PLAYER_LEVEL,
+  xpForLevel,
 } from '../src/persistence';
 
 describe('persistence', () => {
@@ -75,5 +78,11 @@ describe('persistence', () => {
     expect(s.level).toBe(1);
     addXP(s, 900);
     expect(s.level).toBe(2);
+  });
+
+  it('boosts stats to configured max level floor', () => {
+    const boosted = ensureMaxLevelStats(defaultStats());
+    expect(boosted.level).toBe(MAX_PLAYER_LEVEL);
+    expect(boosted.xp).toBe(xpForLevel(MAX_PLAYER_LEVEL));
   });
 });

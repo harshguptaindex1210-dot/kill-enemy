@@ -4,6 +4,7 @@ import {
   canBuyGunSkin,
   defaultProfile,
   grantMatchCredits,
+  isReservedFounderOwner,
   loadProfile,
   matchCreditsReward,
   mergeProfiles,
@@ -19,6 +20,7 @@ import {
   removeFriend,
 } from '../src/profile';
 import { CAR_SKINS, GUN_SKINS } from '../src/cosmetics';
+import { MAX_PLAYER_LEVEL, defaultStats, ensureMaxLevelStats, xpForLevel } from '../src/persistence';
 import type { StorageLike } from '../src/settings';
 
 function memStorage(): StorageLike {
@@ -94,17 +96,52 @@ describe('profile cosmetics', () => {
     }
   });
 
-  it('blocks non-founder attempt to set reserved founder name', () => {
-    const result = setProfileName(defaultProfile(), `  ${RESERVED_FOUNDER_NAME.toLowerCase()}  `);
-    expect('error' in result).toBe(true);
-    if ('error' in result) expect(result.error).toMatch(/already taken|failed/i);
+  it('reserves founder name for first local owner only', () => {
+    const store = memStorage();
+    const founderClaim = setProfileName(
+      defaultProfile(),
+      `  ${RESERVED_FOUNDER_NAME.toLowerCase()}  `,
+      store
+    );
+    expect('profile' in founderClaim).toBe(true);
+    if ('profile' in founderClaim) {
+      expect(founderClaim.profile.name).toBe(RESERVED_FOUNDER_NAME);
+      expect(isReservedFounderOwner(founderClaim.profile, store)).toBe(true);
+      const blocked = setProfileName(defaultProfile(), RESERVED_FOUNDER_NAME, store);
+      expect('error' in blocked).toBe(true);
+      if ('error' in blocked) expect(blocked.error).toMatch(/reserved|failed|already/i);
+    }
   });
 
-  it('allows existing founder profile to keep reserved founder name', () => {
-    const founder = { ...defaultProfile(), name: RESERVED_FOUNDER_NAME };
-    const result = setProfileName(founder, ` ${RESERVED_FOUNDER_NAME.toLowerCase()} `);
-    expect('profile' in result).toBe(true);
-    if ('profile' in result) expect(result.profile.name).toBe(RESERVED_FOUNDER_NAME);
+  it('lets founder owner switch away and reclaim reserved name', () => {
+    const store = memStorage();
+    const founderClaim = setProfileName(defaultProfile(), RESERVED_FOUNDER_NAME, store);
+    expect('profile' in founderClaim).toBe(true);
+    if ('profile' in founderClaim) {
+      const renamedAway = setProfileName(founderClaim.profile, 'Nova', store);
+      expect('profile' in renamedAway).toBe(true);
+      if ('profile' in renamedAway) {
+        const reclaimed = setProfileName(
+          renamedAway.profile,
+          ` ${RESERVED_FOUNDER_NAME.toLowerCase()} `,
+          store
+        );
+        expect('profile' in reclaimed).toBe(true);
+        if ('profile' in reclaimed) expect(reclaimed.profile.name).toBe(RESERVED_FOUNDER_NAME);
+      }
+    }
+  });
+
+  it('grants founder owner max-level stats safely', () => {
+    const store = memStorage();
+    const founderClaim = setProfileName(defaultProfile(), RESERVED_FOUNDER_NAME, store);
+    expect('profile' in founderClaim).toBe(true);
+    if ('profile' in founderClaim) {
+      expect(isReservedFounderOwner(founderClaim.profile, store)).toBe(true);
+      const boosted = ensureMaxLevelStats(defaultStats());
+      expect(boosted.level).toBe(MAX_PLAYER_LEVEL);
+      expect(boosted.xp).toBe(xpForLevel(MAX_PLAYER_LEVEL));
+    }
   });
 
   it('keeps 20-char cap when renaming profile', () => {
