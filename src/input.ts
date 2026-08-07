@@ -1,6 +1,6 @@
 import type { PlayerInput } from './player';
 import { isTouchDevice, safeRequestPointerLock } from './platform';
-import { touchDragToLookDelta } from './touchLook';
+import { shouldUseMouseLook, touchDragToLookDelta } from './touchLook';
 
 export interface InputManager {
   getInput: () => PlayerInput;
@@ -34,6 +34,8 @@ export function createInputManager(canvas: HTMLCanvasElement): InputManager {
   let touchW1 = false;
   let touchW2 = false;
   let touchW3 = false;
+  let touchLookActive = false;
+  let lastTouchLookAtMs = Number.NEGATIVE_INFINITY;
 
   const isTouchDeviceFlag = isTouchDevice();
 
@@ -50,6 +52,7 @@ export function createInputManager(canvas: HTMLCanvasElement): InputManager {
   const onKeyUp = (e: KeyboardEvent) => keys.delete(e.code);
 
   const onMouseMove = (e: MouseEvent) => {
+    if (!shouldUseMouseLook(Date.now(), lastTouchLookAtMs, touchLookActive)) return;
     mouseX += e.movementX;
     mouseY += e.movementY;
   };
@@ -91,6 +94,10 @@ export function createInputManager(canvas: HTMLCanvasElement): InputManager {
   let cameraTouchId: number | null = null;
   let cameraLastX = 0;
   let cameraLastY = 0;
+  let touchMoveHandler: ((e: TouchEvent) => void) | null = null;
+  let touchEndHandler: ((e: TouchEvent) => void) | null = null;
+  let touchStartHandler: ((e: TouchEvent) => void) | null = null;
+  let firstTouchHandler: (() => void) | null = null;
 
   function mountTouchUI() {
     if (touchOverlay) return;
@@ -179,7 +186,7 @@ export function createInputManager(canvas: HTMLCanvasElement): InputManager {
       }
     });
 
-    window.addEventListener('touchmove', (e) => {
+    touchMoveHandler = (e: TouchEvent) => {
       for (let i = 0; i < e.touches.length; i++) {
         const t = e.touches[i];
         if (t.identifier === joystickTouchId) {
@@ -190,26 +197,33 @@ export function createInputManager(canvas: HTMLCanvasElement): InputManager {
           const dy = t.clientY - cameraLastY;
           cameraLastX = t.clientX;
           cameraLastY = t.clientY;
+          touchLookActive = true;
+          lastTouchLookAtMs = Date.now();
           const look = touchDragToLookDelta(dx, dy);
           mouseX += look.mouseX;
           mouseY += look.mouseY;
         }
       }
-    }, { passive: false });
+    };
+    window.addEventListener('touchmove', touchMoveHandler, { passive: false });
 
-    const handleTouchEnd = (e: TouchEvent) => {
+    touchEndHandler = (e: TouchEvent) => {
       for (let i = 0; i < e.changedTouches.length; i++) {
         const t = e.changedTouches[i];
         if (t.identifier === joystickTouchId) resetJoystick();
-        if (t.identifier === cameraTouchId) cameraTouchId = null;
+        if (t.identifier === cameraTouchId) {
+          cameraTouchId = null;
+          touchLookActive = false;
+          lastTouchLookAtMs = Date.now();
+        }
       }
     };
 
-    window.addEventListener('touchend', handleTouchEnd);
-    window.addEventListener('touchcancel', handleTouchEnd);
+    window.addEventListener('touchend', touchEndHandler);
+    window.addEventListener('touchcancel', touchEndHandler);
 
     // Setup Camera Aim Drag Zone (Right half of screen)
-    window.addEventListener('touchstart', (e) => {
+    touchStartHandler = (e: TouchEvent) => {
       for (let i = 0; i < e.changedTouches.length; i++) {
         const t = e.changedTouches[i];
         if (
@@ -222,9 +236,12 @@ export function createInputManager(canvas: HTMLCanvasElement): InputManager {
           cameraTouchId = t.identifier;
           cameraLastX = t.clientX;
           cameraLastY = t.clientY;
+          touchLookActive = true;
+          lastTouchLookAtMs = Date.now();
         }
       }
-    });
+    };
+    window.addEventListener('touchstart', touchStartHandler);
 
     // Touch Button Handlers
     const btnFire = touchOverlay.querySelector('#tb-fire') as HTMLButtonElement;
@@ -289,11 +306,14 @@ export function createInputManager(canvas: HTMLCanvasElement): InputManager {
     mountTouchUI();
   } else {
     // Dynamic mount if touchstart occurs
-    const onFirstTouch = () => {
+    firstTouchHandler = () => {
       mountTouchUI();
-      window.removeEventListener('touchstart', onFirstTouch);
+      if (firstTouchHandler) {
+        window.removeEventListener('touchstart', firstTouchHandler);
+        firstTouchHandler = null;
+      }
     };
-    window.addEventListener('touchstart', onFirstTouch);
+    window.addEventListener('touchstart', firstTouchHandler);
   }
 
   function getInput(): PlayerInput {
@@ -345,6 +365,23 @@ export function createInputManager(canvas: HTMLCanvasElement): InputManager {
       window.removeEventListener('mouseup', onMouseUp);
       document.removeEventListener('pointerlockchange', onPointerLockChange);
       canvas.removeEventListener('click', onCanvasClick);
+      if (touchMoveHandler) {
+        window.removeEventListener('touchmove', touchMoveHandler);
+        touchMoveHandler = null;
+      }
+      if (touchEndHandler) {
+        window.removeEventListener('touchend', touchEndHandler);
+        window.removeEventListener('touchcancel', touchEndHandler);
+        touchEndHandler = null;
+      }
+      if (touchStartHandler) {
+        window.removeEventListener('touchstart', touchStartHandler);
+        touchStartHandler = null;
+      }
+      if (firstTouchHandler) {
+        window.removeEventListener('touchstart', firstTouchHandler);
+        firstTouchHandler = null;
+      }
       if (touchOverlay) {
         touchOverlay.remove();
         touchOverlay = null;
