@@ -70,7 +70,8 @@ async function bench() {
     await page.waitForFunction(() => document.querySelectorAll('canvas').length >= 1, {
       timeout: 15000,
     });
-    await wait(2000);
+    // Let countdown finish and match enter playing phase (bots + targets active).
+    await wait(8000);
 
     const fps = await page.evaluate(async (frameCount) => {
       const frames = [];

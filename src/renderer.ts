@@ -70,7 +70,7 @@ export function createRenderer(
   renderer.shadowMap.enabled = effectiveQuality === 'medium' && !mobile;
 
   if (effectiveQuality === 'medium' && !mobile) {
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.shadowMap.type = THREE.PCFShadowMap;
   }
 
   applyRendererLook(renderer, effectiveQuality);

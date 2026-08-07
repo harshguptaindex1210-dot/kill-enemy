@@ -8,8 +8,11 @@ import {
   scatterInstancedTrees,
 } from './graphics';
 import { MAP_BOUND, MAP_SIZE, POI_RADIUS } from './constants';
+import { isMobileDevice } from './platform';
 
 export type QualityPreset = 'low' | 'medium';
+
+const TREE_COUNTS: Record<QualityPreset, number> = { low: 0, medium: 100 };
 
 export interface SceneBundle {
   scene: THREE.Scene;
@@ -38,7 +41,13 @@ export function createScene(
   const renderer = createRenderer(canvas, quality);
 
   const scene = new THREE.Scene();
-  addGradientSky(scene, { topColor: 0x2a6a8a, bottomColor: 0x9ed4f0, radius: MAP_BOUND * 3 });
+  const skyDetail = quality === 'low' ? { segments: 16, rings: 8 } : { segments: 24, rings: 12 };
+  addGradientSky(scene, {
+    topColor: 0x2a6a8a,
+    bottomColor: 0x9ed4f0,
+    radius: MAP_BOUND * 3,
+    ...skyDetail,
+  });
   applyTealFog(scene, MAP_BOUND * 0.45, MAP_BOUND * 1.55, 0x5a9ab0);
 
   const camera = new THREE.PerspectiveCamera(75, canvas.width / canvas.height, 0.1, MAP_BOUND * 4);
@@ -58,7 +67,7 @@ export function createScene(
   const dirLight = new THREE.DirectionalLight(0xffe8c0, 2.1);
   dirLight.position.set(120, 180, 80);
   if (quality === 'medium') {
-    configureSunShadow(dirLight, MAP_BOUND, 1536);
+    configureSunShadow(dirLight, MAP_BOUND, 1024, false);
   }
   scene.add(dirLight);
 
@@ -92,7 +101,11 @@ export function createScene(
     const angle = (i / 4) * Math.PI * 2;
     const x = Math.cos(angle) * POI_RADIUS;
     const z = Math.sin(angle) * POI_RADIUS;
-    const roadMat = new THREE.MeshStandardMaterial({ color: 0x3a3a48, roughness: 0.88, metalness: 0.12 });
+    const roadMat = new THREE.MeshStandardMaterial({
+      color: 0x3a3a48,
+      roughness: 0.88,
+      metalness: 0.12,
+    });
     const road = new THREE.Mesh(new THREE.PlaneGeometry(4, POI_RADIUS * 1.4), roadMat);
     road.rotation.x = -Math.PI / 2;
     road.rotation.y = -angle;
@@ -100,8 +113,9 @@ export function createScene(
     scene.add(road);
   }
 
-  // Vegetation + rocks — instanced for performance
-  if (quality === 'medium') {
+  // Vegetation — instanced; fewer trees on low, no tree shadows on mobile
+  const treeCount = TREE_COUNTS[quality];
+  if (treeCount > 0) {
     const poiCoords: [number, number][] = [];
     for (let j = 0; j < 4; j++) {
       const a = (j / 4) * Math.PI * 2;
@@ -111,11 +125,11 @@ export function createScene(
       poiCoords.some(([px, pz]) => Math.abs(x - px) < 40 && Math.abs(z - pz) < 40);
 
     scatterInstancedTrees(scene, {
-      count: 200,
+      count: treeCount,
       minDist: 30,
       maxDist: MAP_BOUND - 40,
       skipNear: skipNearPoi,
-      castShadow: true,
+      castShadow: quality === 'medium' && !isMobileDevice(),
     });
   }
 
@@ -134,8 +148,16 @@ export function createScene(
     group.position.set(x, 0, z);
     group.userData.name = names[i];
 
-    const wallMat = new THREE.MeshStandardMaterial({ color: colors[i], roughness: 0.68, metalness: 0.08 });
-    const roofMat = new THREE.MeshStandardMaterial({ color: roofColors[i], roughness: 0.75, metalness: 0.05 });
+    const wallMat = new THREE.MeshStandardMaterial({
+      color: colors[i],
+      roughness: 0.68,
+      metalness: 0.08,
+    });
+    const roofMat = new THREE.MeshStandardMaterial({
+      color: roofColors[i],
+      roughness: 0.75,
+      metalness: 0.05,
+    });
     const accentMat = new THREE.MeshStandardMaterial({
       color: accentColors[i],
       roughness: 0.45,
@@ -156,19 +178,21 @@ export function createScene(
     roof.position.y = mainH + 1;
     group.add(roof);
 
-    // Windows
-    const winMat = new THREE.MeshStandardMaterial({
-      color: 0xffe08a,
-      emissive: 0xffc04d,
-      emissiveIntensity: 0.45,
-      roughness: 0.3,
-      metalness: 0.1,
-    });
-    for (let w = 0; w < 4; w++) {
-      const win = new THREE.Mesh(new THREE.BoxGeometry(2, 3, 0.1), winMat);
-      const wx = -10 + w * 7;
-      win.position.set(wx, mainH * 0.6, 12.6);
-      group.add(win);
+    // Windows — skip on low preset to cut draw calls
+    if (quality === 'medium') {
+      const winMat = new THREE.MeshStandardMaterial({
+        color: 0xffe08a,
+        emissive: 0xffc04d,
+        emissiveIntensity: 0.45,
+        roughness: 0.3,
+        metalness: 0.1,
+      });
+      for (let w = 0; w < 4; w++) {
+        const win = new THREE.Mesh(new THREE.BoxGeometry(2, 3, 0.1), winMat);
+        const wx = -10 + w * 7;
+        win.position.set(wx, mainH * 0.6, 12.6);
+        group.add(win);
+      }
     }
 
     // Side building

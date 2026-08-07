@@ -12,6 +12,8 @@ export interface SkyOptions {
   topColor?: number;
   bottomColor?: number;
   radius?: number;
+  segments?: number;
+  rings?: number;
 }
 
 /** Procedural gradient sky dome — zero texture downloads. */
@@ -19,9 +21,11 @@ export function addGradientSky(scene: THREE.Scene, options: SkyOptions = {}): TH
   const topColor = new THREE.Color(options.topColor ?? 0x3a7a9a);
   const bottomColor = new THREE.Color(options.bottomColor ?? 0x8ec8e8);
   const radius = options.radius ?? 800;
+  const segments = options.segments ?? 24;
+  const rings = options.rings ?? 12;
 
   const mesh = new THREE.Mesh(
-    new THREE.SphereGeometry(radius, 24, 12),
+    new THREE.SphereGeometry(radius, segments, rings),
     new THREE.ShaderMaterial({
       uniforms: {
         topColor: { value: topColor },
@@ -40,7 +44,12 @@ export function addGradientSky(scene: THREE.Scene, options: SkyOptions = {}): TH
   return mesh;
 }
 
-export function applyTealFog(scene: THREE.Scene, near: number, far: number, color = 0x5a9ab0): void {
+export function applyTealFog(
+  scene: THREE.Scene,
+  near: number,
+  far: number,
+  color = 0x5a9ab0
+): void {
   scene.fog = new THREE.Fog(color, near, far);
   scene.background = null;
 }
@@ -48,7 +57,8 @@ export function applyTealFog(scene: THREE.Scene, near: number, far: number, colo
 export function configureSunShadow(
   light: THREE.DirectionalLight,
   bound: number,
-  mapSize = 2048
+  mapSize = 2048,
+  soft = true
 ): void {
   light.castShadow = true;
   light.shadow.mapSize.set(mapSize, mapSize);
@@ -60,7 +70,7 @@ export function configureSunShadow(
   light.shadow.camera.bottom = -bound;
   light.shadow.bias = -0.0004;
   light.shadow.normalBias = 0.025;
-  light.shadow.radius = 2;
+  light.shadow.radius = soft ? 2 : 0;
 }
 
 export interface TreeScatterOptions {
@@ -74,8 +84,16 @@ export interface TreeScatterOptions {
 /** Instanced low-poly trees — cheap draw calls, richer foliage. */
 export function scatterInstancedTrees(scene: THREE.Scene, opts: TreeScatterOptions): void {
   const { count, minDist, maxDist, skipNear, castShadow = false } = opts;
-  const trunkMat = new THREE.MeshStandardMaterial({ color: 0x6b4423, roughness: 0.92, metalness: 0.02 });
-  const leafMat = new THREE.MeshStandardMaterial({ color: 0x2f8f3a, roughness: 0.82, metalness: 0.04 });
+  const trunkMat = new THREE.MeshStandardMaterial({
+    color: 0x6b4423,
+    roughness: 0.92,
+    metalness: 0.02,
+  });
+  const leafMat = new THREE.MeshStandardMaterial({
+    color: 0x2f8f3a,
+    roughness: 0.82,
+    metalness: 0.04,
+  });
 
   const trunkGeo = new THREE.CylinderGeometry(0.15, 0.25, 2, 5);
   const leafGeo = new THREE.SphereGeometry(0.8, 5, 4);

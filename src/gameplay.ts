@@ -58,6 +58,7 @@ import {
   updateTargetRespawns,
   type ShootingTarget,
 } from './targets';
+import { isMobileDevice } from './platform';
 
 export type DamageCause = 'shot' | 'melee' | 'grenade' | 'zone' | 'vehicle';
 
@@ -364,11 +365,17 @@ export class MatchSim {
     const inCombat = Boolean(
       enemy && enemy.player.position.distanceTo(unit.player.position) <= 140
     );
-    const THINK_MS = inCombat ? 0 : 80;
+    const THINK_MS = inCombat
+      ? isMobileDevice()
+        ? 50
+        : 0
+      : isMobileDevice()
+        ? 150
+        : 80;
     if (brain.lastInput && THINK_MS > 0 && this.time - brain.lastThinkMs < THINK_MS) {
       return brain.lastInput;
     }
-    const loot = this.nearestLoot(unit);
+    const loot = THINK_MS > 0 ? null : this.nearestLoot(unit);
     const weapon = this.currentWeapon(unit);
     const zone = this.zone;
     const allyPositions: THREE.Vector3[] = [];

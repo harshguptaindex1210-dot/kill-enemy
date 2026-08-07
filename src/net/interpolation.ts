@@ -29,6 +29,7 @@ export interface InterpolatedEntity {
 export class InterpolationBuffer {
   private snaps: WireSnapshot[] = [];
   private maxMs = 600;
+  private blendCache: InterpolatedEntity[] = [];
 
   push(snap: WireSnapshot) {
     this.snaps.push(snap);
@@ -72,7 +73,8 @@ export class InterpolationBuffer {
 
   private blend(a: WireSnapshot, b: WireSnapshot, t: number): InterpolatedEntity[] {
     const ids = new Set([...Object.keys(a.entities), ...Object.keys(b.entities)]);
-    const out: InterpolatedEntity[] = [];
+    const out = this.blendCache;
+    out.length = 0;
     for (const id of ids) {
       const ea = a.entities[id];
       const eb = b.entities[id];

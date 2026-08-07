@@ -13,14 +13,13 @@ import {
   addCompassPing,
   addDamageNumber,
   type HUDData,
-  type MinimapData,
 } from './hud';
 import { createVehicle, riderWorldPose, shouldShowUnitRig } from './vehicle';
 import { SKILL_DEFS, type ChassisId } from './cosmetics';
 import type { AudioManager } from './audio';
 import type { Settings } from './settings';
 import { formatPlacement, formatTimer, formatCompassBearing } from './feedback';
-import { safeRequestPointerLock } from './platform';
+import { safeRequestPointerLock, isMobileDevice } from './platform';
 import { calculateXP } from './match';
 import { recordMatchResult } from './net/leaderboard';
 import {
@@ -73,7 +72,7 @@ interface UnitRig {
   held?: HeldWeaponKit;
 }
 
-/** Local BR is always you + 9 bots = 10 players. */
+const HUD_INTERVAL_MS = isMobileDevice() ? 100 : 50;
 export const LOCAL_MATCH_BOTS = 9;
 export const LOCAL_MATCH_PLAYERS = LOCAL_MATCH_BOTS + 1;
 
@@ -182,6 +181,14 @@ export class MatchGame {
   private minimapFullscreen = false;
   private raf = 0;
   private lastTime = 0;
+  private hudNext = 0;
+  private minimapNext = 0;
+  private readonly minimapBuildings = [
+    { x: POI_RADIUS, z: 0 },
+    { x: 0, z: POI_RADIUS },
+    { x: -POI_RADIUS, z: 0 },
+    { x: 0, z: -POI_RADIUS },
+  ];
 
   private onKeyDown = (e: KeyboardEvent) => {
     this.keys.add(e.code);
@@ -417,9 +424,9 @@ export class MatchGame {
 
   private async loadTargets() {
     this.targetVisuals = await import('./targetVisuals');
-    this.targetVisuals.mountTargetMeshes(this.scene, this.sim.targets).forEach((parts, id) =>
-      this.targetMeshes.set(id, parts)
-    );
+    this.targetVisuals
+      .mountTargetMeshes(this.scene, this.sim.targets)
+      .forEach((parts, id) => this.targetMeshes.set(id, parts));
   }
 
   private humanUnit(): SimUnit {
@@ -452,8 +459,14 @@ export class MatchGame {
     this.processEvents(this.sim.events.splice(0, this.sim.events.length), dt);
     this.syncVisuals(dt);
     this.updateCamera(dt);
-    this.updateHUD();
-    this.updateMinimap();
+    if (now >= this.hudNext) {
+      this.hudNext = now + HUD_INTERVAL_MS;
+      this.updateHUD();
+    }
+    if (now >= this.minimapNext) {
+      this.minimapNext = now + HUD_INTERVAL_MS;
+      this.updateMinimap();
+    }
     this.renderer.render(this.scene, this.camera);
   }
 
@@ -1071,7 +1084,7 @@ export class MatchGame {
       -Math.sin(human.player.yaw) * Math.cos(human.player.pitch),
       -Math.cos(human.player.yaw) * Math.cos(human.player.pitch)
     );
-    const data: MinimapData = {
+    this.minimap.update({
       px: human.player.position.x,
       pz: human.player.position.z,
       pyaw: human.player.yaw,
@@ -1079,12 +1092,7 @@ export class MatchGame {
       sx: this.sim.zone.center.x,
       sz: this.sim.zone.center.z,
       sr: this.sim.zone.innerRadius,
-      buildings: [
-        { x: POI_RADIUS, z: 0 },
-        { x: 0, z: POI_RADIUS },
-        { x: -POI_RADIUS, z: 0 },
-        { x: 0, z: -POI_RADIUS },
-      ],
+      buildings: this.minimapBuildings,
       loot: this.sim.loot.map((l) => ({
         x: l.position.x,
         z: l.position.z,
@@ -1103,8 +1111,7 @@ export class MatchGame {
       size: this.settings.minimapSize === 'large' ? 240 : 160,
       mapExtent: MAP_SIZE,
       fullscreen: this.minimapFullscreen,
-    };
-    this.minimap.update(data);
+    });
   }
 
   private showHitmarker(kill: boolean) {

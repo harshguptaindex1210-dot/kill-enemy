@@ -209,26 +209,32 @@ export function createMinimap(onToggleFullscreen?: () => void): {
   canvas.addEventListener('click', () => onToggleFullscreen?.());
   document.body.appendChild(canvas);
   const ctx = canvas.getContext('2d')!;
+  let lastCanvasSize = 0;
+  let lastFullscreen = false;
 
   return {
     update(data: MinimapData) {
       const full = data.fullscreen || false;
       const base = data.size || 160;
       const size = full ? Math.min(window.innerWidth, window.innerHeight) * 0.5 : base;
-      canvas.width = size;
-      canvas.height = size;
-      canvas.style.width = size + 'px';
-      canvas.style.height = size + 'px';
-      if (full) {
-        canvas.style.top = '50%';
-        canvas.style.right = '50%';
-        canvas.style.transform = 'translate(50%, -50%)';
-        canvas.style.zIndex = '9999';
-      } else {
-        canvas.style.top = '50px';
-        canvas.style.right = '12px';
-        canvas.style.transform = 'none';
-        canvas.style.zIndex = '9997';
+      if (size !== lastCanvasSize || full !== lastFullscreen) {
+        lastCanvasSize = size;
+        lastFullscreen = full;
+        canvas.width = size;
+        canvas.height = size;
+        canvas.style.width = size + 'px';
+        canvas.style.height = size + 'px';
+        if (full) {
+          canvas.style.top = '50%';
+          canvas.style.right = '50%';
+          canvas.style.transform = 'translate(50%, -50%)';
+          canvas.style.zIndex = '9999';
+        } else {
+          canvas.style.top = '50px';
+          canvas.style.right = '12px';
+          canvas.style.transform = 'none';
+          canvas.style.zIndex = '9997';
+        }
       }
       const s = size / (data.mapExtent ?? MAP_SIZE);
       const ox = size / 2 - data.px * s;

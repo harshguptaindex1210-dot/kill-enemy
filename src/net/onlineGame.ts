@@ -18,7 +18,7 @@ import { MatchClient } from './client';
 import type { AudioManager } from '../audio';
 import type { Settings } from '../settings';
 import { formatTimer, formatCompassBearing } from '../feedback';
-import { safeRequestPointerLock } from '../platform';
+import { safeRequestPointerLock, isMobileDevice } from '../platform';
 import { REWIND_MS, type WireSnapshot } from './protocol';
 import { shouldShowUnitRig } from '../vehicle';
 import {
@@ -29,11 +29,9 @@ import {
 } from '../heldWeapons';
 import type { SimEvent, SimUnit } from '../gameplay';
 import { summarizeMatch } from '../game';
-import {
-  mountTargetMeshes,
-  syncTargetMeshes,
-  type TargetMeshParts,
-} from '../targetVisuals';
+import { mountTargetMeshes, syncTargetMeshes, type TargetMeshParts } from '../targetVisuals';
+
+const HUD_INTERVAL_MS = isMobileDevice() ? 100 : 50;
 
 const ROBOT_GROUP_Y_OFFSET = -0.9;
 const MOUSE_SENSITIVITY = 0.002;
@@ -124,6 +122,20 @@ export class OnlineMatchGame {
   private tracerGeo = new THREE.BoxGeometry(0.05, 0.05, 1.2);
   private tracerMat = new THREE.MeshBasicMaterial({ color: 0xffff88 });
   private lastPhaseBanner = '';
+  private hudNext = 0;
+  private minimapNext = 0;
+  private fpsSamples: number[] = [];
+  private fpsSampleAt = -Infinity;
+  private qualityDowngraded = false;
+  private readonly minimapBuildings = [
+    { x: POI_RADIUS, z: 0 },
+    { x: 0, z: POI_RADIUS },
+    { x: -POI_RADIUS, z: 0 },
+    { x: 0, z: -POI_RADIUS },
+  ];
+  private minimapScratch: MinimapData | null = null;
+  private minimapLootBuf: { x: number; z: number; collected: boolean }[] = [];
+  private minimapEnemyBuf: { x: number; z: number; alive: boolean }[] = [];
   private onResize = () => {
     const c = this.opts.canvas;
     c.width = window.innerWidth;
@@ -333,7 +345,9 @@ export class OnlineMatchGame {
 
   private frame(now: number) {
     const dt = Math.min((now - this.lastTime) / 1000, 0.05);
+    const frameMs = now - this.lastTime;
     this.lastTime = now;
+    this.trackQuality(now, frameMs);
     const sens = this.opts.settings.sensitivity;
     const snap = this.client.interp.latest;
     const phase = snap?.phase ?? 'lobby';
@@ -386,9 +400,37 @@ export class OnlineMatchGame {
     this.syncPlayers(dt);
     this.syncTargets(dt);
     this.updateCamera(dt);
-    this.updateHUD(snap);
-    this.updateMinimap(snap);
+    if (now >= this.hudNext) {
+      this.hudNext = now + HUD_INTERVAL_MS;
+      this.updateHUD(snap);
+    }
+    if (now >= this.minimapNext) {
+      this.minimapNext = now + HUD_INTERVAL_MS;
+      this.updateMinimap(snap);
+    }
     this.renderer.render(this.scene, this.camera);
+  }
+
+  private trackQuality(now: number, frameMs: number) {
+    if (this.qualityDowngraded || this.opts.settings.quality === 'low') return;
+    if (now - this.fpsSampleAt >= 250) {
+      this.fpsSampleAt = now;
+      this.fpsSamples.push(1000 / Math.max(frameMs, 0.001));
+      if (this.fpsSamples.length > 8) this.fpsSamples.shift();
+    }
+    if (this.fpsSamples.length < 6) return;
+    const sorted = [...this.fpsSamples].sort((a, b) => a - b);
+    const median = sorted[Math.floor(sorted.length / 2)]!;
+    if (median >= (isMobileDevice() ? 28 : 52)) return;
+    this.qualityDowngraded = true;
+    this.renderer.shadowMap.enabled = false;
+    this.renderer.setPixelRatio(1);
+    this.scene.traverse((obj) => {
+      if (obj instanceof THREE.Mesh || obj instanceof THREE.InstancedMesh) {
+        obj.castShadow = false;
+        obj.receiveShadow = false;
+      }
+    });
   }
 
   private updatePhaseFlow(snap: WireSnapshot) {
@@ -585,36 +627,49 @@ export class OnlineMatchGame {
   private updateMinimap(snap: WireSnapshot | null) {
     if (!snap) return;
     const self = this.getSelfPose();
-    const data: MinimapData = {
-      px: self.x,
-      pz: self.z,
-      pyaw: self.yaw,
-      aimYaw: self.yaw,
-      sx: snap.zone.cx / 100,
-      sz: snap.zone.cz / 100,
-      sr: snap.zone.r / 100,
-      buildings: [
-        { x: POI_RADIUS, z: 0 },
-        { x: 0, z: POI_RADIUS },
-        { x: -POI_RADIUS, z: 0 },
-        { x: 0, z: -POI_RADIUS },
-      ],
-      loot: snap.loot.map((l) => ({
-        x: l.px / 100,
-        z: l.pz / 100,
-        collected: false,
-      })),
-      enemies: Object.entries(snap.entities)
-        .filter(([id, e]) => id !== this.client.selfId && e.al !== 0)
-        .map(([, e]) => ({
-          x: e.px / 100,
-          z: e.pz / 100,
-          alive: true,
-        })),
-      size: this.opts.settings.minimapSize === 'large' ? 240 : 160,
-      mapExtent: MAP_SIZE,
-      fullscreen: this.minimapFullscreen,
-    };
+
+    const lootSrc = snap.loot;
+    while (this.minimapLootBuf.length < lootSrc.length) {
+      this.minimapLootBuf.push({ x: 0, z: 0, collected: false });
+    }
+    this.minimapLootBuf.length = lootSrc.length;
+    for (let i = 0; i < lootSrc.length; i++) {
+      const dst = this.minimapLootBuf[i]!;
+      const src = lootSrc[i]!;
+      dst.x = src.px / 100;
+      dst.z = src.pz / 100;
+      dst.collected = false;
+    }
+
+    const enemyEntries = Object.entries(snap.entities).filter(
+      ([id, e]) => id !== this.client.selfId && e.al !== 0
+    );
+    while (this.minimapEnemyBuf.length < enemyEntries.length) {
+      this.minimapEnemyBuf.push({ x: 0, z: 0, alive: false });
+    }
+    this.minimapEnemyBuf.length = enemyEntries.length;
+    for (let i = 0; i < enemyEntries.length; i++) {
+      const dst = this.minimapEnemyBuf[i]!;
+      const e = enemyEntries[i]![1];
+      dst.x = e.px / 100;
+      dst.z = e.pz / 100;
+      dst.alive = true;
+    }
+
+    const data = this.minimapScratch ?? (this.minimapScratch = {} as MinimapData);
+    data.px = self.x;
+    data.pz = self.z;
+    data.pyaw = self.yaw;
+    data.aimYaw = self.yaw;
+    data.sx = snap.zone.cx / 100;
+    data.sz = snap.zone.cz / 100;
+    data.sr = snap.zone.r / 100;
+    data.buildings = this.minimapBuildings;
+    data.loot = this.minimapLootBuf;
+    data.enemies = this.minimapEnemyBuf;
+    data.size = this.opts.settings.minimapSize === 'large' ? 240 : 160;
+    data.mapExtent = MAP_SIZE;
+    data.fullscreen = this.minimapFullscreen;
     this.minimap.update(data);
   }
 

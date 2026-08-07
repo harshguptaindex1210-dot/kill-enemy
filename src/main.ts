@@ -34,6 +34,7 @@ import {
   canSyncWithNakama,
   onlineUnavailableMessage,
 } from './net/nakamaConfig';
+import { isMobileDevice } from './platform';
 
 const STATS_KEY = 'robot_arena_stats_v1';
 
@@ -204,7 +205,7 @@ function init() {
       canvas,
       settings,
       audio,
-      botCount: 9,
+      botCount: isMobileDevice() ? 6 : 9,
       cosmetics: matchCosmetics(profile),
       callbacks: {
         onFinished(summary) {
