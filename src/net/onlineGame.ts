@@ -621,9 +621,8 @@ export class OnlineMatchGame {
     const phaseDur = ZONE_PHASE_DURATIONS[snap?.zone.phase ?? 0] ?? 0;
     const elapsedSec = snap ? Math.max(0, (snap.time_ms - this.zonePhaseStartMs) / 1000) : 0;
     const zoneTimeMs = Math.max(0, (phaseDur - elapsedSec) * 1000);
-    const mp = human ? this.client.localServer!.sim.match.players[this.client.selfId] : null;
     const sim = this.client.localServer?.sim;
-
+    const mp = human ? this.client.localServer!.sim.match.players[this.client.selfId] : null;
     const data: HUDData = {
       kills: mp?.kills ?? 0,
       targetsHit: sim?.getTargetHits(this.client.selfId) ?? 0,
@@ -644,6 +643,8 @@ export class OnlineMatchGame {
       justHit: false,
       prompt: '',
       bearing: this.compassBearing(self.yaw),
+      healActionLabel: 'HEAL',
+      healActionEnabled: false,
     };
     this.hud.update(data);
   }

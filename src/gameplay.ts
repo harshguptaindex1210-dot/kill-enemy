@@ -116,6 +116,20 @@ export interface SimVehicle {
   spawnPos: THREE.Vector3;
 }
 
+export type VehicleActionReason =
+  | 'entered'
+  | 'exited'
+  | 'not-alive'
+  | 'none-available'
+  | 'too-far';
+
+export interface VehicleActionResult {
+  ok: boolean;
+  reason: VehicleActionReason;
+  distance?: number;
+  vehicleId?: number;
+}
+
 export interface MatchSimConfig {
   seed?: number;
   humanId?: string;
@@ -924,6 +938,39 @@ export class MatchSim {
       unit.player.position.set(v.state.position.x + 2, 0.9, v.state.position.z + 2);
     }
     return true;
+  }
+
+  useVehicleType(unitId: string, type: Extract<VehicleType, 'sedan' | 'motorbike'>): VehicleActionResult {
+    const unit = this.units.get(unitId);
+    if (!unit || !unit.alive) return { ok: false, reason: 'not-alive' };
+
+    const MAX_USE_DISTANCE = 18;
+    if (unit.inVehicleId !== null) {
+      const current = this.vehicles.find((v) => v.id === unit.inVehicleId);
+      if (current?.type === type) {
+        this.exitVehicle(unitId);
+        return { ok: true, reason: 'exited', vehicleId: current.id };
+      }
+      this.exitVehicle(unitId);
+    }
+
+    let nearest: SimVehicle | null = null;
+    let nearestDist = Infinity;
+    for (const v of this.vehicles) {
+      if (v.type !== type || v.state.occupied || v.state.health <= 0) continue;
+      const dist = v.state.position.distanceTo(unit.player.position);
+      if (dist < nearestDist) {
+        nearestDist = dist;
+        nearest = v;
+      }
+    }
+    if (!nearest) return { ok: false, reason: 'none-available' };
+    if (nearestDist > MAX_USE_DISTANCE) {
+      return { ok: false, reason: 'too-far', distance: nearestDist, vehicleId: nearest.id };
+    }
+    nearest.state.occupied = true;
+    unit.inVehicleId = nearest.id;
+    return { ok: true, reason: 'entered', distance: nearestDist, vehicleId: nearest.id };
   }
 
   /** Local sandbox respawn — revive a dead unit at their spawn point. */

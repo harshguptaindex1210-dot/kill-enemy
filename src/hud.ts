@@ -4,6 +4,7 @@ export function createHUD(): {
   update: (data: HUDData) => void;
   remove: () => void;
   onRespawn?: (handler: () => void) => void;
+  onHealAction?: (handler: () => void) => void;
 } {
   const el = document.createElement('div');
   el.id = 'game-hud';
@@ -45,6 +46,7 @@ export function createHUD(): {
         <div>💣 <span id="hud-grenades">2</span></div>
         <div>💊 <span id="hud-heals">3</span></div>
       </div>
+      <button id="hud-heal-action" type="button" style="pointer-events:auto;padding:6px 8px;border:1px solid #34d399;border-radius:6px;background:#0f5132;color:#d1fae5;">HEAL [H]</button>
     </div>
     <div id="hud-killfeed" style="position:absolute;top:64px;left:12px;display:flex;flex-direction:column;gap:4px;align-items:flex-start;max-width:min(240px,calc(100vw - 200px));"></div>
     <div id="hud-damage" style="position:absolute;inset:0;background:radial-gradient(transparent 50%, rgba(255,0,0,0.4) 100%);opacity:0;transition:opacity 0.1s;pointer-events:none;"></div>
@@ -57,12 +59,22 @@ export function createHUD(): {
   document.body.appendChild(el);
 
   let respawnHandler: (() => void) | null = null;
+  let healActionHandler: (() => void) | null = null;
   const respawnBtn = el.querySelector('#hud-respawn') as HTMLButtonElement;
+  const healBtn = el.querySelector('#hud-heal-action') as HTMLButtonElement;
   respawnBtn.addEventListener('click', () => respawnHandler?.());
+  healBtn.addEventListener('click', (event) => {
+    if (healBtn.disabled) return;
+    event.preventDefault();
+    healActionHandler?.();
+  });
 
   return {
     onRespawn(handler: () => void) {
       respawnHandler = handler;
+    },
+    onHealAction(handler: () => void) {
+      healActionHandler = handler;
     },
     update(data: HUDData) {
       el.style.display = 'block';
@@ -114,6 +126,10 @@ export function createHUD(): {
       } else {
         promptEl.style.display = 'none';
       }
+      healBtn.textContent = data.healActionLabel;
+      healBtn.disabled = !data.healActionEnabled;
+      healBtn.style.opacity = data.healActionEnabled ? '1' : '0.52';
+      healBtn.style.cursor = data.healActionEnabled ? 'pointer' : 'not-allowed';
       if (data.justHit) {
         const dmg = document.getElementById('hud-damage')!;
         dmg.style.opacity = '1';
@@ -193,6 +209,8 @@ export interface HUDData {
   skillCooldownText?: string;
   skillReady?: boolean;
   showRespawn?: boolean;
+  healActionLabel: string;
+  healActionEnabled: boolean;
 }
 
 export function createMinimap(onToggleFullscreen?: () => void): {

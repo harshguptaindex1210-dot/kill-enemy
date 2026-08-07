@@ -222,6 +222,24 @@ describe('MatchSim', () => {
     expect(player.health).toBe(65);
   });
 
+  it('medkit consumes one charge and cannot stack while channeling', () => {
+    const sim = makeSim(1);
+    sim.startMatch();
+    runFor(sim, 9);
+    const player = sim.units.get('player')!;
+    player.health = 40;
+    player.heals.medkit = 2;
+
+    sim.useHealing('player', 'medkit');
+    expect(player.heals.medkit).toBe(1);
+    expect(player.healing?.kind).toBe('medkit');
+
+    sim.useHealing('player', 'medkit');
+    expect(player.heals.medkit).toBe(1);
+    runFor(sim, 5, fullInput());
+    expect(player.health).toBe(90);
+  });
+
   it('damage interrupts healing', () => {
     const sim = makeSim(1);
     sim.startMatch();
@@ -270,6 +288,44 @@ describe('MatchSim', () => {
     runFor(sim, 2);
     expect(v.state.position.distanceTo(player.player.position)).toBeLessThan(0.01);
     expect(sim.exitVehicle('player')).toBe(true);
+    expect(player.inVehicleId).toBeNull();
+  });
+
+  it('selective vehicle action enters matching type then exits on repeat', () => {
+    const sim = makeSim(1);
+    sim.startMatch();
+    runFor(sim, 9);
+    const player = sim.units.get('player')!;
+    const car = sim.vehicles.find((v) => v.type === 'sedan')!;
+    car.state.occupied = false;
+    car.state.position.copy(player.player.position);
+
+    const first = sim.useVehicleType('player', 'sedan');
+    expect(first.ok).toBe(true);
+    expect(first.reason).toBe('entered');
+    expect(player.inVehicleId).toBe(car.id);
+
+    const second = sim.useVehicleType('player', 'sedan');
+    expect(second.ok).toBe(true);
+    expect(second.reason).toBe('exited');
+    expect(player.inVehicleId).toBeNull();
+  });
+
+  it('selective vehicle action blocks when requested type is too far', () => {
+    const sim = makeSim(1);
+    sim.startMatch();
+    runFor(sim, 9);
+    const player = sim.units.get('player')!;
+    player.player.position.set(0, 0.9, 0);
+    for (const vehicle of sim.vehicles) {
+      if (vehicle.type !== 'motorbike') continue;
+      vehicle.state.occupied = false;
+      vehicle.state.position.set(70, 0, 70);
+    }
+
+    const result = sim.useVehicleType('player', 'motorbike');
+    expect(result.ok).toBe(false);
+    expect(result.reason).toBe('too-far');
     expect(player.inVehicleId).toBeNull();
   });
 

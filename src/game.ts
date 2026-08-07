@@ -171,7 +171,9 @@ export class MatchGame {
   private usePressed = false;
   private healMedPressed = false;
   private healBandPressed = false;
+  private vehicleTypePressed: 'sedan' | 'motorbike' | null = null;
   private spectatePressed = false;
+  private vehicleActionCooldownUntil = 0;
 
   private humanId: string;
   private dead = false;
@@ -213,7 +215,11 @@ export class MatchGame {
   };
 
   private opts: MatchGameOptions;
+  private touchActionRoot: HTMLDivElement | null = null;
   private mBtn: HTMLButtonElement | null = null;
+  private healBtn: HTMLButtonElement | null = null;
+  private carBtn: HTMLButtonElement | null = null;
+  private bikeBtn: HTMLButtonElement | null = null;
 
   constructor(opts: MatchGameOptions) {
     this.opts = opts;
@@ -261,6 +267,9 @@ export class MatchGame {
     });
     this.hud = createHUD();
     this.hud.onRespawn?.(() => this.respawnHuman());
+    this.hud.onHealAction?.(() => {
+      this.healMedPressed = true;
+    });
     this.minimap = createMinimap(() => {
       this.minimapFullscreen = !this.minimapFullscreen;
     });
@@ -290,15 +299,7 @@ export class MatchGame {
     document.body.appendChild(this.hitmarkerEl);
 
     if (isTouchDevice()) {
-      this.mBtn = document.createElement('button');
-      this.mBtn.textContent = 'E';
-      this.mBtn.style.cssText =
-        'display:none;position:fixed;right:12px;bottom:120px;z-index:10003';
-      this.mBtn.ontouchstart = (e) => {
-        e.preventDefault();
-        this.usePressed = true;
-      };
-      document.body.appendChild(this.mBtn);
+      this.mountTouchActionButtons();
     }
 
     window.addEventListener('keydown', this.onKeyDown);
@@ -330,6 +331,11 @@ export class MatchGame {
     this.hitmarkerEl.remove();
     this.mBtn?.remove();
     this.mBtn = null;
+    this.healBtn = null;
+    this.carBtn = null;
+    this.bikeBtn = null;
+    this.touchActionRoot?.remove();
+    this.touchActionRoot = null;
     this.hud.remove();
     this.minimap.remove();
     for (const rig of this.rigs.values()) this.scene.remove(rig.group);
@@ -523,11 +529,79 @@ export class MatchGame {
       this.healBandPressed = false;
       this.sim.useHealing(this.humanId, 'bandage');
     }
+    if (this.vehicleTypePressed) {
+      const type = this.vehicleTypePressed;
+      this.vehicleTypePressed = null;
+      this.handleVehicleTypeAction(type);
+    }
     if (this.spectatePressed) {
       this.spectatePressed = false;
       if (this.dead) this.pickSpectateTarget();
       else if (human.inVehicleId !== null) this.sim.exitVehicle(this.humanId);
     }
+  }
+
+  private mountTouchActionButtons() {
+    const root = document.createElement('div');
+    root.id = 't';
+    root.style.cssText =
+      'display:none;position:fixed;right:12px;bottom:120px;z-index:10003;pointer-events:auto;flex-direction:column;gap:6px;';
+
+    const makeBtn = (label: string, bg: string) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.textContent = label;
+      btn.style.cssText =
+        `min-width:76px;padding:7px 8px;border-radius:7px;border:1px solid #fff7;` +
+        `background:${bg};color:#fff;font:bold 11px sans-serif;`;
+      return btn;
+    };
+
+    this.mBtn = makeBtn('E', '#0369a1');
+    this.healBtn = makeBtn('💊', '#047857');
+    this.carBtn = makeBtn('🚗', '#a16207');
+    this.bikeBtn = makeBtn('🏍', '#6b21a8');
+
+    const bindTouch = (btn: HTMLButtonElement, fn: () => void) => {
+      const run = (e: Event) => {
+        e.preventDefault();
+        if (btn.disabled) return;
+        fn();
+      };
+      btn.addEventListener('touchstart', run, { passive: false });
+    };
+    bindTouch(this.mBtn, () => {
+      this.usePressed = true;
+    });
+    bindTouch(this.healBtn, () => {
+      this.healMedPressed = true;
+    });
+    bindTouch(this.carBtn, () => {
+      this.vehicleTypePressed = 'sedan';
+    });
+    bindTouch(this.bikeBtn, () => {
+      this.vehicleTypePressed = 'motorbike';
+    });
+
+    root.append(this.mBtn, this.healBtn, this.carBtn, this.bikeBtn);
+    document.body.appendChild(root);
+    this.touchActionRoot = root;
+  }
+
+  private handleVehicleTypeAction(type: 'sedan' | 'motorbike') {
+    if (this.sim.match.phase !== 'playing') return;
+    const now = this.sim.time;
+    if (now < this.vehicleActionCooldownUntil) {
+      this.banner('VEHICLE CD', 800);
+      return;
+    }
+    this.vehicleActionCooldownUntil = now + 1200;
+    const result = this.sim.useVehicleType(this.humanId, type);
+    if (result.reason === 'entered') return this.banner(type === 'sedan' ? 'CAR READY' : 'BIKE READY', 900);
+    if (result.reason === 'exited') return this.banner('EXITED', 900);
+    if (result.reason === 'too-far') return this.banner('TOO FAR', 900);
+    if (result.reason === 'none-available') return this.banner('UNAVAILABLE', 900);
+    if (result.reason === 'not-alive') this.banner('RESPAWN', 900);
   }
 
   private processEvents(events: SimEvent[], dt: number) {
@@ -1092,12 +1166,37 @@ export class MatchGame {
       skillCooldownText: skillReady ? 'READY' : `${skillCdSec}s`,
       skillReady,
       showRespawn: this.dead && this.sim.match.phase === 'playing',
+      healActionLabel: this.healActionLabel(human),
+      healActionEnabled: this.canUseHealAction(human),
     };
     this.hud.update(data);
-    if (this.mBtn) {
+    if (this.touchActionRoot && this.mBtn && this.healBtn && this.carBtn && this.bikeBtn) {
       const show = human.alive && this.sim.match.phase === 'playing';
-      this.mBtn.style.display = show ? 'block' : 'none';
+      this.touchActionRoot.style.display = show ? 'flex' : 'none';
+      this.healBtn.disabled = !this.canUseHealAction(human);
+      const now = this.sim.time;
+      const inCooldown = now < this.vehicleActionCooldownUntil;
+      this.carBtn.disabled = inCooldown;
+      this.bikeBtn.disabled = inCooldown;
     }
+  }
+
+  private canUseHealAction(human: SimUnit): boolean {
+    if (!human.alive || this.sim.match.phase !== 'playing') return false;
+    if (human.healing) return false;
+    if (human.health >= 100) return false;
+    return human.heals.medkit > 0;
+  }
+
+  private healActionLabel(human: SimUnit): string {
+    if (!human.alive || this.sim.match.phase !== 'playing') return 'HEAL';
+    if (human.healing) {
+      const left = Math.max(0, Math.ceil((human.healing.until - this.sim.time) / 1000));
+      return `HEAL ${left}s`;
+    }
+    if (human.health >= 100) return 'FULL HP';
+    if (human.heals.medkit <= 0) return 'NO KIT';
+    return `HEAL [H]x${human.heals.medkit}`;
   }
 
   private phaseLabel(): string {
