@@ -3,14 +3,14 @@
 @import url('https://fonts.googleapis.com/css2?family=Exo+2:wght@400;600;700;800&family=Orbitron:wght@600;700;800&display=swap');
 
 .lobby-overlay {
-  --lobby-bg0: #05060c;
-  --lobby-bg1: #0e1424;
-  --lobby-accent: #3ec8ff;
-  --lobby-accent-dim: rgba(62, 200, 255, 0.14);
-  --lobby-warn: #ffb020;
-  --lobby-muted: #8a96a8;
-  --lobby-panel: rgba(12, 18, 32, 0.82);
-  --lobby-line: rgba(62, 200, 255, 0.22);
+  --lobby-bg0: #0a1628;
+  --lobby-bg1: #122038;
+  --lobby-accent: #2dd4bf;
+  --lobby-accent-dim: rgba(45, 212, 191, 0.14);
+  --lobby-warn: #fbbf24;
+  --lobby-muted: #94a3b8;
+  --lobby-panel: rgba(15, 31, 53, 0.88);
+  --lobby-line: rgba(45, 212, 191, 0.24);
   --lobby-max: 1100px;
   --lobby-radius: 12px;
 
@@ -32,9 +32,9 @@
   font-family: 'Exo 2', 'Segoe UI', sans-serif;
   -webkit-font-smoothing: antialiased;
   background:
-    radial-gradient(900px 520px at 50% 18%, rgba(5, 6, 12, 0.15), rgba(5, 6, 12, 0.72) 48%, rgba(5, 6, 12, 0.94) 100%),
-    radial-gradient(700px 400px at 100% 30%, rgba(255, 120, 40, 0.08), transparent 50%),
-    linear-gradient(165deg, var(--lobby-bg0), var(--lobby-bg1) 55%, #0a101c);
+    radial-gradient(900px 520px at 50% 18%, rgba(10, 22, 40, 0.15), rgba(10, 22, 40, 0.72) 48%, rgba(10, 22, 40, 0.94) 100%),
+    radial-gradient(700px 400px at 100% 30%, rgba(45, 212, 191, 0.07), transparent 50%),
+    linear-gradient(165deg, var(--lobby-bg0), var(--lobby-bg1) 55%, #0d1a2d);
 }
 
 .lobby-overlay::before {
@@ -140,9 +140,9 @@
   border: 1px solid var(--lobby-line);
   border-radius: calc(var(--lobby-radius) + 4px);
   background:
-    linear-gradient(180deg, rgba(196, 18, 26, 0.12), transparent 45%),
-    linear-gradient(180deg, rgba(62, 200, 255, 0.08), transparent 55%),
-    rgba(8, 12, 22, 0.55);
+    linear-gradient(180deg, rgba(196, 18, 26, 0.1), transparent 45%),
+    linear-gradient(180deg, rgba(45, 212, 191, 0.1), transparent 55%),
+    rgba(10, 18, 32, 0.6);
   box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
   backdrop-filter: blur(6px);
 }
@@ -153,8 +153,8 @@
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--lobby-accent);
-  background: rgba(62, 200, 255, 0.1);
-  border: 1px solid rgba(62, 200, 255, 0.25);
+  background: rgba(45, 212, 191, 0.1);
+  border: 1px solid rgba(45, 212, 191, 0.28);
   padding: 4px 12px;
   border-radius: 999px;
 }
@@ -190,9 +190,9 @@
 }
 
 .lobby-mode-card-primary {
-  border-color: rgba(62, 200, 255, 0.35);
+  border-color: rgba(45, 212, 191, 0.38);
   background:
-    linear-gradient(135deg, rgba(62, 200, 255, 0.08), transparent 55%), var(--lobby-panel);
+    linear-gradient(135deg, rgba(45, 212, 191, 0.1), transparent 55%), var(--lobby-panel);
 }
 
 .lobby-mode-head {
@@ -215,8 +215,8 @@
   letter-spacing: 0.12em;
   padding: 3px 8px;
   border-radius: 4px;
-  background: rgba(62, 200, 255, 0.2);
-  color: #7ef6ff;
+  background: rgba(45, 212, 191, 0.2);
+  color: #5eead4;
   font-weight: 700;
 }
 
@@ -315,9 +315,9 @@
 }
 
 .lobby-friend-invite {
-  background: rgba(62, 200, 255, 0.2);
-  color: #7ef6ff;
-  border: 1px solid rgba(62, 200, 255, 0.35);
+  background: rgba(45, 212, 191, 0.18);
+  color: #5eead4;
+  border: 1px solid rgba(45, 212, 191, 0.35);
 }
 
 .lobby-friend-remove {
@@ -423,10 +423,10 @@
   width: 100%;
   padding: 15px 28px;
   font-size: 1.05rem;
-  background: linear-gradient(180deg, #5ad4ff, var(--lobby-accent) 40%, #1a9fd0);
-  color: #041018;
+  background: linear-gradient(180deg, #5eead4, var(--lobby-accent) 40%, #14b8a6);
+  color: #042f2e;
   min-height: 52px;
-  box-shadow: 0 8px 24px rgba(62, 200, 255, 0.28);
+  box-shadow: 0 8px 24px rgba(45, 212, 191, 0.28);
 }
 
 .lobby-btn-primary:hover {
@@ -621,7 +621,7 @@
 .lobby-card.is-equipped {
   border-color: var(--lobby-accent);
   background: var(--lobby-accent-dim);
-  box-shadow: 0 0 0 1px rgba(62, 200, 255, 0.2);
+  box-shadow: 0 0 0 1px rgba(45, 212, 191, 0.22);
 }
 
 .lobby-card-name {
@@ -631,8 +631,8 @@
 
 .lobby-card-meta {
   font-size: 0.65rem;
-  color: #7ef6ff;
-  background: rgba(0, 240, 255, 0.1);
+  color: #5eead4;
+  background: rgba(45, 212, 191, 0.12);
   padding: 3px 7px;
   border-radius: 999px;
 }

@@ -12,9 +12,10 @@ export function updateCamera(
   eyeHeight: number,
   cameraMode: 'tps' | 'fps',
   playerPos: THREE.Vector3,
-  dt: number
+  dt: number,
+  options?: { snapPosition?: boolean }
 ) {
-  const lerpFactor = 1 - Math.pow(0.01, dt);
+  const lerpFactor = options?.snapPosition ? 1 : 1 - Math.pow(0.01, dt);
 
   if (cameraMode === 'fps') {
     const targetPos = playerPos.clone().add(FPS_OFFSET);

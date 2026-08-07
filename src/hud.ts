@@ -13,9 +13,9 @@ export function createHUD(): {
     <div id="hud-top" style="position:absolute;top:12px;left:50%;transform:translateX(-50%);display:flex;gap:24px;background:rgba(0,0,0,0.5);padding:6px 16px;border-radius:4px;color:#fff;font-size:13px;">
       <span id="hud-kills">☠️ 0</span>
       <span id="hud-alive">👥 0 Alive</span>
-      <span id="hud-phase" style="color:#8af;">LOBBY</span>
+      <span id="hud-phase" style="color:#2dd4bf;">LOBBY</span>
       <span id="hud-timer">⏲ 0:00</span>
-      <span id="hud-zone" style="color:#8af;">⏱ Zone in 0:00</span>
+      <span id="hud-zone" style="color:#2dd4bf;">⏱ Zone in 0:00</span>
       <span id="hud-storm" style="display:none;color:#f44;">⚠️ STORM</span>
     </div>
     <div id="hud-prompt" style="position:absolute;bottom:160px;left:50%;transform:translateX(-50%);display:none;background:rgba(0,0,0,0.6);padding:6px 14px;border-radius:4px;color:#fff;font-size:14px;"></div>
@@ -24,11 +24,11 @@ export function createHUD(): {
         <div style="display:flex;justify-content:space-between;font-size:11px;color:#aaa;">
           <span>HEALTH</span><span id="hud-health-num">100</span>
         </div>
-        <div style="height:8px;width:140px;background:#333;border-radius:4px;overflow:hidden;"><div id="hud-health-bar" style="height:100%;width:100%;background:#4f4;border-radius:4px;transition:width 0.2s;"></div></div>
+        <div style="height:8px;width:140px;background:#1a2a3a;border-radius:4px;overflow:hidden;"><div id="hud-health-bar" style="height:100%;width:100%;background:#2dd4bf;border-radius:4px;transition:width 0.2s;"></div></div>
         <div style="display:flex;justify-content:space-between;font-size:11px;color:#aaa;">
           <span>ARMOR</span><span id="hud-armor-num">0</span>
         </div>
-        <div style="height:6px;width:140px;background:#333;border-radius:4px;overflow:hidden;"><div id="hud-armor-bar" style="height:100%;width:0%;background:#49f;border-radius:4px;transition:width 0.2s;"></div></div>
+        <div style="height:6px;width:140px;background:#1a2a3a;border-radius:4px;overflow:hidden;"><div id="hud-armor-bar" style="height:100%;width:0%;background:#38bdf8;border-radius:4px;transition:width 0.2s;"></div></div>
         <div id="hud-heal-row" style="display:none;height:5px;width:140px;background:#333;border-radius:4px;overflow:hidden;"><div id="hud-heal-bar" style="height:100%;width:0%;background:#ffaa44;border-radius:4px;"></div></div>
       </div>
       <div id="hud-weapon" style="text-align:center;">
@@ -36,9 +36,9 @@ export function createHUD(): {
         <div id="hud-ammo" style="font-size:11px;color:#aaa;">30 / 90</div>
         <div id="hud-reload" style="font-size:11px;color:#fa0;display:none;">RELOADING...</div>
       </div>
-      <div id="hud-skill" style="text-align:center;font-size:11px;background:rgba(0,240,255,0.15);border:1px solid rgba(0,240,255,0.4);padding:4px 8px;border-radius:4px;">
-        <div id="hud-skill-name" style="font-weight:bold;color:#00ffff;">⚡ Speed [F]</div>
-        <div id="hud-skill-status" style="font-size:10px;color:#00ff88;">READY</div>
+      <div id="hud-skill" style="text-align:center;font-size:11px;background:rgba(45,212,191,0.12);border:1px solid rgba(45,212,191,0.35);padding:4px 8px;border-radius:4px;">
+        <div id="hud-skill-name" style="font-weight:bold;color:#2dd4bf;">⚡ Speed [F]</div>
+        <div id="hud-skill-status" style="font-size:10px;color:#34d399;">READY</div>
       </div>
       <div style="text-align:center;font-size:11px;color:#aaa;">
         <div>💣 <span id="hud-grenades">2</span></div>
@@ -51,7 +51,7 @@ export function createHUD(): {
       ${['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'].map((d) => `<span data-dir="${d}" style="color:#889;min-width:15px;text-align:center;">${d}</span>`).join('')}
     </div>
     <div id="hud-damage-numbers" style="position:absolute;inset:0;overflow:hidden;pointer-events:none;"></div>
-    <button id="hud-respawn" type="button" style="display:none;position:absolute;bottom:120px;left:50%;transform:translateX(-50%);pointer-events:auto;padding:14px 32px;font-size:16px;font-weight:bold;background:linear-gradient(180deg,#5ad4ff,#1a9fd0);color:#041018;border:none;border-radius:8px;cursor:pointer;box-shadow:0 8px 24px rgba(62,200,255,0.35);letter-spacing:0.06em;z-index:10002;">RESPAWN</button>
+    <button id="hud-respawn" type="button" style="display:none;position:absolute;bottom:120px;left:50%;transform:translateX(-50%);pointer-events:auto;padding:14px 32px;font-size:16px;font-weight:bold;background:linear-gradient(180deg,#5eead4,#14b8a6);color:#042f2e;border:none;border-radius:8px;cursor:pointer;box-shadow:0 8px 24px rgba(45,212,191,0.35);letter-spacing:0.06em;z-index:10002;">RESPAWN</button>
   `;
   document.body.appendChild(el);
 
@@ -86,7 +86,7 @@ export function createHUD(): {
         document.getElementById('hud-skill-name')!.textContent = `⚡ ${data.skillName}`;
         const statusEl = document.getElementById('hud-skill-status')!;
         statusEl.textContent = data.skillCooldownText || 'READY';
-        statusEl.style.color = data.skillReady ? '#00ff88' : '#ffaa00';
+        statusEl.style.color = data.skillReady ? '#34d399' : '#fbbf24';
       }
       if (data.bearing) {
         document.querySelectorAll('#hud-compass span[data-dir]').forEach((s) => {
@@ -202,7 +202,7 @@ export function createMinimap(onToggleFullscreen?: () => void): {
   canvas.height = 160;
   canvas.title = 'Click to toggle fullscreen minimap (N)';
   canvas.style.cssText =
-    'position:fixed;top:50px;right:12px;z-index:9997;border:2px solid rgba(255,255,255,0.3);border-radius:4px;background:#1a1a2e;cursor:pointer;transition:all 0.2s;';
+    'position:fixed;top:50px;right:12px;z-index:9997;border:2px solid rgba(45,212,191,0.45);border-radius:4px;background:#0f1f35;cursor:pointer;transition:all 0.2s;';
   canvas.addEventListener('click', () => onToggleFullscreen?.());
   document.body.appendChild(canvas);
   const ctx = canvas.getContext('2d')!;
@@ -231,10 +231,10 @@ export function createMinimap(onToggleFullscreen?: () => void): {
       const ox = size / 2 - data.px * s;
       const oz = size / 2 - data.pz * s;
 
-      ctx.fillStyle = '#1a1a2e';
+      ctx.fillStyle = '#0f1f35';
       ctx.fillRect(0, 0, size, size);
 
-      ctx.strokeStyle = '#9932cc';
+      ctx.strokeStyle = '#2dd4bf';
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.arc(data.sx * s + ox, data.sz * s + oz, data.sr * s, 0, Math.PI * 2);
@@ -265,12 +265,12 @@ export function createMinimap(onToggleFullscreen?: () => void): {
         ctx.fill();
       }
 
-      ctx.fillStyle = '#0f0';
+      ctx.fillStyle = '#2dd4bf';
       ctx.beginPath();
       ctx.arc(ox, oz, 4, 0, Math.PI * 2);
       ctx.fill();
 
-      ctx.strokeStyle = '#0f0';
+      ctx.strokeStyle = '#2dd4bf';
       ctx.lineWidth = 2;
       ctx.beginPath();
       const aimYaw = data.aimYaw ?? data.pyaw;
