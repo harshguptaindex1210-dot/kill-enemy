@@ -3,6 +3,7 @@ import { AudioManager } from './audio';
 import { loadSettings, saveSettings, type Settings } from './settings';
 import {
   defaultStats,
+  ensureMaxLevelStats,
   recordMatchOnce,
   createWriteId,
   type PlayerStats,
@@ -17,6 +18,7 @@ import {
   equipChassis,
   equipGunSkin,
   grantMatchCredits,
+  isReservedFounderOwner,
   loadProfile,
   matchCreditsReward,
   mergeProfiles,
@@ -104,7 +106,15 @@ function init() {
     settings = { ...settings, quality: urlQuality };
   }
   let stats: PlayerStats = loadStats();
-  let profile: PlayerProfile = syncLevelUnlocks(loadProfile(), stats.level);
+  let profile: PlayerProfile = loadProfile();
+  if (isReservedFounderOwner(profile)) {
+    const boostedStats = ensureMaxLevelStats(stats);
+    if (boostedStats !== stats) {
+      stats = boostedStats;
+      saveStats(stats);
+    }
+  }
+  profile = syncLevelUnlocks(profile, stats.level);
   saveProfile(profile);
   let shopMessage = '';
   const audio = new AudioManager();
@@ -173,6 +183,13 @@ function init() {
 
   function persistProfile(next: PlayerProfile) {
     profile = next;
+    if (isReservedFounderOwner(profile)) {
+      const boostedStats = ensureMaxLevelStats(stats);
+      if (boostedStats !== stats) {
+        stats = boostedStats;
+        saveStats(stats);
+      }
+    }
     profile = syncLevelUnlocks(profile, stats.level);
     saveProfile(profile);
     lobbyScene?.setCosmetics(lobbyCosmetics());
