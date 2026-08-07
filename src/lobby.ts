@@ -111,7 +111,7 @@ function renderFriendsPanel(profile: PlayerProfile): string {
   return `<aside id="lobby-friends" class="lobby-panel lobby-friends" aria-label="Friends">
     <b class="lobby-panel-title">Squad · Friends</b>
     <div class="lobby-friends-add">
-      <input id="inp-friend" maxlength="16" placeholder="Add by username" aria-label="Friend username" />
+      <input id="inp-friend" maxlength="20" placeholder="Add by username" aria-label="Friend username" />
       <button id="btn-add-friend" class="lobby-btn lobby-btn-primary" type="button" style="width:auto;padding:8px 14px;min-height:40px;font-size:0.75rem;">Add</button>
     </div>
     <div class="lobby-friends-list">${rows}</div>
@@ -358,7 +358,7 @@ export function showLobby(
         <b class="lobby-panel-title">Profile / Player Name</b>
         <p class="lobby-profile-help">Saved locally.</p>
         <div class="lobby-name-row">
-          <input id="inp-name" maxlength="16" value="${escapeHtml(profile.name)}" placeholder="Name" aria-label="Player name" />
+          <input id="inp-name" maxlength="20" value="${escapeHtml(profile.name)}" placeholder="Name" aria-label="Player name" />
           <button id="btn-rename" class="lobby-btn lobby-btn-primary" type="button" style="width:auto;padding:8px 14px;min-height:40px;font-size:0.75rem;">Save</button>
         </div>
       </section>

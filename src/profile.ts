@@ -26,7 +26,7 @@ export interface PlayerProfile {
 
 const PROFILE_KEY = 'robot_arena_profile_v1';
 const NAME_MIN = 3;
-const NAME_MAX = 16;
+const NAME_MAX = 20;
 
 export function defaultProfile(): PlayerProfile {
   return {
@@ -167,7 +167,7 @@ export function addFriend(
   username: string
 ): { profile: PlayerProfile } | { error: string } {
   const name = sanitizeName(username);
-  if (name === 'Pilot') return { error: 'Enter a valid username (3–16 chars)' };
+  if (name === 'Pilot') return { error: 'Enter a valid username (3–20 chars)' };
   if (name.toLowerCase() === profile.name.toLowerCase()) return { error: 'Cannot add yourself' };
   if (profile.friends.some((f) => f.toLowerCase() === name.toLowerCase())) {
     return { error: 'Already on friends list' };

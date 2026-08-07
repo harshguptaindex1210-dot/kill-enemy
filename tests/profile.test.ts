@@ -31,10 +31,11 @@ function memStorage(): StorageLike {
 }
 
 describe('profile cosmetics', () => {
-  it('sanitizes name to 3–16 safe chars', () => {
+  it('sanitizes name to 3–20 safe chars', () => {
     expect(sanitizeName('ab')).toBe('Pilot');
     expect(sanitizeName('Ace Pilot!!')).toBe('Ace Pilot');
-    expect(sanitizeName('x'.repeat(20)).length).toBe(16);
+    expect(sanitizeName('x'.repeat(20)).length).toBe(20);
+    expect(sanitizeName('x'.repeat(24)).length).toBe(20);
   });
 
   it('grants match credits in 236–893', () => {

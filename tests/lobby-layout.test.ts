@@ -112,6 +112,8 @@ describe('lobby responsive layout (#46)', () => {
     expect(document.getElementById('inp-friend')).toBeTruthy();
     expect(document.getElementById('btn-add-friend')).toBeTruthy();
     expect(document.body.textContent).toMatch(/AcePilot/);
+    expect((document.getElementById('inp-friend') as HTMLInputElement).maxLength).toBe(20);
+    expect((document.getElementById('inp-name') as HTMLInputElement).maxLength).toBe(20);
   });
 
   it('mounts mode cards with play buttons in first fold', () => {
