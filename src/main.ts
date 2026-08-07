@@ -34,7 +34,7 @@ import {
   canSyncWithNakama,
   onlineUnavailableMessage,
 } from './net/nakamaConfig';
-import { isMobileDevice, isPhoneDevice } from './platform';
+import { isMobileDevice } from './platform';
 
 const STATS_KEY = 'robot_arena_stats_v1';
 
@@ -511,18 +511,9 @@ function showBootError(message?: string) {
   el.classList.add('visible');
 }
 
-async function boot() {
-  if (isPhoneDevice()) {
-    const [{ initPhoneLandscapeMode }] = await Promise.all([
-      import('./orientation'),
-      import('./orientation.css'),
-    ]);
-    initPhoneLandscapeMode();
-  }
+try {
   init();
-}
-
-boot().catch((err) => {
+} catch (err) {
   const detail = err instanceof Error ? err.message : String(err);
   console.error('Kill Enemy failed to start:', err);
   showBootError(
@@ -530,4 +521,4 @@ boot().catch((err) => {
       ? 'WebGL is unavailable on this device. Try closing other tabs or updating iOS Safari.'
       : 'The game failed to start. Try refreshing the page.'
   );
-}
+});
