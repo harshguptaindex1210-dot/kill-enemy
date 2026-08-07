@@ -1,3 +1,5 @@
+import { isMobileDevice } from './platform';
+
 export interface Settings {
   quality: 'low' | 'medium';
   sensitivity: number;
@@ -15,7 +17,7 @@ const KEY = 'robot_arena_settings_v1';
 
 export function defaultSettings(): Settings {
   return {
-    quality: 'medium',
+    quality: isMobileDevice() ? 'low' : 'medium',
     sensitivity: 1,
     volume: 0.7,
     cameraMode: 'tps',

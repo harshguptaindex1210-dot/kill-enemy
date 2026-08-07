@@ -74,9 +74,9 @@ describe('online local player pose', () => {
 
   it('adopts authoritative rollback state for local demo mode', () => {
     const client = new MatchClient('local', { onSnapshot: () => {}, onDisconnect: () => {} });
-    const handle = (client as unknown as { handleSnapshot: (s: WireSnapshot) => void }).handleSnapshot.bind(
-      client
-    );
+    const handle = (
+      client as unknown as { handleSnapshot: (s: WireSnapshot) => void }
+    ).handleSnapshot.bind(client);
     handle(makeSnap(1, 2, 3));
     handle(makeSnap(2, 8, 9));
 

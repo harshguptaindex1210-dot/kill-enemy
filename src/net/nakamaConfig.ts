@@ -45,6 +45,16 @@ export function allowDemoOnlineFallback(
   return isLocalNakamaEndpoint(config) && !isLocalBrowserHost(hostname);
 }
 
+/** Skip Nakama HTTP/socket calls on static hosts that use in-browser demo online. */
+export function canSyncWithNakama(
+  config: NakamaConfig = getNakamaConfig(),
+  hostname = globalThis.location?.hostname ?? ''
+): boolean {
+  if (allowDemoOnlineFallback(config, hostname)) return false;
+  if (isLocalNakamaEndpoint(config)) return isLocalBrowserHost(hostname);
+  return true;
+}
+
 export function onlineUnavailableMessage(
   err: unknown,
   config: NakamaConfig = getNakamaConfig(),

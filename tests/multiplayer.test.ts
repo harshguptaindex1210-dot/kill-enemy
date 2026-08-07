@@ -265,9 +265,9 @@ describe('#39 client path', () => {
   it('local mode adopts authoritative pose without client prediction', async () => {
     const client = new MatchClient('local', { onSnapshot: () => {}, onDisconnect: () => {} });
     await client.connect();
-    const handle = (client as unknown as { handleSnapshot: (s: WireSnapshot) => void }).handleSnapshot.bind(
-      client
-    );
+    const handle = (
+      client as unknown as { handleSnapshot: (s: WireSnapshot) => void }
+    ).handleSnapshot.bind(client);
     handle(snap);
     client.rollback.applyInput(frame(1, { forward: true }), 1 / 20, 0);
     const predictedZ = client.rollback.localState.pos.z;

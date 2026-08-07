@@ -1,4 +1,5 @@
 import type { PlayerInput } from './player';
+import { isTouchDevice, safeRequestPointerLock } from './platform';
 
 export interface InputManager {
   getInput: () => PlayerInput;
@@ -33,10 +34,7 @@ export function createInputManager(canvas: HTMLCanvasElement): InputManager {
   let touchW2 = false;
   let touchW3 = false;
 
-  const isTouchDevice =
-    'ontouchstart' in window ||
-    navigator.maxTouchPoints > 0 ||
-    /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const isTouchDeviceFlag = isTouchDevice();
 
   // Keyboard listeners
   const onKeyDown = (e: KeyboardEvent) => {
@@ -74,8 +72,8 @@ export function createInputManager(canvas: HTMLCanvasElement): InputManager {
   };
 
   const onCanvasClick = () => {
-    if (!isTouchDevice && !document.pointerLockElement) {
-      canvas.requestPointerLock();
+    if (!isTouchDeviceFlag && !document.pointerLockElement) {
+      safeRequestPointerLock(canvas);
     }
   };
 
@@ -284,7 +282,7 @@ export function createInputManager(canvas: HTMLCanvasElement): InputManager {
     );
   }
 
-  if (isTouchDevice) {
+  if (isTouchDeviceFlag) {
     mountTouchUI();
   } else {
     // Dynamic mount if touchstart occurs

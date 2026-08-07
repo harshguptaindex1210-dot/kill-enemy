@@ -133,6 +133,7 @@ describe('lobby responsive layout (#46)', () => {
     expect(css).toMatch(/\.lobby-instructions/);
     expect(css).toMatch(/\.lobby-hero/);
     expect(css).toMatch(/\.lobby-shop-grid/);
+    expect(css).toMatch(/@media\s*\(\s*max-width:\s*767px\s*\)/);
     expect(css).toMatch(/@media\s*\(\s*min-width:\s*768px\s*\)/);
     expect(css).toMatch(/@media\s*\(\s*min-width:\s*900px\s*\)/);
     expect(css).toMatch(/@media\s*\(\s*min-width:\s*1024px\s*\)/);
@@ -151,8 +152,11 @@ describe('lobby responsive layout (#46)', () => {
       defaultProfile(),
       callbacks()
     );
-    expect(document.querySelector('.lobby-quick-controls')).toBeTruthy();
-    expect(document.querySelector('.lobby-quick-controls')!.textContent).toMatch(/W A S D/i);
+    const quick = document.querySelector('.lobby-quick-controls');
+    expect(quick).toBeTruthy();
+    const text = quick!.textContent ?? '';
+    expect(text.length).toBeGreaterThan(0);
+    expect(text).toMatch(/W A S D|Touch:/i);
   });
 
   it('disables Play Local while matchmaking queue is active', () => {

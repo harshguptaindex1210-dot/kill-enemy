@@ -31,6 +31,7 @@ import type { MatchClient } from './net/client';
 import type { NakamaSocket } from './net/nakama';
 import {
   allowDemoOnlineFallback,
+  canSyncWithNakama,
   onlineUnavailableMessage,
 } from './net/nakamaConfig';
 
@@ -127,13 +128,18 @@ function init() {
   }
 
   async function startLobbyScene() {
-    const { createLobbyScene } = await import('./lobbyScene');
-    stopLobbyScene();
-    lobbyScene = createLobbyScene(canvas, settings.quality, lobbyCosmetics());
-    lobbyScene.start();
+    try {
+      const { createLobbyScene } = await import('./lobbyScene');
+      stopLobbyScene();
+      lobbyScene = createLobbyScene(canvas, settings.quality, lobbyCosmetics());
+      lobbyScene.start();
+    } catch (err) {
+      console.warn('Lobby 3D backdrop unavailable:', err);
+    }
   }
 
   async function syncProfileOnline() {
+    if (!canSyncWithNakama()) return;
     try {
       const { nakama } = await loadOnlineStack();
       const session = nakama.getSession() ?? (await nakama.authenticateGuest());
@@ -148,6 +154,7 @@ function init() {
   }
 
   async function pushProfileOnline() {
+    if (!canSyncWithNakama()) return;
     try {
       const { nakama } = await loadOnlineStack();
       const session = nakama.getSession();
@@ -490,7 +497,27 @@ function init() {
   }
 
   applyQuality(settings.quality);
-  showLobbyUI();
+  void showLobbyUI();
 }
 
-init();
+function showBootError(message?: string) {
+  const el = document.getElementById('boot-error');
+  if (!el) return;
+  if (message) {
+    const p = el.querySelector('p');
+    if (p) p.textContent = message;
+  }
+  el.classList.add('visible');
+}
+
+try {
+  init();
+} catch (err) {
+  const detail = err instanceof Error ? err.message : String(err);
+  console.error('Kill Enemy failed to start:', err);
+  showBootError(
+    detail.includes('WebGL')
+      ? 'WebGL is unavailable on this device. Try closing other tabs or updating iOS Safari.'
+      : 'The game failed to start. Try refreshing the page.'
+  );
+}

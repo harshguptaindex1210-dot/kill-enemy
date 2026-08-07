@@ -20,6 +20,7 @@ import { SKILL_DEFS, type ChassisId } from './cosmetics';
 import type { AudioManager } from './audio';
 import type { Settings } from './settings';
 import { formatPlacement, formatTimer, formatCompassBearing } from './feedback';
+import { safeRequestPointerLock } from './platform';
 import { calculateXP } from './match';
 import { recordMatchResult } from './net/leaderboard';
 import {
@@ -271,7 +272,7 @@ export class MatchGame {
   start() {
     this.sim.startMatch();
     this.banner('GET READY');
-    this.opts.canvas.requestPointerLock();
+    safeRequestPointerLock(this.opts.canvas);
     this.lastTime = performance.now();
     const loop = (now: number) => {
       this.raf = requestAnimationFrame(loop);
@@ -398,11 +399,7 @@ export class MatchGame {
     const cos = this.opts.cosmetics;
     for (const v of this.sim.vehicles) {
       const bodyColor =
-        v.type === 'sedan'
-          ? cos?.sedanColor
-          : v.type === 'buggy'
-            ? cos?.buggyColor
-            : undefined;
+        v.type === 'sedan' ? cos?.sedanColor : v.type === 'buggy' ? cos?.buggyColor : undefined;
       const { mesh } = createVehicle(
         v.type,
         v.state.position,
@@ -603,7 +600,7 @@ export class MatchGame {
     document.getElementById('spectate-overlay')?.remove();
     const rig = this.rigs.get(this.humanId);
     if (rig) rig.dead = false;
-    this.opts.canvas.requestPointerLock();
+    safeRequestPointerLock(this.opts.canvas);
   }
 
   private updateSpectateOverlay() {

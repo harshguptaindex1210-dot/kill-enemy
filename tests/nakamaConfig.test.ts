@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import {
   allowDemoOnlineFallback,
+  canSyncWithNakama,
   getNakamaConfig,
   isLocalBrowserHost,
   isLocalNakamaEndpoint,
@@ -43,15 +44,20 @@ describe('nakamaConfig', () => {
     expect(allowDemoOnlineFallback(getNakamaConfig(), 'localhost')).toBe(false);
   });
 
+  it('skips Nakama profile sync on static demo hosts', () => {
+    expect(canSyncWithNakama(getNakamaConfig(), 'harshguptaindex1210-dot.github.io')).toBe(false);
+    expect(canSyncWithNakama(getNakamaConfig(), 'localhost')).toBe(true);
+  });
+
   it('forces demo fallback when VITE_ONLINE_DEMO=true', () => {
     vi.stubEnv('VITE_ONLINE_DEMO', 'true');
     expect(allowDemoOnlineFallback(getNakamaConfig(), 'localhost')).toBe(true);
   });
 
   it('builds actionable error messages', () => {
-    expect(onlineUnavailableMessage(new Error('fetch failed'), getNakamaConfig(), 'localhost')).toBe(
-      'Nakama not running — run: docker compose up -d, then Play Online'
-    );
+    expect(
+      onlineUnavailableMessage(new Error('fetch failed'), getNakamaConfig(), 'localhost')
+    ).toBe('Nakama not running — run: docker compose up -d, then Play Online');
     expect(
       onlineUnavailableMessage(new Error('timeout'), getNakamaConfig(), 'game.example.com')
     ).toContain('Could not reach online server');

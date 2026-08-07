@@ -6,6 +6,10 @@ Three.js + Vite + TypeScript; authoritative multiplayer via Nakama.
 
 **Play:** https://harshguptaindex1210-dot.github.io/kill-enemy/
 
+Short link (redirects to game): https://harshguptaindex1210-dot.github.io/
+
+Share message: *Play Kill Enemy — free browser battle royale: https://harshguptaindex1210-dot.github.io/kill-enemy/*
+
 ## What it is
 
 - **10-player BR** — Play Local (bots only) or Play Online (Nakama + bot fill).

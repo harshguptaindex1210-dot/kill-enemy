@@ -7,6 +7,7 @@ function createMockRenderer() {
     setPixelRatio: vi.fn(),
     render: vi.fn(),
     dispose: vi.fn(),
+    getContext: () => ({}),
     shadowMap: { enabled: true, type: 0 },
   };
 }

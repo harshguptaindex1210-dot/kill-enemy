@@ -68,9 +68,7 @@ export function sanitizeProfile(raw: unknown): PlayerProfile {
     ? r.ownedCarSkins.filter((id): id is string => typeof id === 'string' && !!carSkinById(id))
     : d.ownedCarSkins;
   const friends = Array.isArray(r.friends)
-    ? r.friends
-        .filter((id): id is string => typeof id === 'string' && id.length > 0)
-        .slice(0, 50)
+    ? r.friends.filter((id): id is string => typeof id === 'string' && id.length > 0).slice(0, 50)
     : d.friends;
   const chassisId =
     typeof r.chassisId === 'string' && chassisById(r.chassisId)

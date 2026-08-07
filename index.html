@@ -2,23 +2,84 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no"
+    />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="theme-color" content="#05060c" />
+    <meta
+      name="description"
+      content="Kill Enemy — 10-player browser battle royale. Loot, drive, survive the robot apocalypse."
+    />
+    <link rel="canonical" href="https://harshguptaindex1210-dot.github.io/kill-enemy/" />
+    <meta property="og:title" content="Kill Enemy" />
+    <meta
+      property="og:description"
+      content="Drop into the robot apocalypse — loot, drive, survive. Play free in your browser."
+    />
+    <meta property="og:url" content="https://harshguptaindex1210-dot.github.io/kill-enemy/" />
+    <meta property="og:type" content="website" />
     <title>Kill Enemy</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <style>
+      html,
       body {
         margin: 0;
+        width: 100%;
+        height: 100%;
         overflow: hidden;
         background: #05060c;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+        -webkit-text-size-adjust: 100%;
       }
       canvas {
         display: block;
+        touch-action: none;
+      }
+      #boot-error {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 100000;
+        padding: 24px;
+        box-sizing: border-box;
+        color: #eef3f8;
+        font-family: system-ui, sans-serif;
+        background: #05060c;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+      }
+      #boot-error.visible {
+        display: flex;
       }
     </style>
   </head>
   <body>
+    <div id="boot-error" role="alert">
+      <div>
+        <h1 style="margin: 0 0 12px; font-size: 1.25rem">Kill Enemy failed to load</h1>
+        <p style="margin: 0; opacity: 0.85; line-height: 1.5">
+          Try refreshing, enabling JavaScript, or switching to a newer browser with WebGL support.
+        </p>
+      </div>
+    </div>
     <canvas id="game"></canvas>
     <script type="module" src="/src/main.ts"></script>
+    <script>
+      window.addEventListener('error', function (event) {
+        var el = document.getElementById('boot-error');
+        if (el) el.classList.add('visible');
+      });
+      window.addEventListener('unhandledrejection', function () {
+        var el = document.getElementById('boot-error');
+        if (el) el.classList.add('visible');
+      });
+    </script>
   </body>
 </html>

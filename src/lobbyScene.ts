@@ -123,7 +123,8 @@ export function createLobbyScene(
         const mat = obj.material;
         if (mat.emissiveIntensity > 0.5) return;
         const tint = new THREE.Color(c.chassisColor);
-        if (mat.metalness > 0.65) mat.color.copy(tint.clone().lerp(new THREE.Color(0xffffff), 0.35));
+        if (mat.metalness > 0.65)
+          mat.color.copy(tint.clone().lerp(new THREE.Color(0xffffff), 0.35));
         else mat.color.copy(tint.clone().multiplyScalar(0.55));
       }
     });

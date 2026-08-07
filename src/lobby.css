@@ -173,6 +173,33 @@
   font-size: 0.95rem;
 }
 
+.lobby-share {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px 10px;
+  margin: 14px 0 0;
+  font-size: 0.72rem;
+}
+
+.lobby-share-link {
+  color: var(--lobby-accent);
+  text-decoration: none;
+  word-break: break-all;
+}
+
+.lobby-share-link:hover {
+  text-decoration: underline;
+}
+
+.lobby-share-btn {
+  width: auto !important;
+  padding: 6px 12px !important;
+  min-height: 36px !important;
+  font-size: 0.7rem !important;
+}
+
 .lobby-modes {
   display: grid;
   grid-template-columns: 1fr;
@@ -694,6 +721,31 @@
   gap: 8px;
   padding: 4px 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+@media (max-width: 767px) {
+  .lobby-instructions {
+    display: none;
+  }
+
+  .lobby-overlay {
+    padding-top: max(12px, env(safe-area-inset-top));
+  }
+
+  .lobby-btn-primary,
+  .lobby-btn-secondary,
+  .lobby-btn-danger {
+    min-height: 48px;
+  }
+
+  .lobby-mode-card {
+    padding: 14px 12px;
+  }
+
+  .lobby-hero-stats {
+    gap: 10px 14px;
+    font-size: 0.78rem;
+  }
 }
 
 @media (max-width: 360px) {

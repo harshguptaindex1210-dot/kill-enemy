@@ -1,8 +1,20 @@
 import type { Settings } from './settings';
 import type { LeaderboardEntry, MatchRecord } from './net/leaderboard';
 import type { PlayerProfile } from './profile';
-import { CHASSIS_PRESETS, GUN_SKINS, CAR_SKINS, SKILL_DEFS, carSkinById, chassisById, gunSkinById } from './cosmetics';
+import {
+  CHASSIS_PRESETS,
+  GUN_SKINS,
+  CAR_SKINS,
+  SKILL_DEFS,
+  carSkinById,
+  chassisById,
+  gunSkinById,
+} from './cosmetics';
+import { isTouchDevice, safeScrollToTop } from './platform';
 import './lobby.css';
+
+const GAME_URL = 'https://harshguptaindex1210-dot.github.io/kill-enemy/';
+const SHARE_TEXT = `Play Kill Enemy — free browser battle royale: ${GAME_URL}`;
 
 export interface LobbyCallbacks {
   onPlayLocal: () => void;
@@ -55,6 +67,9 @@ function escapeHtml(value: string): string {
 }
 
 function renderInstructionsPanel(): string {
+  const touchHint = isTouchDevice()
+    ? '<dt>Mobile</dt><dd>Left joystick move · drag right side to aim · on-screen buttons to shoot, jump, reload</dd>'
+    : '';
   return `<aside id="lobby-instructions" class="lobby-instructions" aria-label="How to play">
     <b class="lobby-panel-title">How to Play</b>
     <dl class="lobby-instructions-list">
@@ -74,6 +89,7 @@ function renderInstructionsPanel(): string {
       <dd>Stay inside the blue safe zone — damage ramps each phase</dd>
       <dt>Win</dt>
       <dd>Be the last fighter standing in the 10-player match</dd>
+      ${touchHint}
     </dl>
   </aside>`;
 }
@@ -186,6 +202,10 @@ export function showLobby(
   // Essential positioning if the CSS chunk is slow/unavailable (INV-L failure degrade).
   overlay.style.cssText = 'position:fixed;inset:0;z-index:9998;overflow:auto;';
 
+  const touchControlsHint = isTouchDevice()
+    ? 'Touch: joystick move · drag to aim · on-screen buttons to shoot'
+    : '<kbd>W A S D</kbd> move · Mouse aim · <kbd>LMB</kbd> shoot · <kbd>E</kbd> loot/vehicle · <kbd>G</kbd> grenade';
+
   const select = (id: string, opts: [string, string][], cur: string) =>
     `<select id="${id}">${opts.map(([v, l]) => `<option value="${v}"${v === cur ? ' selected' : ''}>${l}</option>`).join('')}</select>`;
 
@@ -297,6 +317,10 @@ export function showLobby(
           <span><b style="color:#4f4;">${stats.wins}</b> <span class="muted">Wins</span></span>
           <span><b style="color:#f44;">${stats.kills}</b> <span class="muted">Kills</span></span>
         </div>
+        <p class="lobby-share" aria-label="Share game link">
+          <a class="lobby-share-link" href="${GAME_URL}" target="_blank" rel="noopener noreferrer">${GAME_URL}</a>
+          <button id="btn-share" class="lobby-btn lobby-btn-secondary lobby-share-btn" type="button">Copy link</button>
+        </p>
       </header>
       <section class="lobby-modes" aria-label="Play modes">
         <article class="lobby-mode-card lobby-mode-card-primary">
@@ -318,7 +342,7 @@ export function showLobby(
           <button id="btn-local" class="lobby-btn lobby-btn-secondary" type="button" style="width:100%;"${queue.active ? ' disabled' : ''}>Play Local</button>
         </article>
       </section>
-      <p class="lobby-quick-controls" aria-label="Quick controls"><kbd>W A S D</kbd> move · Mouse aim · <kbd>LMB</kbd> shoot · <kbd>E</kbd> loot/vehicle · <kbd>G</kbd> grenade</p>
+      <p class="lobby-quick-controls" aria-label="Quick controls">${touchControlsHint}</p>
       ${shopMessage ? `<p id="shop-msg" class="lobby-shop-msg">${escapeHtml(shopMessage)}</p>` : ''}
       <div class="lobby-body">
         <div class="lobby-body-main">
@@ -468,11 +492,7 @@ export function showLobby(
 
   document.body.appendChild(overlay);
   overlay.scrollTop = 0;
-  try {
-    window.scrollTo(0, 0);
-  } catch {
-    /* jsdom */
-  }
+  safeScrollToTop();
 
   document.getElementById('btn-online')?.addEventListener('click', () => {
     if (queue.active) return;
@@ -493,6 +513,37 @@ export function showLobby(
   document.getElementById('btn-rename')?.addEventListener('click', () => {
     const inp = document.getElementById('inp-name') as HTMLInputElement | null;
     if (inp) callbacks.onRename(inp.value);
+  });
+
+  document.getElementById('btn-share')?.addEventListener('click', async () => {
+    const btn = document.getElementById('btn-share') as HTMLButtonElement | null;
+    const share = async (): Promise<boolean> => {
+      if (navigator.share) {
+        try {
+          await navigator.share({ title: 'Kill Enemy', text: SHARE_TEXT, url: GAME_URL });
+          return true;
+        } catch {
+          /* user dismissed */
+        }
+      }
+      if (navigator.clipboard?.writeText) {
+        try {
+          await navigator.clipboard.writeText(SHARE_TEXT);
+          return true;
+        } catch {
+          /* restricted */
+        }
+      }
+      return false;
+    };
+    const ok = await share();
+    if (btn) {
+      const prev = btn.textContent;
+      btn.textContent = ok ? 'Copied!' : 'Copy failed';
+      window.setTimeout(() => {
+        btn.textContent = prev;
+      }, 2000);
+    }
   });
 
   document.getElementById('btn-add-friend')?.addEventListener('click', () => {

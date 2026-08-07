@@ -3,13 +3,22 @@ import { createScene, type QualityPreset } from '../scene';
 import { MAP_SIZE, POI_RADIUS, ZONE_PHASE_DURATIONS } from '../constants';
 import { createRobotModel, updateRobotAnim, type RobotAnimState } from '../robot';
 import { ZoneSystem } from '../zone';
-import { createHUD, createMinimap, addKillFeedEntry, addCompassPing, addDamageNumber, type HUDData, type MinimapData } from '../hud';
+import {
+  createHUD,
+  createMinimap,
+  addKillFeedEntry,
+  addCompassPing,
+  addDamageNumber,
+  type HUDData,
+  type MinimapData,
+} from '../hud';
 import { updateCamera } from '../camera';
 import { createInputManager, type InputManager } from '../input';
 import { MatchClient } from './client';
 import type { AudioManager } from '../audio';
 import type { Settings } from '../settings';
 import { formatTimer, formatCompassBearing } from '../feedback';
+import { safeRequestPointerLock } from '../platform';
 import { REWIND_MS, type WireSnapshot } from './protocol';
 import { shouldShowUnitRig } from '../vehicle';
 import {
@@ -158,7 +167,7 @@ export class OnlineMatchGame {
 
   start() {
     this.lastTime = performance.now();
-    this.opts.canvas.requestPointerLock();
+    safeRequestPointerLock(this.opts.canvas);
     const loop = (now: number) => {
       this.raf = requestAnimationFrame(loop);
       this.frame(now);
@@ -234,7 +243,8 @@ export class OnlineMatchGame {
         const killer = String(e.killerId ?? 'zone');
         const victim = String(e.victimId);
         const cause = String(e.cause ?? 'shot');
-        const icon = cause === 'melee' ? '🔪' : cause === 'grenade' ? '💣' : cause === 'zone' ? '☢️' : '🔫';
+        const icon =
+          cause === 'melee' ? '🔪' : cause === 'grenade' ? '💣' : cause === 'zone' ? '☢️' : '🔫';
         addKillFeedEntry(`${killer} ${icon} ${victim}`);
         break;
       }
@@ -316,7 +326,17 @@ export class OnlineMatchGame {
       this.pitch -= rawInput.mouseY * sens * MOUSE_SENSITIVITY;
       this.pitch = Math.max(-MAX_PITCH, Math.min(MAX_PITCH, this.pitch));
     } else {
-      rawInput = { ...rawInput, forward: false, backward: false, left: false, right: false, sprint: false, fire: false, reload: false, jump: false };
+      rawInput = {
+        ...rawInput,
+        forward: false,
+        backward: false,
+        left: false,
+        right: false,
+        sprint: false,
+        fire: false,
+        reload: false,
+        jump: false,
+      };
     }
 
     this.lastAim = rawInput.aim || this.opts.settings.cameraMode === 'fps';
@@ -353,9 +373,7 @@ export class OnlineMatchGame {
     const phase = snap.phase;
     if (phase === 'countdown') {
       const sim = this.client.localServer?.sim;
-      const remain = sim
-        ? sim.match.countdownDuration - (sim.time - sim.match.phaseStart)
-        : 5000;
+      const remain = sim ? sim.match.countdownDuration - (sim.time - sim.match.phaseStart) : 5000;
       const label = `MATCH STARTS IN ${Math.max(1, Math.ceil(remain / 1000))}`;
       if (label !== this.lastPhaseBanner) {
         this.lastPhaseBanner = label;
@@ -486,19 +504,11 @@ export class OnlineMatchGame {
     const self = this.getSelfPose();
     this.cameraPos.set(self.x, self.y, self.z);
 
-    const cameraMode =
-      this.lastAim || this.opts.settings.cameraMode === 'fps' ? 'fps' : 'tps';
+    const cameraMode = this.lastAim || this.opts.settings.cameraMode === 'fps' ? 'fps' : 'tps';
 
-    updateCamera(
-      this.camera,
-      self.yaw,
-      this.pitch,
-      1.6,
-      cameraMode,
-      this.cameraPos,
-      dt,
-      { snapPosition: true }
-    );
+    updateCamera(this.camera, self.yaw, this.pitch, 1.6, cameraMode, this.cameraPos, dt, {
+      snapPosition: true,
+    });
   }
 
   private updateHUD(snap: WireSnapshot | null) {
@@ -507,8 +517,7 @@ export class OnlineMatchGame {
     const human = this.localHumanUnit();
     const weapon = human ? human.weapons[human.inventory.weaponIndex] : null;
     const phaseDur = ZONE_PHASE_DURATIONS[snap?.zone.phase ?? 0] ?? 0;
-    const elapsedSec =
-      snap ? Math.max(0, (snap.time_ms - this.zonePhaseStartMs) / 1000) : 0;
+    const elapsedSec = snap ? Math.max(0, (snap.time_ms - this.zonePhaseStartMs) / 1000) : 0;
     const zoneTimeMs = Math.max(0, (phaseDur - elapsedSec) * 1000);
     const mp = human ? this.client.localServer!.sim.match.players[this.client.selfId] : null;
 
