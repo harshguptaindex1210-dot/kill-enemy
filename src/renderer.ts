@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import type { QualityPreset } from './scene';
+import { applyRendererLook } from './graphics';
 import { isMobileDevice } from './platform';
 
 export interface RendererOptions {
@@ -71,6 +72,8 @@ export function createRenderer(
   if (effectiveQuality === 'medium' && !mobile) {
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   }
+
+  applyRendererLook(renderer, effectiveQuality);
 
   canvas.addEventListener(
     'webglcontextlost',

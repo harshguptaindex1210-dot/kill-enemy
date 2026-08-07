@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { createRenderer } from './renderer';
+import { addGradientSky, applyTealFog } from './graphics';
 import { createRobotModel, updateRobotAnim } from './robot';
 import { attachHeldWeaponKit, createHeldWeaponKit, syncHeldWeaponKit } from './heldWeapons';
 import type { QualityPreset } from './scene';
@@ -31,8 +32,10 @@ export function createLobbyScene(
 
   const renderer = createRenderer(canvas, quality);
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x0a0e18);
-  scene.fog = new THREE.Fog(0x0a0e18, 8, 22);
+  addGradientSky(scene, { topColor: 0x0d1a2a, bottomColor: 0x1e3a4a, radius: 40 });
+  applyTealFog(scene, 6, 20, 0x0a1420);
+
+  const shadowsOn = quality === 'medium';
 
   const camera = new THREE.PerspectiveCamera(50, canvas.width / canvas.height, 0.1, 60);
   camera.position.set(2.8, 1.6, 3.4);
@@ -46,37 +49,67 @@ export function createLobbyScene(
   controls.maxPolarAngle = Math.PI / 2.05;
   controls.enablePan = false;
 
-  const ambient = new THREE.AmbientLight(0x8899cc, 0.55);
+  const ambient = new THREE.AmbientLight(0x6688bb, 0.45);
   scene.add(ambient);
-  const key = new THREE.DirectionalLight(0xffe8c8, 1.4);
+
+  const key = new THREE.DirectionalLight(0xffe8c8, 1.6);
   key.position.set(3, 5, 2);
+  if (shadowsOn) {
+    key.castShadow = true;
+    key.shadow.mapSize.set(1024, 1024);
+    key.shadow.camera.near = 0.5;
+    key.shadow.camera.far = 12;
+    key.shadow.camera.left = -3;
+    key.shadow.camera.right = 3;
+    key.shadow.camera.top = 3;
+    key.shadow.camera.bottom = -1;
+    key.shadow.bias = -0.0003;
+    key.shadow.radius = 2;
+  }
   scene.add(key);
-  const rim = new THREE.DirectionalLight(0x66aaff, 0.45);
-  rim.position.set(-2, 3, -3);
+
+  const rim = new THREE.DirectionalLight(0x2dd4bf, 0.7);
+  rim.position.set(-2.5, 2.5, -3);
   scene.add(rim);
+
+  const backRim = new THREE.DirectionalLight(0x4488cc, 0.25);
+  backRim.position.set(0, 2, -4);
+  scene.add(backRim);
+
+  const podiumGlow = new THREE.PointLight(0xc4121a, 0.8, 4, 2);
+  podiumGlow.position.set(0, 0.5, 0);
+  scene.add(podiumGlow);
+
+  const floorGlow = new THREE.PointLight(0x2dd4bf, 0.35, 6, 2);
+  floorGlow.position.set(0, 0.1, 1.5);
+  scene.add(floorGlow);
 
   const floor = new THREE.Mesh(
     new THREE.CircleGeometry(4.5, 32),
-    new THREE.MeshStandardMaterial({ color: 0x1a2233, roughness: 0.9, metalness: 0.1 })
+    new THREE.MeshStandardMaterial({ color: 0x141c2a, roughness: 0.75, metalness: 0.2 })
   );
   floor.rotation.x = -Math.PI / 2;
   floor.position.y = -0.01;
+  floor.receiveShadow = shadowsOn;
   scene.add(floor);
 
   const podium = new THREE.Mesh(
     new THREE.CylinderGeometry(0.9, 1.05, 0.35, 24),
-    new THREE.MeshStandardMaterial({ color: 0x2a3348, roughness: 0.55, metalness: 0.35 })
+    new THREE.MeshStandardMaterial({ color: 0x2a3348, roughness: 0.45, metalness: 0.45 })
   );
   podium.position.y = 0.175;
+  podium.castShadow = shadowsOn;
+  podium.receiveShadow = shadowsOn;
   scene.add(podium);
 
   const ring = new THREE.Mesh(
     new THREE.TorusGeometry(1.15, 0.04, 8, 48),
     new THREE.MeshStandardMaterial({
       color: 0xc4121a,
-      emissive: 0x6b0505,
-      emissiveIntensity: 0.35,
-      metalness: 0.6,
+      emissive: 0x8b1018,
+      emissiveIntensity: 0.55,
+      metalness: 0.7,
+      roughness: 0.25,
     })
   );
   ring.rotation.x = Math.PI / 2;
@@ -86,6 +119,12 @@ export function createLobbyScene(
   const { group: robotGroup, anim } = createRobotModel(cosmetics.chassisColor);
   robotGroup.position.y = 0.35;
   robotGroup.rotation.y = Math.PI * 0.12;
+  robotGroup.traverse((obj) => {
+    if (obj instanceof THREE.Mesh) {
+      obj.castShadow = shadowsOn;
+      obj.receiveShadow = shadowsOn;
+    }
+  });
   scene.add(robotGroup);
 
   const held = createHeldWeaponKit({
