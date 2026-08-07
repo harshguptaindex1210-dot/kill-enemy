@@ -17,7 +17,7 @@ import {
 import { createVehicle, riderWorldPose, shouldShowUnitRig } from './vehicle';
 import { SKILL_DEFS, type ChassisId } from './cosmetics';
 import type { AudioManager } from './audio';
-import type { Settings } from './settings';
+import { saveSettings, type Settings } from './settings';
 import { formatPlacement, formatTimer, formatCompassBearing } from './feedback';
 import { safeRequestPointerLock, isMobileDevice } from './platform';
 import { calculateXP } from './match';
@@ -242,7 +242,13 @@ export class MatchGame {
     this.humanId = this.sim.humanId;
 
     this.zoneSys = new ZoneSystem(scene);
-    this.input = createInputManager(c);
+    this.input = createInputManager(c, {
+      getInvertLookHorizontal: () => this.settings.invertLookHorizontal,
+      onInvertLookHorizontalChange: (invert) => {
+        this.settings.invertLookHorizontal = invert;
+        saveSettings(this.settings);
+      },
+    });
     this.hud = createHUD();
     this.hud.onRespawn?.(() => this.respawnHuman());
     this.minimap = createMinimap(() => {

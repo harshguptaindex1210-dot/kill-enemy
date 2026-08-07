@@ -5,16 +5,18 @@ export const TOUCH_MOUSE_LOOK_LOCKOUT_MS = 180;
 
 /**
  * Map a touch/pointer drag delta to look input.
- * Horizontal: drag right → negative mouseX so player yaw decreases (turn right).
- * Vertical: drag down → positive mouseY → pitch decreases (look down).
+ * Drag right → positive mouseX → yaw decreases (turn right), matching desktop movementX.
+ * `invertHorizontal` flips yaw only; default false is standard FPS mapping.
  */
 export function touchDragToLookDelta(
   dx: number,
   dy: number,
-  scale: number = TOUCH_LOOK_SCALE
+  scale: number = TOUCH_LOOK_SCALE,
+  invertHorizontal: boolean = false
 ): { mouseX: number; mouseY: number } {
+  const mouseX = dx * scale;
   return {
-    mouseX: -dx * scale,
+    mouseX: invertHorizontal ? -mouseX : mouseX,
     mouseY: dy * scale,
   };
 }

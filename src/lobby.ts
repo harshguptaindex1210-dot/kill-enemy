@@ -428,6 +428,17 @@ export function showLobby(
               )
             )}
             ${row(
+              'Invert Look',
+              select(
+                'sel-invert-look',
+                [
+                  ['false', 'Off'],
+                  ['true', 'On'],
+                ],
+                String(settings.invertLookHorizontal)
+              )
+            )}
+            ${row(
               'Minimap',
               select(
                 'sel-minimap',
@@ -607,14 +618,16 @@ export function showLobby(
   const wire = (id: string, field: keyof Settings) => {
     document.getElementById(id)?.addEventListener('change', (e) => {
       const target = e.target as HTMLSelectElement;
-      const value =
-        field === 'sensitivity' || field === 'volume' ? parseFloat(target.value) : target.value;
+      let value: string | number | boolean = target.value;
+      if (field === 'sensitivity' || field === 'volume') value = parseFloat(target.value);
+      else if (field === 'invertLookHorizontal') value = target.value === 'true';
       callbacks.onSettingsChange({ [field]: value } as Partial<Settings>);
     });
   };
   wire('sel-quality', 'quality');
   wire('sel-sensitivity', 'sensitivity');
   wire('sel-camera', 'cameraMode');
+  wire('sel-invert-look', 'invertLookHorizontal');
   wire('sel-minimap', 'minimapSize');
   wire('sel-volume', 'volume');
 }

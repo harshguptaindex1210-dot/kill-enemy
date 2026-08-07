@@ -6,6 +6,8 @@ export interface Settings {
   volume: number;
   cameraMode: 'tps' | 'fps';
   minimapSize: 'small' | 'large';
+  /** When true, flips touch horizontal look only (desktop mouse unchanged). */
+  invertLookHorizontal: boolean;
 }
 
 export interface StorageLike {
@@ -22,6 +24,8 @@ export function defaultSettings(): Settings {
     volume: 0.7,
     cameraMode: 'tps',
     minimapSize: 'small',
+    // Default false: drag/swipe right → turn right (matches desktop mouse look).
+    invertLookHorizontal: false,
   };
 }
 
@@ -42,6 +46,10 @@ export function sanitizeSettings(raw: unknown): Settings {
     cameraMode: r.cameraMode === 'tps' || r.cameraMode === 'fps' ? r.cameraMode : d.cameraMode,
     minimapSize:
       r.minimapSize === 'small' || r.minimapSize === 'large' ? r.minimapSize : d.minimapSize,
+    invertLookHorizontal:
+      typeof r.invertLookHorizontal === 'boolean'
+        ? r.invertLookHorizontal
+        : d.invertLookHorizontal,
   };
 }
 

@@ -16,7 +16,7 @@ import { updateCamera } from '../camera';
 import { createInputManager, type InputManager } from '../input';
 import { MatchClient } from './client';
 import type { AudioManager } from '../audio';
-import type { Settings } from '../settings';
+import { saveSettings, type Settings } from '../settings';
 import { formatTimer, formatCompassBearing } from '../feedback';
 import { safeRequestPointerLock, isMobileDevice } from '../platform';
 import { REWIND_MS, type WireSnapshot } from './protocol';
@@ -163,7 +163,13 @@ export class OnlineMatchGame {
     this.renderer = renderer;
 
     this.zoneSys = new ZoneSystem(scene);
-    this.input = createInputManager(c);
+    this.input = createInputManager(c, {
+      getInvertLookHorizontal: () => this.opts.settings.invertLookHorizontal,
+      onInvertLookHorizontalChange: (invert) => {
+        this.opts.settings.invertLookHorizontal = invert;
+        saveSettings(this.opts.settings);
+      },
+    });
     this.hud = createHUD();
     this.minimap = createMinimap();
     this.buildTargetsFromSim();

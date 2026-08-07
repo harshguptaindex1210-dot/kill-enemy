@@ -25,12 +25,20 @@ describe('settings (#33)', () => {
     expect(s.volume).toBe(0.7);
     expect(s.cameraMode).toBe('tps');
     expect(s.minimapSize).toBe('small');
+    expect(s.invertLookHorizontal).toBe(false);
   });
 
   it('round-trips a valid settings object through storage', () => {
     const store = memStorage();
     saveSettings(
-      { quality: 'low', sensitivity: 1.5, volume: 0.4, cameraMode: 'fps', minimapSize: 'large' },
+      {
+        quality: 'low',
+        sensitivity: 1.5,
+        volume: 0.4,
+        cameraMode: 'fps',
+        minimapSize: 'large',
+        invertLookHorizontal: true,
+      },
       store
     );
     const loaded = loadSettings(store);
@@ -39,6 +47,7 @@ describe('settings (#33)', () => {
     expect(loaded.volume).toBe(0.4);
     expect(loaded.cameraMode).toBe('fps');
     expect(loaded.minimapSize).toBe('large');
+    expect(loaded.invertLookHorizontal).toBe(true);
   });
 
   it('returns defaults for empty storage', () => {
