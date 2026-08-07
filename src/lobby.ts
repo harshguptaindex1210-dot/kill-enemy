@@ -356,9 +356,9 @@ export function showLobby(
       </section>
       <section class="lobby-panel lobby-profile-panel" aria-label="Profile">
         <b class="lobby-panel-title">Profile / Player Name</b>
-        <p class="lobby-profile-help">Your name is saved on this device and used in matches.</p>
+        <p class="lobby-profile-help">Saved locally.</p>
         <div class="lobby-name-row">
-          <input id="inp-name" maxlength="16" value="${escapeHtml(profile.name)}" placeholder="Enter player name" aria-label="Player name" />
+          <input id="inp-name" maxlength="16" value="${escapeHtml(profile.name)}" placeholder="Name" aria-label="Player name" />
           <button id="btn-rename" class="lobby-btn lobby-btn-primary" type="button" style="width:auto;padding:8px 14px;min-height:40px;font-size:0.75rem;">Save</button>
         </div>
       </section>
