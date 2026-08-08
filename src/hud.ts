@@ -9,17 +9,16 @@ export function createHUD(): {
   const el = document.createElement('div');
   el.id = 'game-hud';
   el.className = 'game-hud';
-  el.style.cssText =
-    'position:fixed;inset:0;pointer-events:none;z-index:9997;display:none;';
+  el.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:9997;display:none;';
   el.innerHTML = `
     <div id="hud-top" class="hud-panel hud-top">
-      <span id="hud-kills" class="hud-stat">☠️ 0</span>
-      <span id="hud-targets" class="hud-stat">🎯 0</span>
-      <span id="hud-alive" class="hud-stat">👥 0 Alive</span>
+      <span id="hud-kills" class="hud-stat">KILLS 0</span>
+      <span id="hud-targets" class="hud-stat">TGT 0</span>
+      <span id="hud-alive" class="hud-stat">ALIVE 0</span>
       <span id="hud-phase" class="hud-stat hud-phase">LOBBY</span>
-      <span id="hud-timer" class="hud-stat">⏲ 0:00</span>
-      <span id="hud-zone" class="hud-stat hud-zone">⏱ Zone in 0:00</span>
-      <span id="hud-storm" class="hud-stat hud-storm">⚠️ STORM</span>
+      <span id="hud-timer" class="hud-stat">TIME 0:00</span>
+      <span id="hud-zone" class="hud-stat hud-zone">ZONE 0:00</span>
+      <span id="hud-storm" class="hud-stat hud-storm">STORM</span>
     </div>
     <div id="hud-prompt" class="hud-panel hud-prompt"></div>
     <div id="hud-bottom" class="hud-panel hud-bottom">
@@ -40,12 +39,12 @@ export function createHUD(): {
         <div id="hud-reload" class="hud-reload">RELOADING...</div>
       </div>
       <div id="hud-skill" class="hud-skill">
-        <div id="hud-skill-name" class="hud-skill-name">⚡ Speed [F]</div>
+        <div id="hud-skill-name" class="hud-skill-name">SKILL Speed [F]</div>
         <div id="hud-skill-status" class="hud-skill-status">READY</div>
       </div>
       <div class="hud-supplies">
-        <div>💣 <span id="hud-grenades">2</span></div>
-        <div>💊 <span id="hud-heals">3</span></div>
+        <div>GRN <span id="hud-grenades">2</span></div>
+        <div>MED <span id="hud-heals">3</span></div>
       </div>
       <button id="hud-heal-action" type="button" class="hud-heal-btn">HEAL</button>
     </div>
@@ -81,12 +80,12 @@ export function createHUD(): {
     },
     update(data: HUDData) {
       el.style.display = 'block';
-      document.getElementById('hud-kills')!.textContent = `☠️ ${data.kills}`;
-      document.getElementById('hud-targets')!.textContent = `🎯 ${data.targetsHit ?? 0}`;
-      document.getElementById('hud-alive')!.textContent = `👥 ${data.alive} Alive`;
+      document.getElementById('hud-kills')!.textContent = `KILLS ${data.kills}`;
+      document.getElementById('hud-targets')!.textContent = `TGT ${data.targetsHit ?? 0}`;
+      document.getElementById('hud-alive')!.textContent = `ALIVE ${data.alive}`;
       document.getElementById('hud-phase')!.textContent = data.phaseLabel;
-      document.getElementById('hud-timer')!.textContent = `⏲ ${data.matchTimer}`;
-      document.getElementById('hud-zone')!.textContent = `⏱ Zone in ${data.zoneTimer}`;
+      document.getElementById('hud-timer')!.textContent = `TIME ${data.matchTimer}`;
+      document.getElementById('hud-zone')!.textContent = `ZONE ${data.zoneTimer}`;
       document.getElementById('hud-health-bar')!.style.width =
         `${Math.max(0, Math.min(100, data.health))}%`;
       document.getElementById('hud-health-num')!.textContent = `${Math.round(data.health)}`;
@@ -100,7 +99,7 @@ export function createHUD(): {
       document.getElementById('hud-grenades')!.textContent = String(data.grenades);
       document.getElementById('hud-heals')!.textContent = String(data.heals);
       if (data.skillName) {
-        document.getElementById('hud-skill-name')!.textContent = `⚡ ${data.skillName}`;
+        document.getElementById('hud-skill-name')!.textContent = `SKILL ${data.skillName}`;
         const statusEl = document.getElementById('hud-skill-status')!;
         statusEl.textContent = data.skillCooldownText || 'READY';
         statusEl.classList.toggle('is-ready', !!data.skillReady);

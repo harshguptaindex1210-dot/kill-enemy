@@ -68,12 +68,7 @@ export function createScene(
   const dirLight = new THREE.DirectionalLight(0xfff0d0, 3.1);
   dirLight.position.set(118, 78, 152);
   if (quality !== 'low')
-    configureSunShadow(
-      dirLight,
-      MAP_BOUND,
-      quality === 'high' ? 2048 : 1024,
-      quality === 'high'
-    );
+    configureSunShadow(dirLight, MAP_BOUND, quality === 'high' ? 2048 : 1024, quality === 'high');
   scene.add(dirLight);
 
   const fillLight = new THREE.DirectionalLight(0x4a7090, 0.16);
