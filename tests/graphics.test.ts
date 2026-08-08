@@ -14,11 +14,14 @@ describe('battle royale visuals', () => {
     expect(scene.background).toBeNull();
   });
 
-  it('createDirtGroundTexture is exported for ground tiling', () => {
-    const src = readFileSync(resolve(__dirname, '../src/graphics.ts'), 'utf8');
+  it('groundSurfaces provides 256px albedo + roughness maps for PBR terrain', () => {
+    const src = readFileSync(resolve(__dirname, '../src/groundSurfaces.ts'), 'utf8');
     expect(src).toMatch(/fillStyle = '#4a5c38'/);
-    expect(src).toMatch(/c\.width = 128/);
-    expect(src).not.toMatch(/GridHelper/);
+    expect(src).toMatch(/roughnessMap/);
+    expect(src).toMatch(/256/);
+    const sceneSrc = readFileSync(resolve(__dirname, '../src/scene.ts'), 'utf8');
+    expect(sceneSrc).toMatch(/groundSurfaceFor/);
+    expect(sceneSrc).toMatch(/roughnessMap/);
   });
 
   it('addGradientSky adds a back-face gradient dome', () => {
@@ -61,6 +64,8 @@ describe('graphics.ts BGMI palette wiring', () => {
     const post = readFileSync(resolve(__dirname, '../src/postProcess.ts'), 'utf8');
     expect(post).toMatch(/UnrealBloomPass/);
     expect(post).toMatch(/ColorGradeShader/);
+    expect(post).toMatch(/GRADE/);
+    expect(matchRender).toMatch(/mapId/);
   });
 
   it('artStyle.ts unifies PBR surface roles', () => {

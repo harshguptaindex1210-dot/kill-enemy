@@ -5,12 +5,12 @@ import {
   addGradientSky,
   addMapLighting,
   applyTealFog,
-  groundTextureFor,
   scatterInstancedTrees,
   scatterInstancedGrass,
   scatterPalms,
   scatterParkedCars,
 } from './graphics';
+import { groundSurfaceFor } from './groundSurfaces';
 import { buildPoiGroup, poiDistrictAt } from './poiVisuals';
 import { MAP_BOUND, MAP_SIZE, POI_RADIUS } from './constants';
 import { isMobileDevice } from './platform';
@@ -100,9 +100,12 @@ export function createScene(
     MAP_BOUND
   );
 
+  const texSize = quality === 'low' ? 128 : 256;
+  const groundSurf = groundSurfaceFor(map.groundKind, MAP_SIZE / 18, texSize);
   const groundGeo = new THREE.PlaneGeometry(MAP_SIZE, MAP_SIZE);
   const groundMat = new THREE.MeshStandardMaterial({
-    map: groundTextureFor(map.groundKind, MAP_SIZE / 18),
+    map: groundSurf.map,
+    roughnessMap: groundSurf.roughnessMap,
     color: map.groundTint,
     roughness: map.groundKind === 'asphalt' ? 0.88 : 0.96,
     metalness: map.groundKind === 'asphalt' ? 0.08 : 0.02,

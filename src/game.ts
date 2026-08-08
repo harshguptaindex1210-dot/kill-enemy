@@ -245,7 +245,7 @@ export class MatchGame {
     this.camera = camera;
     this.renderer = renderer;
     this.sceneControls = controls;
-    this.matchRenderer = createMatchRenderer(renderer, scene, camera, quality);
+    this.matchRenderer = createMatchRenderer(renderer, scene, camera, quality, this.settings.mapId);
 
     this.sim = new MatchSim({
       seed: opts.seed,

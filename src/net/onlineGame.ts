@@ -170,7 +170,7 @@ export class OnlineMatchGame {
     this.scene = scene;
     this.camera = camera;
     this.renderer = renderer;
-    this.matchRenderer = createMatchRenderer(renderer, scene, camera, quality);
+    this.matchRenderer = createMatchRenderer(renderer, scene, camera, quality, opts.settings.mapId);
 
     this.zoneSys = new ZoneSystem(scene);
     this.input = createInputManager(c, {

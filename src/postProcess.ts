@@ -6,23 +6,36 @@ import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
 import { CopyShader } from 'three/addons/shaders/CopyShader.js';
 import type { QualityPreset } from './scene';
 
+import type { MapId } from './mapPresets';
+
+const GRADE: Record<MapId, { warmMix: number; vignette: number; sat: number }> = {
+  meadow: { warmMix: 0.2, vignette: 0.42, sat: 1.1 },
+  city: { warmMix: 0.07, vignette: 0.34, sat: 1.04 },
+  desert: { warmMix: 0.24, vignette: 0.46, sat: 1.12 },
+};
+
 const ColorGradeShader = {
   uniforms: {
     tDiffuse: { value: null as THREE.Texture | null },
     warmMix: { value: 0.14 },
     vignette: { value: 0.38 },
+    saturation: { value: 1.08 },
   },
   vertexShader: CopyShader.vertexShader,
   fragmentShader: `
     uniform sampler2D tDiffuse;
     uniform float warmMix;
     uniform float vignette;
+    uniform float saturation;
     varying vec2 vUv;
     void main() {
       vec3 col = texture2D(tDiffuse, vUv).rgb;
       float luma = dot(col, vec3(0.299, 0.587, 0.114));
+      col = mix(vec3(luma), col, saturation);
       col = mix(col, col * vec3(1.04, 1.0, 0.92) + vec3(0.02, 0.01, 0.0), warmMix);
       col = col * (col * 1.06 + 0.03);
+      float grain = fract(sin(dot(vUv * 1400.0, vec2(12.9898, 78.233))) * 43758.5453);
+      col += (grain - 0.5) * 0.022;
       float d = distance(vUv, vec2(0.5));
       col *= smoothstep(0.95, 0.42, d * (1.0 + vignette));
       gl_FragColor = vec4(col, 1.0);
@@ -40,7 +53,8 @@ export function createPostPipeline(
   renderer: THREE.WebGLRenderer,
   scene: THREE.Scene,
   camera: THREE.Camera,
-  quality: QualityPreset
+  quality: QualityPreset,
+  mapId: MapId = 'meadow'
 ): PostPipeline {
   const size = new THREE.Vector2(renderer.domElement.width, renderer.domElement.height);
   const composer = new EffectComposer(renderer);
@@ -56,6 +70,10 @@ export function createPostPipeline(
   }
 
   const grade = new ShaderPass(ColorGradeShader);
+  const profile = GRADE[mapId];
+  grade.uniforms.warmMix.value = profile.warmMix;
+  grade.uniforms.vignette.value = profile.vignette;
+  grade.uniforms.saturation.value = profile.sat;
   grade.renderToScreen = true;
   composer.addPass(grade);
 

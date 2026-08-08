@@ -1,4 +1,5 @@
 import type * as THREE from 'three';
+import type { MapId } from './mapPresets';
 import type { QualityPreset } from './scene';
 import type { PostPipeline } from './postProcess';
 
@@ -13,7 +14,8 @@ export function createMatchRenderer(
   renderer: THREE.WebGLRenderer,
   scene: THREE.Scene,
   camera: THREE.Camera,
-  quality: QualityPreset
+  quality: QualityPreset,
+  mapId: MapId = 'meadow'
 ): MatchRenderHandle {
   let pipeline: PostPipeline | null = null;
   let disposed = false;
@@ -21,7 +23,7 @@ export function createMatchRenderer(
   if (quality !== 'low') {
     void import('./postProcess').then(({ createPostPipeline }) => {
       if (!disposed) {
-        pipeline = createPostPipeline(renderer, scene, camera, quality);
+        pipeline = createPostPipeline(renderer, scene, camera, quality, mapId);
         pipeline.setSize(renderer.domElement.width, renderer.domElement.height);
       }
     });

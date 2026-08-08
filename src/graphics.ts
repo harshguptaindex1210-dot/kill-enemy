@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import type { QualityPreset } from './scene';
 import { styleMat } from './artStyle';
+export { groundTextureFor } from './groundSurfaces';
 
 export function applyRendererLook(renderer: THREE.WebGLRenderer, quality: QualityPreset): void {
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -44,98 +45,6 @@ export function addGradientSky(scene: THREE.Scene, options: SkyOptions = {}): TH
   );
   scene.add(mesh);
   return mesh;
-}
-
-export function createDirtGroundTexture(repeat = 16): THREE.CanvasTexture {
-  const c = document.createElement('canvas');
-  c.width = 128;
-  c.height = 128;
-  const g = c.getContext('2d')!;
-  g.fillStyle = '#4a5c38';
-  g.fillRect(0, 0, 128, 128);
-  for (let i = 0; i < 220; i++) {
-    const v = 34 + Math.random() * 58;
-    g.fillStyle = `rgba(${v | 0},${(v * 0.94) | 0},${(v * 0.5) | 0},0.14)`;
-    const s = 2 + ((Math.random() * 3) | 0);
-    g.fillRect((Math.random() * 128) | 0, (Math.random() * 128) | 0, s, s);
-  }
-  for (let i = 0; i < 18; i++) {
-    const v = 52 + Math.random() * 36;
-    g.fillStyle = `rgba(${v | 0},${(v * 1.02) | 0},${(v * 0.55) | 0},0.1)`;
-    g.beginPath();
-    g.arc(
-      (Math.random() * 128) | 0,
-      (Math.random() * 128) | 0,
-      8 + Math.random() * 14,
-      0,
-      Math.PI * 2
-    );
-    g.fill();
-  }
-  for (let i = 0; i < 28; i++) {
-    g.fillStyle = 'rgba(58,48,32,0.1)';
-    g.fillRect(
-      (Math.random() * 120) | 0,
-      (Math.random() * 128) | 0,
-      8 + ((Math.random() * 10) | 0),
-      1
-    );
-  }
-  const t = new THREE.CanvasTexture(c);
-  t.wrapS = t.wrapT = THREE.RepeatWrapping;
-  t.repeat.set(repeat, repeat);
-  return t;
-}
-
-export function createAsphaltGroundTexture(repeat = 16): THREE.CanvasTexture {
-  const c = document.createElement('canvas');
-  c.width = 128;
-  c.height = 128;
-  const g = c.getContext('2d')!;
-  g.fillStyle = '#3a3c42';
-  g.fillRect(0, 0, 128, 128);
-  for (let i = 0; i < 90; i++) {
-    const v = 48 + Math.random() * 28;
-    g.fillStyle = `rgba(${v | 0},${v | 0},${(v + 4) | 0},0.12)`;
-    g.fillRect((Math.random() * 128) | 0, (Math.random() * 128) | 0, 3, 3);
-  }
-  g.strokeStyle = 'rgba(220,190,80,0.35)';
-  g.lineWidth = 2;
-  g.beginPath();
-  g.moveTo(0, 64);
-  g.lineTo(128, 64);
-  g.stroke();
-  const t = new THREE.CanvasTexture(c);
-  t.wrapS = t.wrapT = THREE.RepeatWrapping;
-  t.repeat.set(repeat, repeat);
-  return t;
-}
-
-export function createSandGroundTexture(repeat = 16): THREE.CanvasTexture {
-  const c = document.createElement('canvas');
-  c.width = 128;
-  c.height = 128;
-  const g = c.getContext('2d')!;
-  g.fillStyle = '#c8a870';
-  g.fillRect(0, 0, 128, 128);
-  for (let i = 0; i < 180; i++) {
-    const v = 160 + Math.random() * 50;
-    g.fillStyle = `rgba(${v | 0},${(v * 0.82) | 0},${(v * 0.48) | 0},0.16)`;
-    g.fillRect((Math.random() * 128) | 0, (Math.random() * 128) | 0, 2, 2);
-  }
-  const t = new THREE.CanvasTexture(c);
-  t.wrapS = t.wrapT = THREE.RepeatWrapping;
-  t.repeat.set(repeat, repeat);
-  return t;
-}
-
-export function groundTextureFor(
-  kind: 'dirt' | 'asphalt' | 'sand',
-  repeat: number
-): THREE.CanvasTexture {
-  if (kind === 'asphalt') return createAsphaltGroundTexture(repeat);
-  if (kind === 'sand') return createSandGroundTexture(repeat);
-  return createDirtGroundTexture(repeat);
 }
 
 export function applyTealFog(
@@ -366,15 +275,21 @@ export function scatterPalms(scene: THREE.Scene, opts: GrassScatterOptions): voi
 export function scatterParkedCars(scene: THREE.Scene, count: number, bound: number): void {
   const colors = [0xc04030, 0x305080, 0xd0d0d8, 0x202028, 0x408050];
   const geo = new THREE.BoxGeometry(1.8, 0.9, 3.6);
+  const carMat = styleMat(colors[0]!, 'paint');
+  carMat.vertexColors = true;
+  const cars = new THREE.InstancedMesh(geo, carMat, count);
   const dummy = new THREE.Object3D();
   for (let i = 0; i < count; i++) {
-    const mat = styleMat(colors[i % colors.length]!, 'paint');
-    const car = new THREE.Mesh(geo, mat);
+    cars.setColorAt(i, new THREE.Color(colors[i % colors.length]!));
     const angle = Math.random() * Math.PI * 2;
     const dist = 12 + Math.random() * (bound - 30);
-    car.position.set(Math.cos(angle) * dist, 0.45, Math.sin(angle) * dist);
-    car.rotation.y = Math.random() * Math.PI;
-    scene.add(car);
-    void dummy;
+    dummy.position.set(Math.cos(angle) * dist, 0.45, Math.sin(angle) * dist);
+    dummy.rotation.y = Math.random() * Math.PI;
+    dummy.updateMatrix();
+    cars.setMatrixAt(i, dummy.matrix);
   }
+  cars.instanceMatrix.needsUpdate = true;
+  if (cars.instanceColor) cars.instanceColor.needsUpdate = true;
+  cars.castShadow = true;
+  scene.add(cars);
 }
