@@ -32,8 +32,8 @@ export function createLobbyScene(
 
   const renderer = createRenderer(canvas, quality);
   const scene = new THREE.Scene();
-  addGradientSky(scene, { topColor: 0x0d1a2a, bottomColor: 0x1e3a4a, radius: 40 });
-  applyTealFog(scene, 6, 20, 0x0a1420);
+  addGradientSky(scene, { topColor: 0x0a1420, bottomColor: 0x1a3048, radius: 40 });
+  applyTealFog(scene, 5, 18, 0x0c1828);
 
   const shadowsOn = quality === 'medium';
 
@@ -49,10 +49,10 @@ export function createLobbyScene(
   controls.maxPolarAngle = Math.PI / 2.05;
   controls.enablePan = false;
 
-  const ambient = new THREE.AmbientLight(0x6688bb, 0.45);
+  const ambient = new THREE.AmbientLight(0x506888, 0.38);
   scene.add(ambient);
 
-  const key = new THREE.DirectionalLight(0xffe8c8, 1.6);
+  const key = new THREE.DirectionalLight(0xffe0b8, 1.85);
   key.position.set(3, 5, 2);
   if (shadowsOn) {
     key.castShadow = true;
@@ -68,11 +68,11 @@ export function createLobbyScene(
   }
   scene.add(key);
 
-  const rim = new THREE.DirectionalLight(0x2dd4bf, 0.7);
+  const rim = new THREE.DirectionalLight(0x3a9a8a, 0.55);
   rim.position.set(-2.5, 2.5, -3);
   scene.add(rim);
 
-  const backRim = new THREE.DirectionalLight(0x4488cc, 0.25);
+  const backRim = new THREE.DirectionalLight(0x3a6898, 0.22);
   backRim.position.set(0, 2, -4);
   scene.add(backRim);
 
@@ -86,7 +86,7 @@ export function createLobbyScene(
 
   const floor = new THREE.Mesh(
     new THREE.CircleGeometry(4.5, 32),
-    new THREE.MeshStandardMaterial({ color: 0x141c2a, roughness: 0.75, metalness: 0.2 })
+    new THREE.MeshStandardMaterial({ color: 0x101820, roughness: 0.82, metalness: 0.28 })
   );
   floor.rotation.x = -Math.PI / 2;
   floor.position.y = -0.01;

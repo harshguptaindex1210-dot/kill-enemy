@@ -3,16 +3,16 @@
 @import url('https://fonts.googleapis.com/css2?family=Exo+2:wght@400;600;700;800&family=Orbitron:wght@600;700;800&display=swap');
 
 .lobby-overlay {
-  --lobby-bg0: #0a1628;
-  --lobby-bg1: #122038;
-  --lobby-accent: #2dd4bf;
-  --lobby-accent-dim: rgba(45, 212, 191, 0.14);
-  --lobby-warn: #fbbf24;
-  --lobby-muted: #94a3b8;
-  --lobby-panel: rgba(15, 31, 53, 0.88);
-  --lobby-line: rgba(45, 212, 191, 0.24);
+  --lobby-bg0: #060c14;
+  --lobby-bg1: #0c1624;
+  --lobby-accent: #5a9a88;
+  --lobby-accent-dim: rgba(90, 154, 136, 0.12);
+  --lobby-warn: #c89830;
+  --lobby-muted: #7a8898;
+  --lobby-panel: rgba(8, 14, 22, 0.92);
+  --lobby-line: rgba(90, 154, 136, 0.2);
   --lobby-max: 1100px;
-  --lobby-radius: 12px;
+  --lobby-radius: 4px;
 
   position: fixed;
   inset: 0;
@@ -32,9 +32,9 @@
   font-family: 'Exo 2', 'Segoe UI', sans-serif;
   -webkit-font-smoothing: antialiased;
   background:
-    radial-gradient(900px 520px at 50% 18%, rgba(10, 22, 40, 0.15), rgba(10, 22, 40, 0.72) 48%, rgba(10, 22, 40, 0.94) 100%),
-    radial-gradient(700px 400px at 100% 30%, rgba(45, 212, 191, 0.07), transparent 50%),
-    linear-gradient(165deg, var(--lobby-bg0), var(--lobby-bg1) 55%, #0d1a2d);
+    radial-gradient(900px 520px at 50% 18%, rgba(6, 12, 20, 0.2), rgba(6, 12, 20, 0.78) 48%, rgba(4, 8, 14, 0.96) 100%),
+    radial-gradient(700px 400px at 100% 30%, rgba(90, 154, 136, 0.05), transparent 50%),
+    linear-gradient(165deg, var(--lobby-bg0), var(--lobby-bg1) 55%, #080e18);
 }
 
 .lobby-overlay::before {
@@ -140,10 +140,10 @@
   border: 1px solid var(--lobby-line);
   border-radius: calc(var(--lobby-radius) + 4px);
   background:
-    linear-gradient(180deg, rgba(196, 18, 26, 0.1), transparent 45%),
-    linear-gradient(180deg, rgba(45, 212, 191, 0.1), transparent 55%),
-    rgba(10, 18, 32, 0.6);
-  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+    linear-gradient(180deg, rgba(140, 20, 28, 0.12), transparent 45%),
+    linear-gradient(180deg, rgba(90, 154, 136, 0.08), transparent 55%),
+    rgba(6, 10, 18, 0.72);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(6px);
 }
 
@@ -217,9 +217,9 @@
 }
 
 .lobby-mode-card-primary {
-  border-color: rgba(45, 212, 191, 0.38);
+  border-color: rgba(90, 154, 136, 0.35);
   background:
-    linear-gradient(135deg, rgba(45, 212, 191, 0.1), transparent 55%), var(--lobby-panel);
+    linear-gradient(135deg, rgba(90, 154, 136, 0.08), transparent 55%), var(--lobby-panel);
 }
 
 .lobby-mode-head {
@@ -241,9 +241,9 @@
   font-size: 0.62rem;
   letter-spacing: 0.12em;
   padding: 3px 8px;
-  border-radius: 4px;
-  background: rgba(45, 212, 191, 0.2);
-  color: #5eead4;
+  border-radius: 2px;
+  background: rgba(90, 154, 136, 0.18);
+  color: #7ec8b0;
   font-weight: 700;
 }
 
@@ -294,9 +294,9 @@
 }
 
 .lobby-preset.is-active {
-  border-color: rgba(45, 212, 191, 0.58);
-  background: rgba(45, 212, 191, 0.17);
-  color: #5eead4;
+  border-color: rgba(90, 154, 136, 0.5);
+  background: rgba(90, 154, 136, 0.14);
+  color: #7ec8b0;
 }
 
 .lobby-body {
@@ -490,10 +490,13 @@
   width: 100%;
   padding: 15px 28px;
   font-size: 1.05rem;
-  background: linear-gradient(180deg, #5eead4, var(--lobby-accent) 40%, #14b8a6);
-  color: #042f2e;
+  background: linear-gradient(180deg, #4a9a88, var(--lobby-accent) 40%, #2a6a58);
+  color: #e8f4f0;
   min-height: 52px;
-  box-shadow: 0 8px 24px rgba(45, 212, 191, 0.28);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .lobby-btn-primary:hover {
@@ -710,7 +713,7 @@
 }
 
 .lobby-settings input[type='range'] {
-  accent-color: #2dd4bf;
+  accent-color: #5a9a88;
 }
 
 .lobby-section {

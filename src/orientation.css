@@ -223,3 +223,77 @@
     font-size: 10px !important;
   }
 }
+
+/* Tactical in-match HUD — military contrast without JS bundle cost */
+#game-hud {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+#hud-top,
+#hud-bottom,
+#hud-compass,
+#hud-prompt {
+  background: rgba(6, 10, 16, 0.82) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 2px !important;
+  color: #e8edf2 !important;
+  letter-spacing: 0.04em;
+}
+
+#hud-top {
+  text-transform: uppercase;
+  font-size: 12px !important;
+  font-weight: 600;
+}
+
+#hud-phase,
+#hud-zone {
+  color: #8ab4c8 !important;
+}
+
+#hud-bottom span,
+#hud-ammo {
+  color: #8a9aaa !important;
+}
+
+#hud-health-bar {
+  background: #3cb890 !important;
+}
+
+#hud-armor-bar {
+  background: #48a8d8 !important;
+}
+
+#hud-weapon-name {
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+#hud-heal-action {
+  min-height: 44px !important;
+  border: 1px solid #3a8a6a !important;
+  border-radius: 2px !important;
+  background: #0e3a30 !important;
+  color: #d8f0e8 !important;
+  font-size: 12px !important;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+#hud-respawn {
+  background: #1a6a58 !important;
+  color: #e8f4f0 !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 2px !important;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+#minimap {
+  border: 1px solid rgba(120, 140, 160, 0.35) !important;
+  border-radius: 2px !important;
+  background: #080c12 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}

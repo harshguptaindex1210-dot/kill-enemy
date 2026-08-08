@@ -225,7 +225,7 @@ export function createMinimap(onToggleFullscreen?: () => void): {
   canvas.id = 'minimap';
   canvas.width = 160;
   canvas.height = 160;
-  canvas.style.cssText = `position:fixed;top:${minimapAnchorTop};right:${minimapAnchorRight};z-index:9997;border:2px solid rgba(45,212,191,0.45);border-radius:4px;background:#0f1f35;cursor:pointer;transition:all 0.2s;`;
+  canvas.style.cssText = `position:fixed;top:${minimapAnchorTop};right:${minimapAnchorRight};z-index:9997;border:1px solid rgba(120,140,160,.35);border-radius:2px;background:#080c12;cursor:pointer;`;
   canvas.addEventListener('click', () => onToggleFullscreen?.());
   document.body.appendChild(canvas);
   const ctx = canvas.getContext('2d')!;
@@ -265,16 +265,16 @@ export function createMinimap(onToggleFullscreen?: () => void): {
       const playerX = data.px * s + ox;
       const playerZ = data.pz * s + oz;
 
-      ctx.fillStyle = '#0f1f35';
+      ctx.fillStyle = '#080c12';
       ctx.fillRect(0, 0, size, size);
 
-      ctx.strokeStyle = '#2dd4bf';
+      ctx.strokeStyle = 'rgba(100,140,180,0.7)';
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.arc(data.sx * s + ox, data.sz * s + oz, data.sr * s, 0, Math.PI * 2);
       ctx.stroke();
 
-      ctx.fillStyle = '#555';
+      ctx.fillStyle = '#4a5058';
       for (const b of data.buildings) ctx.fillRect(b.x * s + ox - 2, b.z * s + oz - 2, 4, 4);
 
       ctx.fillStyle = '#2f2';
@@ -299,7 +299,7 @@ export function createMinimap(onToggleFullscreen?: () => void): {
         ctx.fill();
       }
 
-      ctx.strokeStyle = '#2dd4bf';
+      ctx.strokeStyle = 'rgba(100,140,180,0.8)';
       ctx.lineWidth = 2;
       ctx.beginPath();
       const aimYaw = data.aimYaw ?? data.pyaw;

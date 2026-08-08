@@ -1,7 +1,6 @@
 import * as THREE from 'three';
 import type { QualityPreset } from './scene';
 
-/** ACES tone mapping + sRGB output — richer PBR response, no extra bundle cost. */
 export function applyRendererLook(renderer: THREE.WebGLRenderer, quality: QualityPreset): void {
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = quality === 'high' ? 1.18 : quality === 'medium' ? 1.12 : 1.0;
@@ -16,10 +15,9 @@ export interface SkyOptions {
   rings?: number;
 }
 
-/** Procedural gradient sky dome — zero texture downloads. */
 export function addGradientSky(scene: THREE.Scene, options: SkyOptions = {}): THREE.Mesh {
-  const topColor = new THREE.Color(options.topColor ?? 0x3a7a9a);
-  const bottomColor = new THREE.Color(options.bottomColor ?? 0x8ec8e8);
+  const topColor = new THREE.Color(options.topColor ?? 0x1a4a6a);
+  const bottomColor = new THREE.Color(options.bottomColor ?? 0x6a9ab8);
   const radius = options.radius ?? 800;
   const segments = options.segments ?? 24;
   const rings = options.rings ?? 12;
@@ -34,7 +32,7 @@ export function addGradientSky(scene: THREE.Scene, options: SkyOptions = {}): TH
       vertexShader:
         'varying vec3 vWorldPosition;void main(){vec4 wp=modelMatrix*vec4(position,1.0);vWorldPosition=wp.xyz;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
       fragmentShader:
-        'uniform vec3 topColor,bottomColor;varying vec3 vWorldPosition;void main(){float h=pow(clamp(normalize(vWorldPosition).y*0.5+0.5,0.0,1.0),0.72);gl_FragColor=vec4(mix(bottomColor,topColor,h),1.0);}',
+        'uniform vec3 topColor,bottomColor;varying vec3 vWorldPosition;void main(){float h=pow(clamp(normalize(vWorldPosition).y*.5+.5,0.,1.),.72);gl_FragColor=vec4(mix(bottomColor,topColor,h),1.);}',
       side: THREE.BackSide,
       depthWrite: false,
       fog: false,
@@ -81,7 +79,6 @@ export interface TreeScatterOptions {
   castShadow?: boolean;
 }
 
-/** Instanced low-poly trees — cheap draw calls, richer foliage. */
 export function scatterInstancedTrees(scene: THREE.Scene, opts: TreeScatterOptions): void {
   const { count, minDist, maxDist, skipNear, castShadow = false } = opts;
   const trunkMat = new THREE.MeshStandardMaterial({

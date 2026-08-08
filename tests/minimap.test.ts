@@ -74,7 +74,7 @@ describe('createMinimap', () => {
 
     expect(localMarker).toHaveLength(3);
     expect(localMarker.map((c) => c.radius)).toEqual([5, 3.6, 2.4]);
-    expect(localMarker.map((c) => c.fillStyle)).toEqual(['#ffffff', '#0f172a', '#2dd4bf']);
+    expect(localMarker.map((c) => c.fillStyle)).toEqual(['#ffffff', '#0f172a', '#7ec8b8']);
 
     minimap.remove();
   });
