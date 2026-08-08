@@ -527,6 +527,7 @@ function init() {
   }
 
   applyQuality(settings.quality);
+  (window as Window & { __killEnemyBooted?: boolean }).__killEnemyBooted = true;
   void showLobbyUI();
 }
 

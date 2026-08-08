@@ -9,7 +9,14 @@ describe('touch jump input', () => {
     expect(src).toMatch(/touchJumpLatchUntil/);
     expect(src).toMatch(/Date\.now\(\)\s*\+\s*450/);
     expect(src).toMatch(/touchJumpHeld\s*\|\|\s*Date\.now\(\)\s*<\s*touchJumpLatchUntil/);
+    expect(src).toMatch(/desktopJumpLatchUntil/);
     expect(src).toMatch(/z-index:10000/);
+  });
+
+  it('mounts touch UI only on phones, not touch laptops', () => {
+    const src = readFileSync(resolve(__dirname, '../src/input.ts'), 'utf8');
+    expect(src).toMatch(/isPhoneDevice\(\)/);
+    expect(src).not.toMatch(/isTouchDevice\(\)/);
   });
 
   it('jump button is a proper touch button with hold handlers', () => {

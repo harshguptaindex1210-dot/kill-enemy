@@ -56,6 +56,16 @@ describe('MatchSim', () => {
     expect(sim.match.phase).toBe('playing');
   });
 
+  it('accepts human jump input during dropping phase', () => {
+    const sim = makeSim(1);
+    sim.startMatch();
+    runFor(sim, 6);
+    expect(sim.match.phase).toBe('dropping');
+    const player = sim.units.get('player')!;
+    sim.update(1 / 60, fullInput({ jump: true }));
+    expect(player.player.velocity.y).toBeGreaterThan(0);
+  });
+
   it('does not advance phases before startMatch', () => {
     const sim = makeSim(2);
     runFor(sim, 20);

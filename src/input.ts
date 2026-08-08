@@ -1,6 +1,6 @@
 import type { PlayerInput } from './player';
 import type { Settings } from './settings';
-import { isTouchDevice, safeRequestPointerLock } from './platform';
+import { isPhoneDevice, safeRequestPointerLock } from './platform';
 import { shouldUseMouseLook, touchDragToLookDelta, TOUCH_LOOK_SCALE } from './touchLook';
 
 type TouchRuntimeSettings = Pick<
@@ -50,6 +50,7 @@ export function createInputManager(
   let skillOnce = false;
   let healOnce = false;
   let jumpOnce = false;
+  let desktopJumpLatchUntil = 0;
   let w1 = false,
     w2 = false,
     w3 = false;
@@ -73,15 +74,32 @@ export function createInputManager(
   let touchLookActive = false;
   let lastTouchLookAtMs = Number.NEGATIVE_INFINITY;
 
-  const isTouchDeviceFlag = isTouchDevice();
+  const isPhoneFlag = isPhoneDevice();
+
+  const blockGameKeys = (e: KeyboardEvent) => {
+    if (
+      e.code === 'Space' ||
+      e.code === 'ArrowUp' ||
+      e.code === 'ArrowDown' ||
+      e.code === 'ArrowLeft' ||
+      e.code === 'ArrowRight' ||
+      e.code.startsWith('Key')
+    ) {
+      e.preventDefault();
+    }
+  };
 
   // Keyboard listeners
   const onKeyDown = (e: KeyboardEvent) => {
+    blockGameKeys(e);
     keys.add(e.code);
     if (e.code === 'KeyR') reloadOnce = true;
     if (e.code === 'KeyF') skillOnce = true;
     if (e.code === 'KeyH') healOnce = true;
-    if (e.code === 'Space') jumpOnce = true;
+    if (e.code === 'Space') {
+      jumpOnce = true;
+      desktopJumpLatchUntil = Date.now() + 450;
+    }
     if (e.code === 'Digit1') w1 = true;
     if (e.code === 'Digit2') w2 = true;
     if (e.code === 'Digit3') w3 = true;
@@ -113,14 +131,14 @@ export function createInputManager(
   };
 
   const onCanvasClick = () => {
-    if (!isTouchDeviceFlag && !document.pointerLockElement) {
+    if (!isPhoneFlag && !document.pointerLockElement) {
       safeRequestPointerLock(canvas);
     }
   };
 
   window.addEventListener('keydown', onKeyDown);
   window.addEventListener('keyup', onKeyUp);
-  if (!isTouchDeviceFlag) canvas.addEventListener('mousemove', onMouseMove);
+  if (!isPhoneFlag) canvas.addEventListener('mousemove', onMouseMove);
   window.addEventListener('mousedown', onMouseDown);
   window.addEventListener('mouseup', onMouseUp);
   document.addEventListener('pointerlockchange', onPointerLockChange);
@@ -557,11 +575,12 @@ export function createInputManager(
     }
   }
 
-  if (isTouchDeviceFlag) {
+  if (isPhoneFlag) {
     mountTouchUI();
   } else {
-    // Dynamic mount if touchstart occurs
+    // Dynamic mount if touchstart occurs on a phone-class device only
     firstTouchHandler = () => {
+      if (!isPhoneDevice()) return;
       mountTouchUI();
       if (firstTouchHandler) {
         window.removeEventListener('touchstart', firstTouchHandler);
@@ -574,6 +593,7 @@ export function createInputManager(
   function getInput(): PlayerInput {
     if (touchOverlay) applyTouchUiSettings();
     const touchJump = touchJumpHeld || Date.now() < touchJumpLatchUntil;
+    const desktopJump = Date.now() < desktopJumpLatchUntil;
     const input: PlayerInput = {
       forward: keys.has('KeyW') || keys.has('ArrowUp') || touchForward,
       backward: keys.has('KeyS') || keys.has('ArrowDown') || touchBackward,
@@ -581,7 +601,7 @@ export function createInputManager(
       right: keys.has('KeyD') || keys.has('ArrowRight') || touchRight,
       sprint: keys.has('ShiftLeft') || keys.has('ShiftRight') || touchSprint,
       crouch: keys.has('ControlLeft') || keys.has('ControlRight'),
-      jump: keys.has('Space') || jumpOnce || touchJump,
+      jump: keys.has('Space') || jumpOnce || touchJump || desktopJump,
       aim: aimPressed || touchAimPressed,
       fire: firePressed || touchFirePressed,
       reload: reloadOnce || touchReloadOnce,
@@ -619,7 +639,7 @@ export function createInputManager(
     dispose: () => {
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
-      if (!isTouchDeviceFlag) canvas.removeEventListener('mousemove', onMouseMove);
+      if (!isPhoneFlag) canvas.removeEventListener('mousemove', onMouseMove);
       window.removeEventListener('mousedown', onMouseDown);
       window.removeEventListener('mouseup', onMouseUp);
       document.removeEventListener('pointerlockchange', onPointerLockChange);

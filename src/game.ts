@@ -484,14 +484,24 @@ export class MatchGame {
   }
 
   private frame(now: number) {
+    try {
+      this.frameInner(now);
+    } catch (err) {
+      console.error('Match frame error:', err);
+    }
+  }
+
+  private frameInner(now: number) {
     const dt = Math.min((now - this.lastTime) / 1000, 0.05);
     this.lastTime = now;
 
     this.handleActions();
 
     const human = this.humanUnit();
+    const inMatch =
+      (this.sim.match.phase === 'playing' || this.sim.match.phase === 'dropping') && human.alive;
     let input = undefined;
-    if (this.sim.match.phase === 'playing' && human.alive) {
+    if (inMatch) {
       const raw = this.input.getInput();
       const mobileLook = isMobileDevice();
       const sensX = mobileLook ? this.settings.touchSensitivityX : this.settings.sensitivity;

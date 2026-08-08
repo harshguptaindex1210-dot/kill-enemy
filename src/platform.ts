@@ -41,9 +41,9 @@ export function isPhoneDevice(): boolean {
   return /iPhone|iPod/i.test(ua) || (/Android/i.test(ua) && /Mobile/i.test(ua));
 }
 
-/** Pointer lock is desktop-only; iOS Safari rejects or no-ops the call. */
+/** Pointer lock is desktop-only; phones/tablets reject or no-op the call. */
 export function safeRequestPointerLock(el: Element): void {
-  if (isTouchDevice()) return;
+  if (isPhoneDevice() || isTabletDevice()) return;
   const req = (el as HTMLElement & { requestPointerLock?: () => void }).requestPointerLock;
   if (!req) return;
   try {

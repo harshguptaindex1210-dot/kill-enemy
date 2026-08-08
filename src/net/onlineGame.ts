@@ -400,10 +400,12 @@ export class OnlineMatchGame {
       : this.opts.settings.sensitivity;
     const snap = this.client.interp.latest;
     const phase = snap?.phase ?? 'lobby';
-    const playing = phase === 'playing';
+    const inMatch = phase === 'playing' || phase === 'dropping';
     const selfEnt = snap?.entities[this.client.selfId];
     const alive = selfEnt ? selfEnt.al !== 0 : true;
-    const active = playing && alive;
+    const active = inMatch && alive;
+
+    const playing = phase === 'playing';
 
     let rawInput = this.input.getInput();
     if (active) {

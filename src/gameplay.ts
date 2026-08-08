@@ -350,11 +350,14 @@ export class MatchSim {
     const dtMs = dt * 1000;
     this.time += dtMs;
     tickMatch(this.match, dtMs, this.time);
-    if (
-      this.match.phase === 'lobby' ||
-      this.match.phase === 'countdown' ||
-      this.match.phase === 'dropping'
-    ) {
+    if (this.match.phase === 'lobby' || this.match.phase === 'countdown') {
+      return;
+    }
+    if (this.match.phase === 'dropping') {
+      const human = this.units.get(this.humanId);
+      if (human?.alive && humanInput) {
+        this.updateUnit(human, humanInput, dt);
+      }
       return;
     }
     if (this.match.phase === 'ended') return;

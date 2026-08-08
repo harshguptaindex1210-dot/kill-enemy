@@ -124,10 +124,18 @@
     <script type="module" src="/src/main.ts"></script>
     <script>
       window.addEventListener('error', function (event) {
+        if (window.__killEnemyBooted) {
+          console.error('In-match error:', event.error || event.message);
+          return;
+        }
         var el = document.getElementById('boot-error');
         if (el) el.classList.add('visible');
       });
-      window.addEventListener('unhandledrejection', function () {
+      window.addEventListener('unhandledrejection', function (event) {
+        if (window.__killEnemyBooted) {
+          console.error('In-match promise rejection:', event.reason);
+          return;
+        }
         var el = document.getElementById('boot-error');
         if (el) el.classList.add('visible');
       });
