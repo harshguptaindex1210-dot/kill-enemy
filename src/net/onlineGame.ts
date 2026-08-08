@@ -373,8 +373,12 @@ export class OnlineMatchGame {
     this.lastTime = now;
     this.trackQuality(now, frameMs);
     const mobileLook = isMobileDevice();
-    const sensX = mobileLook ? this.opts.settings.touchSensitivityX : this.opts.settings.sensitivity;
-    const sensY = mobileLook ? this.opts.settings.touchSensitivityY : this.opts.settings.sensitivity;
+    const sensX = mobileLook
+      ? this.opts.settings.touchSensitivityX
+      : this.opts.settings.sensitivity;
+    const sensY = mobileLook
+      ? this.opts.settings.touchSensitivityY
+      : this.opts.settings.sensitivity;
     const snap = this.client.interp.latest;
     const phase = snap?.phase ?? 'lobby';
     const playing = phase === 'playing';

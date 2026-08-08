@@ -225,8 +225,7 @@ export function createMinimap(onToggleFullscreen?: () => void): {
   canvas.id = 'minimap';
   canvas.width = 160;
   canvas.height = 160;
-  canvas.style.cssText =
-    `position:fixed;top:${minimapAnchorTop};right:${minimapAnchorRight};z-index:9997;border:2px solid rgba(45,212,191,0.45);border-radius:4px;background:#0f1f35;cursor:pointer;transition:all 0.2s;`;
+  canvas.style.cssText = `position:fixed;top:${minimapAnchorTop};right:${minimapAnchorRight};z-index:9997;border:2px solid rgba(45,212,191,0.45);border-radius:4px;background:#0f1f35;cursor:pointer;transition:all 0.2s;`;
   canvas.addEventListener('click', () => onToggleFullscreen?.());
   document.body.appendChild(canvas);
   const ctx = canvas.getContext('2d')!;

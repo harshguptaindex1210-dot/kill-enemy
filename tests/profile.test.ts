@@ -21,7 +21,12 @@ import {
   removeFriend,
 } from '../src/profile';
 import { CAR_SKINS, GUN_SKINS } from '../src/cosmetics';
-import { MAX_PLAYER_LEVEL, defaultStats, ensureMaxLevelStats, xpForLevel } from '../src/persistence';
+import {
+  MAX_PLAYER_LEVEL,
+  defaultStats,
+  ensureMaxLevelStats,
+  xpForLevel,
+} from '../src/persistence';
 import type { StorageLike } from '../src/settings';
 
 function memStorage(): StorageLike {
@@ -99,11 +104,7 @@ describe('profile cosmetics', () => {
 
   it('reserves founder name for first local owner only', () => {
     const store = memStorage();
-    const founderClaim = setProfileName(
-      defaultProfile(),
-      '  harsh   founderceo_01  ',
-      store
-    );
+    const founderClaim = setProfileName(defaultProfile(), '  harsh   founderceo_01  ', store);
     expect('profile' in founderClaim).toBe(true);
     if ('profile' in founderClaim) {
       expect(founderClaim.profile.name).toBe(RESERVED_FOUNDER_NAME);
@@ -135,7 +136,11 @@ describe('profile cosmetics', () => {
 
   it('hydrates owner storage key from reserved owner token', () => {
     const store = memStorage();
-    const profile = { ...defaultProfile(), name: RESERVED_FOUNDER_NAME, ownerToken: 'owner_abc123' };
+    const profile = {
+      ...defaultProfile(),
+      name: RESERVED_FOUNDER_NAME,
+      ownerToken: 'owner_abc123',
+    };
     expect(isReservedFounderOwner(profile, store)).toBe(true);
     expect(store.getItem('raf_owner')).toBe('owner_abc123');
   });
@@ -211,7 +216,11 @@ describe('profile cosmetics', () => {
       ownerToken: 'local_owner_token',
       credits: 25,
     };
-    const remote = { ...defaultProfile(), name: RESERVED_FOUNDER_NAME, ownerToken: 'remote_owner_token' };
+    const remote = {
+      ...defaultProfile(),
+      name: RESERVED_FOUNDER_NAME,
+      ownerToken: 'remote_owner_token',
+    };
     const merged = mergeProfiles(local, remote);
     expect(merged.name).toBe(RESERVED_FOUNDER_NAME);
     expect(merged.ownerToken).toBe('local_owner_token');

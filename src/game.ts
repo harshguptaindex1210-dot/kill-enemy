@@ -597,7 +597,8 @@ export class MatchGame {
     }
     this.vehicleActionCooldownUntil = now + 1200;
     const result = this.sim.useVehicleType(this.humanId, type);
-    if (result.reason === 'entered') return this.banner(type === 'sedan' ? 'CAR OK' : 'BIKE OK', 900);
+    if (result.reason === 'entered')
+      return this.banner(type === 'sedan' ? 'CAR OK' : 'BIKE OK', 900);
     if (result.reason === 'exited') return this.banner('EXIT', 900);
     if (result.reason === 'too-far') return this.banner('FAR', 900);
     if (result.reason === 'none-available') return this.banner('NONE', 900);

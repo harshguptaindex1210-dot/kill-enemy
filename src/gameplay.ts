@@ -123,12 +123,7 @@ export interface SimVehicle {
   spawnPos: THREE.Vector3;
 }
 
-export type VehicleActionReason =
-  | 'entered'
-  | 'exited'
-  | 'not-alive'
-  | 'none-available'
-  | 'too-far';
+export type VehicleActionReason = 'entered' | 'exited' | 'not-alive' | 'none-available' | 'too-far';
 
 export interface VehicleActionResult {
   ok: boolean;
@@ -386,13 +381,7 @@ export class MatchSim {
     const inCombat = Boolean(
       enemy && enemy.player.position.distanceTo(unit.player.position) <= 140
     );
-    const THINK_MS = inCombat
-      ? isMobileDevice()
-        ? 80
-        : 0
-      : isMobileDevice()
-        ? 220
-        : 80;
+    const THINK_MS = inCombat ? (isMobileDevice() ? 80 : 0) : isMobileDevice() ? 220 : 80;
     if (brain.lastInput && THINK_MS > 0 && this.time - brain.lastThinkMs < THINK_MS) {
       return brain.lastInput;
     }
@@ -949,7 +938,10 @@ export class MatchSim {
     return true;
   }
 
-  useVehicleType(unitId: string, type: Extract<VehicleType, 'sedan' | 'motorbike'>): VehicleActionResult {
+  useVehicleType(
+    unitId: string,
+    type: Extract<VehicleType, 'sedan' | 'motorbike'>
+  ): VehicleActionResult {
     const unit = this.units.get(unitId);
     if (!unit || !unit.alive) return { ok: false, reason: 'not-alive' };
 

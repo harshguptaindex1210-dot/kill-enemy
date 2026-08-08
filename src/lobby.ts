@@ -218,14 +218,7 @@ export function showLobby(
 
   const row = (label: string, sel: string) =>
     `<label style="display:flex;justify-content:space-between;align-items:center;gap:10px;">${label}${sel}</label>`;
-  const range = (
-    id: string,
-    value: number,
-    min: number,
-    max: number,
-    step: number,
-    suffix = ''
-  ) =>
+  const range = (id: string, value: number, min: number, max: number, step: number, suffix = '') =>
     `<span style="display:flex;align-items:center;gap:8px;min-width:58%;">
       <input id="${id}" type="range" min="${min}" max="${max}" step="${step}" value="${value}" style="flex:1;" />
       <b id="${id}-value" style="min-width:54px;text-align:right;color:#fff;font-size:0.75rem;">${value.toFixed(2)}${suffix}</b>
@@ -537,10 +530,7 @@ export function showLobby(
             )}
             ${row('HUD Opacity', range('rng-hud-opacity', settings.hudOpacity, 0.35, 1, 0.05))}
             ${row('HUD Scale', range('rng-hud-scale', settings.hudScale, 0.8, 1.3, 0.05, 'x'))}
-            ${row(
-              'Gyro Aim',
-              toggle('sel-gyro', settings.gyroAim, 'On (Soon)', 'Off')
-            )}
+            ${row('Gyro Aim', toggle('sel-gyro', settings.gyroAim, 'On (Soon)', 'Off'))}
             ${row(
               'Volume',
               select(
@@ -626,7 +616,11 @@ export function showLobby(
     const share = async (): Promise<boolean> => {
       if (navigator.share) {
         try {
-          await navigator.share({ title: 'Kill Enemy', text: GAME_SHARE_TEXT, url: GAME_SHARE_URL });
+          await navigator.share({
+            title: 'Kill Enemy',
+            text: GAME_SHARE_TEXT,
+            url: GAME_SHARE_URL,
+          });
           return true;
         } catch {
           /* user dismissed */

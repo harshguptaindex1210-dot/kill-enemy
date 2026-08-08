@@ -158,8 +158,12 @@ export function createInputManager(
     if (signature === lastTouchUiSignature) return;
     lastTouchUiSignature = signature;
 
-    const joystickArea = touchOverlay.querySelector('#touch-joystick-area') as HTMLDivElement | null;
-    const joystickKnob = touchOverlay.querySelector('#touch-joystick-knob') as HTMLDivElement | null;
+    const joystickArea = touchOverlay.querySelector(
+      '#touch-joystick-area'
+    ) as HTMLDivElement | null;
+    const joystickKnob = touchOverlay.querySelector(
+      '#touch-joystick-knob'
+    ) as HTMLDivElement | null;
     const actionsArea = touchOverlay.querySelector('#touch-actions-area') as HTMLDivElement | null;
     const weaponsArea = touchOverlay.querySelector('#touch-weapons-area') as HTMLDivElement | null;
     const leftFire = touchOverlay.querySelector('#tb-fire-left') as HTMLButtonElement | null;
@@ -274,15 +278,30 @@ export function createInputManager(
       '#tb-heal',
       `${(touchOverlay.querySelector('#tb-heal') as HTMLElement).style.cssText};font-size:11px;letter-spacing:.02em;`
     );
-    setStyle('#tb-fire-left', `${(touchOverlay.querySelector('#tb-fire-left') as HTMLElement).style.cssText};position:absolute;left:22px;bottom:170px;pointer-events:auto;touch-action:none;box-shadow:0 4px 12px rgba(255,0,0,.6);`);
-    setStyle('#tb-fire', `${(touchOverlay.querySelector('#tb-fire') as HTMLElement).style.cssText};box-shadow:0 4px 12px rgba(255,0,0,.6);`);
+    setStyle(
+      '#tb-fire-left',
+      `${(touchOverlay.querySelector('#tb-fire-left') as HTMLElement).style.cssText};position:absolute;left:22px;bottom:170px;pointer-events:auto;touch-action:none;box-shadow:0 4px 12px rgba(255,0,0,.6);`
+    );
+    setStyle(
+      '#tb-fire',
+      `${(touchOverlay.querySelector('#tb-fire') as HTMLElement).style.cssText};box-shadow:0 4px 12px rgba(255,0,0,.6);`
+    );
     touchOverlay.querySelectorAll('#touch-weapons-area button').forEach((el) => {
       (el as HTMLElement).style.cssText =
         'padding:6px 12px;background:rgba(0,0,0,.6);border-radius:4px;font-size:12px;font-weight:bold;';
     });
-    setStyle('#tb-w1', `${(touchOverlay.querySelector('#tb-w1') as HTMLElement).style.cssText};border:1px solid #4af;color:#4af;`);
-    setStyle('#tb-w2', `${(touchOverlay.querySelector('#tb-w2') as HTMLElement).style.cssText};border:1px solid #fa0;color:#fa0;`);
-    setStyle('#tb-w3', `${(touchOverlay.querySelector('#tb-w3') as HTMLElement).style.cssText};border:1px solid #aaa;color:#aaa;`);
+    setStyle(
+      '#tb-w1',
+      `${(touchOverlay.querySelector('#tb-w1') as HTMLElement).style.cssText};border:1px solid #4af;color:#4af;`
+    );
+    setStyle(
+      '#tb-w2',
+      `${(touchOverlay.querySelector('#tb-w2') as HTMLElement).style.cssText};border:1px solid #fa0;color:#fa0;`
+    );
+    setStyle(
+      '#tb-w3',
+      `${(touchOverlay.querySelector('#tb-w3') as HTMLElement).style.cssText};border:1px solid #aaa;color:#aaa;`
+    );
     applyTouchUiSettings();
 
     // Setup Joystick Dragging
