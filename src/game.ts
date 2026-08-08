@@ -592,16 +592,16 @@ export class MatchGame {
     if (this.sim.match.phase !== 'playing') return;
     const now = this.sim.time;
     if (now < this.vehicleActionCooldownUntil) {
-      this.banner('VEHICLE CD', 800);
+      this.banner('V CD', 800);
       return;
     }
     this.vehicleActionCooldownUntil = now + 1200;
     const result = this.sim.useVehicleType(this.humanId, type);
-    if (result.reason === 'entered') return this.banner(type === 'sedan' ? 'CAR READY' : 'BIKE READY', 900);
-    if (result.reason === 'exited') return this.banner('EXITED', 900);
-    if (result.reason === 'too-far') return this.banner('TOO FAR', 900);
-    if (result.reason === 'none-available') return this.banner('UNAVAILABLE', 900);
-    if (result.reason === 'not-alive') this.banner('RESPAWN', 900);
+    if (result.reason === 'entered') return this.banner(type === 'sedan' ? 'CAR OK' : 'BIKE OK', 900);
+    if (result.reason === 'exited') return this.banner('EXIT', 900);
+    if (result.reason === 'too-far') return this.banner('FAR', 900);
+    if (result.reason === 'none-available') return this.banner('NONE', 900);
+    if (result.reason === 'not-alive') this.banner('RESP', 900);
   }
 
   private processEvents(events: SimEvent[], dt: number) {
@@ -1194,8 +1194,8 @@ export class MatchGame {
       const left = Math.max(0, Math.ceil((human.healing.until - this.sim.time) / 1000));
       return `HEAL ${left}s`;
     }
-    if (human.health >= 100) return 'FULL HP';
-    if (human.heals.medkit <= 0) return 'NO KIT';
+    if (human.health >= 100) return 'FULL';
+    if (human.heals.medkit <= 0) return 'NO';
     return `HEAL [H]x${human.heals.medkit}`;
   }
 
