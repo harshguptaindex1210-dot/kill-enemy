@@ -542,11 +542,9 @@ function showBootError(message?: string) {
 }
 
 async function boot() {
+  await import('./orientation.css');
   if (isPhoneDevice()) {
-    const [{ initPhoneLandscapeMode }] = await Promise.all([
-      import('./orientation'),
-      import('./orientation.css'),
-    ]);
+    const { initPhoneLandscapeMode } = await import('./orientation');
     initPhoneLandscapeMode();
   }
   init();

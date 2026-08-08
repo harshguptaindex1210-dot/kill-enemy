@@ -110,6 +110,12 @@ describe('orientation markup', () => {
 });
 
 describe('touch overlay heal control', () => {
+  it('main.ts loads HUD styles on laptop and phone', () => {
+    const src = readFileSync(resolve(__dirname, '../src/main.ts'), 'utf8');
+    expect(src).toMatch(/import\('\.\/orientation\.css'\)/);
+    expect(src).not.toMatch(/isPhoneDevice\(\)\)[\s\S]*import\('\.\/orientation\.css'\)/);
+  });
+
   it('ships a labeled HEAL button in the touch actions markup', () => {
     const src = readFileSync(resolve(__dirname, '../src/input.ts'), 'utf8');
     expect(src).toMatch(/id="tb-heal"/);
