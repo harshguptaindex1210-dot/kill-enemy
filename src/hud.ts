@@ -268,7 +268,7 @@ export function createMinimap(onToggleFullscreen?: () => void): {
       ctx.fillStyle = '#080c12';
       ctx.fillRect(0, 0, size, size);
 
-      ctx.strokeStyle = 'rgba(100,140,180,0.7)';
+      ctx.strokeStyle = '#2dd4bf';
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.arc(data.sx * s + ox, data.sz * s + oz, data.sr * s, 0, Math.PI * 2);
@@ -299,7 +299,7 @@ export function createMinimap(onToggleFullscreen?: () => void): {
         ctx.fill();
       }
 
-      ctx.strokeStyle = 'rgba(100,140,180,0.8)';
+      ctx.strokeStyle = '#2dd4bf';
       ctx.lineWidth = 2;
       ctx.beginPath();
       const aimYaw = data.aimYaw ?? data.pyaw;

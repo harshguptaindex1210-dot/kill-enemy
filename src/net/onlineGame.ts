@@ -236,6 +236,13 @@ export class OnlineMatchGame {
     this.muzzleFlashMat.dispose();
     this.tracerGeo.dispose();
     this.tracerMat.dispose();
+    this.scene.traverse((obj) => {
+      if (obj instanceof THREE.Mesh) {
+        obj.geometry?.dispose();
+        const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+        for (const m of mats) m?.dispose();
+      }
+    });
     this.renderer.dispose();
   }
 

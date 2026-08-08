@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { createRenderer } from './renderer';
-import { addGradientSky, applyTealFog } from './graphics';
+import { addGradientSky, applyTealFog, configureSunShadow } from './graphics';
 import { createRobotModel, updateRobotAnim } from './robot';
 import { attachHeldWeaponKit, createHeldWeaponKit, syncHeldWeaponKit } from './heldWeapons';
 import type { QualityPreset } from './scene';
@@ -54,18 +54,7 @@ export function createLobbyScene(
 
   const key = new THREE.DirectionalLight(0xffe0b8, 1.85);
   key.position.set(3, 5, 2);
-  if (shadowsOn) {
-    key.castShadow = true;
-    key.shadow.mapSize.set(1024, 1024);
-    key.shadow.camera.near = 0.5;
-    key.shadow.camera.far = 12;
-    key.shadow.camera.left = -3;
-    key.shadow.camera.right = 3;
-    key.shadow.camera.top = 3;
-    key.shadow.camera.bottom = -1;
-    key.shadow.bias = -0.0003;
-    key.shadow.radius = 2;
-  }
+  if (shadowsOn) configureSunShadow(key, 3, 1024, true);
   scene.add(key);
 
   const rim = new THREE.DirectionalLight(0x3a9a8a, 0.55);
