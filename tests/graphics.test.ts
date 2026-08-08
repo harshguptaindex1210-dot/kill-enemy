@@ -5,12 +5,12 @@ import * as THREE from 'three';
 import { applyRendererLook, applyTealFog, addGradientSky } from '../src/graphics';
 
 describe('battle royale visuals', () => {
-  it('applyTealFog uses horizon-matched fog for seamless sky blend', () => {
+  it('applyTealFog uses horizon-matched exponential fog for seamless sky blend', () => {
     const scene = new THREE.Scene();
     applyTealFog(scene, 40, 140, 0xd8c0a0);
-    expect(scene.fog).toBeInstanceOf(THREE.Fog);
-    expect((scene.fog as THREE.Fog).color.getHex()).toBe(0xd8c0a0);
-    expect((scene.fog as THREE.Fog).near).toBe(40);
+    expect(scene.fog).toBeInstanceOf(THREE.FogExp2);
+    expect((scene.fog as THREE.FogExp2).color.getHex()).toBe(0xd8c0a0);
+    expect((scene.fog as THREE.FogExp2).density).toBeGreaterThan(0);
     expect(scene.background).toBeNull();
   });
 
@@ -48,8 +48,25 @@ describe('graphics.ts BGMI palette wiring', () => {
   it('scene.ts uses warm horizon sky and matching fog colors', () => {
     const src = readFileSync(resolve(__dirname, '../src/scene.ts'), 'utf8');
     expect(src).toMatch(/mapPreset\(mapId\)/);
+    expect(src).toMatch(/addMapLighting/);
     expect(src).toMatch(/scatterParkedCars/);
     expect(src).toMatch(/scatterInstancedGrass/);
     expect(src).toMatch(/GRASS_COUNTS/);
+  });
+
+  it('post-processing is lazy-loaded for medium and high quality', () => {
+    const matchRender = readFileSync(resolve(__dirname, '../src/matchRender.ts'), 'utf8');
+    expect(matchRender).toMatch(/import\('\.\/postProcess'\)/);
+    expect(matchRender).toMatch(/quality !== 'low'/);
+    const post = readFileSync(resolve(__dirname, '../src/postProcess.ts'), 'utf8');
+    expect(post).toMatch(/UnrealBloomPass/);
+    expect(post).toMatch(/ColorGradeShader/);
+  });
+
+  it('artStyle.ts unifies PBR surface roles', () => {
+    const src = readFileSync(resolve(__dirname, '../src/artStyle.ts'), 'utf8');
+    expect(src).toMatch(/styleMat/);
+    expect(src).toMatch(/foliage/);
+    expect(src).toMatch(/paint/);
   });
 });

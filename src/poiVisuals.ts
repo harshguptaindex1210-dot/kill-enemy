@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { styleMat } from './artStyle';
 
 type QualityPreset = 'low' | 'medium' | 'high';
 
@@ -21,7 +22,9 @@ const URBAN_PALETTE: typeof PALETTE = {
 };
 
 function stdMat(color: number, rough = 0.84, metal = 0.06): THREE.MeshStandardMaterial {
-  return new THREE.MeshStandardMaterial({ color, roughness: rough, metalness: metal });
+  void rough;
+  void metal;
+  return styleMat(color, 'concrete');
 }
 
 function box(
@@ -50,13 +53,7 @@ function addWindows(
   spacing: number,
   shadows: boolean
 ) {
-  const winMat = new THREE.MeshStandardMaterial({
-    color: 0xd4c090,
-    emissive: 0xb89040,
-    emissiveIntensity: 0.34,
-    roughness: 0.42,
-    metalness: 0.12,
-  });
+  const winMat = styleMat(0xd4c090, 'glass', 0xb89040, 0.38);
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
       const win = box(

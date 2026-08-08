@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { mapPreset } from '../mapPresets';
 import { createScene, type QualityPreset } from '../scene';
+import { createMatchRenderer, type MatchRenderHandle } from '../matchRender';
 import { MAP_SIZE, POI_RADIUS, ZONE_PHASE_DURATIONS, START_MEDKITS } from '../constants';
 import { createRobotModel, updateRobotAnim, type RobotAnimState } from '../robot';
 import { ZoneSystem } from '../zone';
@@ -97,6 +98,7 @@ export class OnlineMatchGame {
   private scene: THREE.Scene;
   private camera: THREE.PerspectiveCamera;
   private renderer: THREE.WebGLRenderer;
+  private matchRenderer: MatchRenderHandle;
   private zoneSys: ZoneSystem;
   private hud: ReturnType<typeof createHUD>;
   private minimap: ReturnType<typeof createMinimap>;
@@ -148,7 +150,7 @@ export class OnlineMatchGame {
     c.height = window.innerHeight;
     this.camera.aspect = window.innerWidth / window.innerHeight;
     this.camera.updateProjectionMatrix();
-    this.renderer.setSize(window.innerWidth, window.innerHeight);
+    this.matchRenderer.setSize(window.innerWidth, window.innerHeight);
   };
   private onKeyDown = (e: KeyboardEvent) => {
     if (e.code === 'KeyN') this.minimapFullscreen = !this.minimapFullscreen;
@@ -168,6 +170,7 @@ export class OnlineMatchGame {
     this.scene = scene;
     this.camera = camera;
     this.renderer = renderer;
+    this.matchRenderer = createMatchRenderer(renderer, scene, camera, quality);
 
     this.zoneSys = new ZoneSystem(scene);
     this.input = createInputManager(c, {
@@ -255,6 +258,7 @@ export class OnlineMatchGame {
         for (const m of mats) m?.dispose();
       }
     });
+    this.matchRenderer.dispose();
     this.renderer.dispose();
   }
 
@@ -470,7 +474,7 @@ export class OnlineMatchGame {
       this.minimapNext = now + this.minimapIntervalMs;
       this.updateMinimap(snap);
     }
-    this.renderer.render(this.scene, this.camera);
+    this.matchRenderer.render();
   }
 
   private trackQuality(now: number, frameMs: number) {

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { styleMat } from './artStyle';
 
 export interface RobotAnimState {
   mixer: THREE.AnimationMixer;
@@ -18,26 +19,10 @@ export function createRobotModel(teamColor = 0x3366cc): {
   const accent = base.clone().lerp(new THREE.Color(0xffffff), 0.35);
   const optic = base.clone().lerp(new THREE.Color(0x00ffff), 0.55);
 
-  const bodyMat = new THREE.MeshStandardMaterial({
-    color: body,
-    metalness: 0.7,
-    roughness: 0.3,
-  });
-  const accentMat = new THREE.MeshStandardMaterial({
-    color: accent,
-    metalness: 0.8,
-    roughness: 0.2,
-  });
-  const opticMat = new THREE.MeshStandardMaterial({
-    color: optic,
-    emissive: optic,
-    emissiveIntensity: 0.65,
-  });
-  const darkMat = new THREE.MeshStandardMaterial({
-    color: 0x222233,
-    metalness: 0.6,
-    roughness: 0.4,
-  });
+  const bodyMat = styleMat(body.getHex(), 'paint');
+  const accentMat = styleMat(accent.getHex(), 'metal');
+  const opticMat = styleMat(optic.getHex(), 'emissive', optic.getHex(), 0.72);
+  const darkMat = styleMat(0x222233, 'rubber');
 
   const torso = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.9, 0.5), bodyMat);
   torso.position.y = 0.9;

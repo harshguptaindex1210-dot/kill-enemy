@@ -3,8 +3,8 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { createRenderer } from './renderer';
 import {
   addGradientSky,
+  addMapLighting,
   applyTealFog,
-  configureSunShadow,
   groundTextureFor,
   scatterInstancedTrees,
   scatterInstancedGrass,
@@ -84,19 +84,21 @@ export function createScene(
   controls.maxDistance = 300;
   controls.maxPolarAngle = Math.PI / 2.1;
 
-  scene.add(new THREE.AmbientLight(map.ambientColor, map.ambientIntensity));
-
-  const dirLight = new THREE.DirectionalLight(map.sunColor, map.sunIntensity);
-  dirLight.position.set(118, 78, 152);
-  if (quality !== 'low')
-    configureSunShadow(dirLight, MAP_BOUND, quality === 'high' ? 2048 : 1024, quality === 'high');
-  scene.add(dirLight);
-
-  const fillLight = new THREE.DirectionalLight(0x6a88a8, map.id === 'city' ? 0.14 : 0.2);
-  fillLight.position.set(-88, 46, -108);
-  scene.add(fillLight);
-
-  scene.add(new THREE.HemisphereLight(map.hemiSky, map.hemiGround, map.hemiIntensity));
+  addMapLighting(
+    scene,
+    {
+      ambientColor: map.ambientColor,
+      ambientIntensity: map.ambientIntensity,
+      sunColor: map.sunColor,
+      sunIntensity: map.sunIntensity,
+      hemiSky: map.hemiSky,
+      hemiGround: map.hemiGround,
+      hemiIntensity: map.hemiIntensity,
+      mapId: map.id,
+    },
+    quality,
+    MAP_BOUND
+  );
 
   const groundGeo = new THREE.PlaneGeometry(MAP_SIZE, MAP_SIZE);
   const groundMat = new THREE.MeshStandardMaterial({
