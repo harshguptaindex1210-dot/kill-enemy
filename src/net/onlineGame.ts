@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { mapPreset } from '../mapPresets';
 import { createScene, type QualityPreset } from '../scene';
 import { MAP_SIZE, POI_RADIUS, ZONE_PHASE_DURATIONS, START_MEDKITS } from '../constants';
 import { createRobotModel, updateRobotAnim, type RobotAnimState } from '../robot';
@@ -163,7 +164,7 @@ export class OnlineMatchGame {
     c.style.cssText = 'position:fixed;inset:0;width:100vw;height:100vh;display:block;';
 
     const quality: QualityPreset = opts.settings.quality;
-    const { scene, camera, renderer } = createScene(c, quality);
+    const { scene, camera, renderer } = createScene(c, quality, opts.settings.mapId);
     this.scene = scene;
     this.camera = camera;
     this.renderer = renderer;
@@ -703,7 +704,7 @@ export class OnlineMatchGame {
       grenades: human?.grenadeCount ?? 2,
       heals: human ? human.heals.medkit + human.heals.bandage : START_MEDKITS + 2,
       matchTimer: formatTimer(snap?.time_ms ?? 0),
-      phaseLabel: (snap?.phase ?? 'lobby').toUpperCase(),
+      phaseLabel: `${(snap?.phase ?? 'lobby').toUpperCase()} · ${mapPreset(this.opts.settings.mapId).label.toUpperCase()}`,
       zoneTimer: formatTimer(zoneTimeMs),
       healProgress,
       inStorm: false,

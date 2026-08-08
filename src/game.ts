@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { mapPreset } from './mapPresets';
 import { createScene, disposeScene, type QualityPreset } from './scene';
 import { POI_RADIUS, MAP_SIZE } from './constants';
 import { MatchSim, type SimEvent, type SimUnit } from './gameplay';
@@ -232,7 +233,7 @@ export class MatchGame {
     c.style.cssText = 'position:fixed;inset:0;width:100vw;height:100vh;display:block;';
 
     const quality: QualityPreset = this.settings.quality;
-    const { scene, camera, renderer, controls, pois } = createScene(c, quality);
+    const { scene, camera, renderer, controls, pois } = createScene(c, quality, this.settings.mapId);
     controls.enabled = false;
     this.scene = scene;
     this.camera = camera;
@@ -369,6 +370,7 @@ export class MatchGame {
       renderer: this.renderer,
       controls: this.sceneControls,
       pois: [],
+      mapId: this.settings.mapId,
     });
     this.input.dispose();
   }
@@ -1164,7 +1166,7 @@ export class MatchGame {
       grenades: human.grenadeCount,
       heals: human.heals.medkit + human.heals.bandage,
       matchTimer: formatTimer(this.sim.time),
-      phaseLabel: this.phaseLabel(),
+      phaseLabel: `${this.phaseLabel()} · ${mapPreset(this.settings.mapId).label.toUpperCase()}`,
       zoneTimer: formatTimer(zoneTimeMs * 1000),
       healProgress,
       inStorm: human.alive && this.sim.zone.isOutsideZone(human.player.position),

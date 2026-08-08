@@ -13,6 +13,13 @@ const PALETTE: Record<PoiDistrict, { wall: number; roof: number; accent: number 
   Hilltop: { wall: 0x6a7a58, roof: 0x3a4530, accent: 0x4a5a38 },
 };
 
+const URBAN_PALETTE: typeof PALETTE = {
+  Town: { wall: 0x9a9aa8, roof: 0x484850, accent: 0x707880 },
+  Factory: { wall: 0x7a8088, roof: 0x383840, accent: 0x606870 },
+  Docks: { wall: 0x8a8078, roof: 0x404038, accent: 0x686058 },
+  Hilltop: { wall: 0x888890, roof: 0x404048, accent: 0x585860 },
+};
+
 function stdMat(color: number, rough = 0.84, metal = 0.06): THREE.MeshStandardMaterial {
   return new THREE.MeshStandardMaterial({ color, roughness: rough, metalness: metal });
 }
@@ -64,8 +71,9 @@ function addPad(group: THREE.Group, shadows: boolean) {
   );
 }
 
-function buildTown(group: THREE.Group, idx: number, shadows: boolean, quality: QualityPreset) {
-  const p = PALETTE.Town;
+function buildTown(group: THREE.Group, idx: number, shadows: boolean, quality: QualityPreset, urban: boolean) {
+  const pal = urban ? URBAN_PALETTE : PALETTE;
+  const p = pal.Town;
   const wall = stdMat(p.wall);
   const roof = stdMat(p.roof, 0.88, 0.04);
   const accent = stdMat(p.accent, 0.72, 0.16);
@@ -80,8 +88,9 @@ function buildTown(group: THREE.Group, idx: number, shadows: boolean, quality: Q
   addPad(group, shadows);
 }
 
-function buildFactory(group: THREE.Group, idx: number, shadows: boolean, quality: QualityPreset) {
-  const p = PALETTE.Factory;
+function buildFactory(group: THREE.Group, idx: number, shadows: boolean, quality: QualityPreset, urban: boolean) {
+  const pal = urban ? URBAN_PALETTE : PALETTE;
+  const p = pal.Factory;
   const wall = stdMat(p.wall);
   const roof = stdMat(p.roof, 0.9, 0.08);
   const metal = stdMat(p.accent, 0.55, 0.35);
@@ -100,8 +109,9 @@ function buildFactory(group: THREE.Group, idx: number, shadows: boolean, quality
   addPad(group, shadows);
 }
 
-function buildDocks(group: THREE.Group, _idx: number, shadows: boolean, quality: QualityPreset) {
-  const p = PALETTE.Docks;
+function buildDocks(group: THREE.Group, _idx: number, shadows: boolean, quality: QualityPreset, urban: boolean) {
+  const pal = urban ? URBAN_PALETTE : PALETTE;
+  const p = pal.Docks;
   const wood = stdMat(p.wall, 0.92, 0.04);
   const roof = stdMat(p.roof, 0.88, 0.06);
   group.add(box(34, 12, 20, wood, 0, 6, 0, shadows));
@@ -120,8 +130,9 @@ function buildDocks(group: THREE.Group, _idx: number, shadows: boolean, quality:
   addPad(group, shadows);
 }
 
-function buildHilltop(group: THREE.Group, idx: number, shadows: boolean, quality: QualityPreset) {
-  const p = PALETTE.Hilltop;
+function buildHilltop(group: THREE.Group, idx: number, shadows: boolean, quality: QualityPreset, urban: boolean) {
+  const pal = urban ? URBAN_PALETTE : PALETTE;
+  const p = pal.Hilltop;
   const wall = stdMat(p.wall);
   const roof = stdMat(p.roof, 0.88, 0.05);
   const bunker = stdMat(p.accent, 0.8, 0.12);
@@ -145,7 +156,7 @@ function buildHilltop(group: THREE.Group, idx: number, shadows: boolean, quality
 
 const BUILDERS: Record<
   PoiDistrict,
-  (g: THREE.Group, idx: number, shadows: boolean, q: QualityPreset) => void
+  (g: THREE.Group, idx: number, shadows: boolean, q: QualityPreset, urban: boolean) => void
 > = {
   Town: buildTown,
   Factory: buildFactory,
@@ -153,16 +164,25 @@ const BUILDERS: Record<
   Hilltop: buildHilltop,
 };
 
+export interface PoiBuildStyle {
+  scale?: number;
+  urban?: boolean;
+}
+
 /** Battle-royale POI cluster with a distinct silhouette per district. */
 export function buildPoiGroup(
   district: PoiDistrict,
   index: number,
   quality: QualityPreset,
-  shadows: boolean
+  shadows: boolean,
+  style: PoiBuildStyle = {}
 ): THREE.Group {
   const group = new THREE.Group();
   group.userData.name = district;
-  BUILDERS[district](group, index, shadows, quality);
+  const scale = style.scale ?? 1;
+  const urban = style.urban ?? false;
+  BUILDERS[district](group, index, shadows, quality, urban);
+  if (scale !== 1) group.scale.setScalar(scale);
   return group;
 }
 

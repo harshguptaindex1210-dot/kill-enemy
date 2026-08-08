@@ -75,6 +75,57 @@ export function createDirtGroundTexture(repeat = 16): THREE.CanvasTexture {
   return t;
 }
 
+export function createAsphaltGroundTexture(repeat = 16): THREE.CanvasTexture {
+  const c = document.createElement('canvas');
+  c.width = 128;
+  c.height = 128;
+  const g = c.getContext('2d')!;
+  g.fillStyle = '#3a3c42';
+  g.fillRect(0, 0, 128, 128);
+  for (let i = 0; i < 90; i++) {
+    const v = 48 + Math.random() * 28;
+    g.fillStyle = `rgba(${v | 0},${v | 0},${(v + 4) | 0},0.12)`;
+    g.fillRect((Math.random() * 128) | 0, (Math.random() * 128) | 0, 3, 3);
+  }
+  g.strokeStyle = 'rgba(220,190,80,0.35)';
+  g.lineWidth = 2;
+  g.beginPath();
+  g.moveTo(0, 64);
+  g.lineTo(128, 64);
+  g.stroke();
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.repeat.set(repeat, repeat);
+  return t;
+}
+
+export function createSandGroundTexture(repeat = 16): THREE.CanvasTexture {
+  const c = document.createElement('canvas');
+  c.width = 128;
+  c.height = 128;
+  const g = c.getContext('2d')!;
+  g.fillStyle = '#c8a870';
+  g.fillRect(0, 0, 128, 128);
+  for (let i = 0; i < 180; i++) {
+    const v = 160 + Math.random() * 50;
+    g.fillStyle = `rgba(${v | 0},${(v * 0.82) | 0},${(v * 0.48) | 0},0.16)`;
+    g.fillRect((Math.random() * 128) | 0, (Math.random() * 128) | 0, 2, 2);
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.repeat.set(repeat, repeat);
+  return t;
+}
+
+export function groundTextureFor(
+  kind: 'dirt' | 'asphalt' | 'sand',
+  repeat: number
+): THREE.CanvasTexture {
+  if (kind === 'asphalt') return createAsphaltGroundTexture(repeat);
+  if (kind === 'sand') return createSandGroundTexture(repeat);
+  return createDirtGroundTexture(repeat);
+}
+
 export function applyTealFog(
   scene: THREE.Scene,
   near: number,
@@ -226,4 +277,61 @@ export function scatterInstancedGrass(scene: THREE.Scene, opts: GrassScatterOpti
   blades.instanceMatrix.needsUpdate = true;
   if (blades.instanceColor) blades.instanceColor.needsUpdate = true;
   scene.add(blades);
+}
+
+export function scatterPalms(scene: THREE.Scene, opts: GrassScatterOptions): void {
+  const { count, minDist, maxDist, skipNear } = opts;
+  const trunkMat = new THREE.MeshStandardMaterial({ color: 0x8a6840, roughness: 0.92, metalness: 0.02 });
+  const leafMat = new THREE.MeshStandardMaterial({ color: 0x4a8a38, roughness: 0.88, metalness: 0.03 });
+  const trunkGeo = new THREE.CylinderGeometry(0.12, 0.18, 3.2, 5);
+  const leafGeo = new THREE.SphereGeometry(0.55, 5, 4);
+  const trunks = new THREE.InstancedMesh(trunkGeo, trunkMat, count);
+  const leaves = new THREE.InstancedMesh(leafGeo, leafMat, count);
+  const dummy = new THREE.Object3D();
+  let placed = 0;
+  let attempts = 0;
+  while (placed < count && attempts < count * 4) {
+    attempts++;
+    const angle = Math.random() * Math.PI * 2;
+    const dist = minDist + Math.random() * (maxDist - minDist);
+    const x = Math.cos(angle) * dist;
+    const z = Math.sin(angle) * dist;
+    if (skipNear?.(x, z)) continue;
+    const scale = 0.9 + Math.random() * 0.5;
+    dummy.position.set(x, 1.6 * scale, z);
+    dummy.rotation.y = Math.random() * Math.PI;
+    dummy.scale.setScalar(scale);
+    dummy.updateMatrix();
+    trunks.setMatrixAt(placed, dummy.matrix);
+    dummy.position.set(x, 3.4 * scale, z);
+    dummy.updateMatrix();
+    leaves.setMatrixAt(placed, dummy.matrix);
+    placed++;
+  }
+  trunks.count = placed;
+  leaves.count = placed;
+  trunks.instanceMatrix.needsUpdate = true;
+  leaves.instanceMatrix.needsUpdate = true;
+  scene.add(trunks);
+  scene.add(leaves);
+}
+
+export function scatterParkedCars(scene: THREE.Scene, count: number, bound: number): void {
+  const colors = [0xc04030, 0x305080, 0xd0d0d8, 0x202028, 0x408050];
+  const geo = new THREE.BoxGeometry(1.8, 0.9, 3.6);
+  const dummy = new THREE.Object3D();
+  for (let i = 0; i < count; i++) {
+    const mat = new THREE.MeshStandardMaterial({
+      color: colors[i % colors.length],
+      roughness: 0.55,
+      metalness: 0.35,
+    });
+    const car = new THREE.Mesh(geo, mat);
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 12 + Math.random() * (bound - 30);
+    car.position.set(Math.cos(angle) * dist, 0.45, Math.sin(angle) * dist);
+    car.rotation.y = Math.random() * Math.PI;
+    scene.add(car);
+    void dummy;
+  }
 }

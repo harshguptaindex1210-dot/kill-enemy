@@ -51,9 +51,8 @@ describe('battle royale visuals', () => {
 describe('graphics.ts BGMI palette wiring', () => {
   it('scene.ts uses warm horizon sky and matching fog colors', () => {
     const src = readFileSync(resolve(__dirname, '../src/scene.ts'), 'utf8');
-    expect(src).toMatch(/topColor:\s*0x2a4a68/);
-    expect(src).toMatch(/bottomColor:\s*0xe8c090/);
-    expect(src).toMatch(/applyTealFog\(scene,\s*MAP_BOUND \* 0\.52,\s*MAP_BOUND \* 1\.45,\s*0xd8c0a0\)/);
+    expect(src).toMatch(/mapPreset\(mapId\)/);
+    expect(src).toMatch(/scatterParkedCars/);
     expect(src).toMatch(/scatterInstancedGrass/);
     expect(src).toMatch(/GRASS_COUNTS/);
   });

@@ -36,6 +36,7 @@ describe('settings (#33)', () => {
     expect(s.hudOpacity).toBe(0.9);
     expect(s.hudScale).toBe(1);
     expect(s.gyroAim).toBe(false);
+    expect(s.mapId).toBe('meadow');
   });
 
   it('round-trips a valid settings object through storage', () => {
@@ -58,6 +59,7 @@ describe('settings (#33)', () => {
         hudOpacity: 0.66,
         hudScale: 1.2,
         gyroAim: true,
+        mapId: 'city',
       },
       store
     );
@@ -78,6 +80,7 @@ describe('settings (#33)', () => {
     expect(loaded.hudOpacity).toBe(0.66);
     expect(loaded.hudScale).toBe(1.2);
     expect(loaded.gyroAim).toBe(true);
+    expect(loaded.mapId).toBe('city');
   });
 
   it('returns defaults for empty storage', () => {
@@ -86,7 +89,7 @@ describe('settings (#33)', () => {
 
   it('falls back to defaults for invalid / corrupt values', () => {
     const store = memStorage();
-    store.setItem('robot_arena_settings_v2', 'not-json');
+    store.setItem('robot_arena_settings_v3', 'not-json');
     expect(loadSettings(store)).toEqual(defaultSettings());
   });
 
@@ -106,7 +109,7 @@ describe('settings (#33)', () => {
     const loaded = loadSettings(store);
     expect(loaded.quality).toBe('low');
     expect(loaded.invertLookHorizontal).toBe(false);
-    expect(store.getItem('robot_arena_settings_v2')).toBeTruthy();
+    expect(store.getItem('robot_arena_settings_v3')).toBeTruthy();
   });
 
   it('sanitizes wrong-typed and unrecognized values to defaults', () => {

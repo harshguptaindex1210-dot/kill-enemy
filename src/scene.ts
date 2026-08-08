@@ -5,13 +5,16 @@ import {
   addGradientSky,
   applyTealFog,
   configureSunShadow,
-  createDirtGroundTexture,
+  groundTextureFor,
   scatterInstancedTrees,
   scatterInstancedGrass,
+  scatterPalms,
+  scatterParkedCars,
 } from './graphics';
 import { buildPoiGroup, poiDistrictAt } from './poiVisuals';
 import { MAP_BOUND, MAP_SIZE, POI_RADIUS } from './constants';
 import { isMobileDevice } from './platform';
+import { mapPreset, type MapId } from './mapPresets';
 
 export type QualityPreset = 'low' | 'medium' | 'high';
 
@@ -24,6 +27,7 @@ export interface SceneBundle {
   renderer: THREE.WebGLRenderer;
   controls: OrbitControls;
   pois: { name: string; group: THREE.Group; position: THREE.Vector3 }[];
+  mapId: MapId;
 }
 
 export function disposeScene(bundle: SceneBundle) {
@@ -38,21 +42,36 @@ export function disposeScene(bundle: SceneBundle) {
   bundle.renderer.dispose();
 }
 
+function poiCoords(): [number, number][] {
+  const coords: [number, number][] = [];
+  for (let j = 0; j < 4; j++) {
+    const a = (j / 4) * Math.PI * 2;
+    coords.push([Math.cos(a) * POI_RADIUS, Math.sin(a) * POI_RADIUS]);
+  }
+  return coords;
+}
+
+function skipNearPoi(coords: [number, number][], pad: number) {
+  return (x: number, z: number) =>
+    coords.some(([px, pz]) => Math.abs(x - px) < pad && Math.abs(z - pz) < pad);
+}
+
 export function createScene(
   canvas: HTMLCanvasElement,
-  quality: QualityPreset = 'medium'
+  quality: QualityPreset = 'medium',
+  mapId: MapId = 'meadow'
 ): SceneBundle {
   const renderer = createRenderer(canvas, quality);
-
+  const map = mapPreset(mapId);
   const scene = new THREE.Scene();
   const skyDetail = quality === 'low' ? { segments: 16, rings: 8 } : { segments: 24, rings: 12 };
   addGradientSky(scene, {
-    topColor: 0x2a4a68,
-    bottomColor: 0xe8c090,
+    topColor: map.skyTop,
+    bottomColor: map.skyBottom,
     radius: MAP_BOUND * 3,
     ...skyDetail,
   });
-  applyTealFog(scene, MAP_BOUND * 0.52, MAP_BOUND * 1.45, 0xd8c0a0);
+  applyTealFog(scene, MAP_BOUND * map.fogNear, MAP_BOUND * map.fogFar, map.fogColor);
 
   const camera = new THREE.PerspectiveCamera(75, canvas.width / canvas.height, 0.1, MAP_BOUND * 4);
   camera.position.set(0, 50, 100);
@@ -65,106 +84,118 @@ export function createScene(
   controls.maxDistance = 300;
   controls.maxPolarAngle = Math.PI / 2.1;
 
-  const ambientLight = new THREE.AmbientLight(0x706860, 0.26);
-  scene.add(ambientLight);
+  scene.add(new THREE.AmbientLight(map.ambientColor, map.ambientIntensity));
 
-  const dirLight = new THREE.DirectionalLight(0xffe0b8, 3.35);
+  const dirLight = new THREE.DirectionalLight(map.sunColor, map.sunIntensity);
   dirLight.position.set(118, 78, 152);
   if (quality !== 'low')
     configureSunShadow(dirLight, MAP_BOUND, quality === 'high' ? 2048 : 1024, quality === 'high');
   scene.add(dirLight);
 
-  const fillLight = new THREE.DirectionalLight(0x6a88a8, 0.2);
+  const fillLight = new THREE.DirectionalLight(0x6a88a8, map.id === 'city' ? 0.14 : 0.2);
   fillLight.position.set(-88, 46, -108);
   scene.add(fillLight);
 
-  const hemiLight = new THREE.HemisphereLight(0xa8c8e8, 0x3a3428, 0.38);
-  scene.add(hemiLight);
+  scene.add(new THREE.HemisphereLight(map.hemiSky, map.hemiGround, map.hemiIntensity));
 
-  // Ground — textured grid
   const groundGeo = new THREE.PlaneGeometry(MAP_SIZE, MAP_SIZE);
   const groundMat = new THREE.MeshStandardMaterial({
-    map: createDirtGroundTexture(MAP_SIZE / 18),
-    color: 0xe0ead8,
-    roughness: 0.96,
-    metalness: 0.02,
+    map: groundTextureFor(map.groundKind, MAP_SIZE / 18),
+    color: map.groundTint,
+    roughness: map.groundKind === 'asphalt' ? 0.88 : 0.96,
+    metalness: map.groundKind === 'asphalt' ? 0.08 : 0.02,
   });
   const ground = new THREE.Mesh(groundGeo, groundMat);
   ground.rotation.x = -Math.PI / 2;
   ground.receiveShadow = quality !== 'low';
   scene.add(ground);
 
-  // Road circles connecting POIs
+  const roadW = map.roadKind === 'highway' ? 7 : 4;
+  const roadColor = map.roadKind === 'highway' ? 0x2a2a32 : 0x282430;
   for (let i = 0; i < 4; i++) {
     const angle = (i / 4) * Math.PI * 2;
     const x = Math.cos(angle) * POI_RADIUS;
     const z = Math.sin(angle) * POI_RADIUS;
     const roadMat = new THREE.MeshStandardMaterial({
-      color: 0x282430,
-      roughness: 0.9,
-      metalness: 0.08,
+      color: roadColor,
+      roughness: 0.88,
+      metalness: 0.1,
     });
-    const road = new THREE.Mesh(new THREE.PlaneGeometry(4, POI_RADIUS * 1.4), roadMat);
+    const road = new THREE.Mesh(new THREE.PlaneGeometry(roadW, POI_RADIUS * 1.4), roadMat);
     road.rotation.x = -Math.PI / 2;
     road.rotation.y = -angle;
     road.position.set(x / 2, 0.05, z / 2);
     scene.add(road);
+    if (map.roadKind === 'highway') {
+      const line = new THREE.Mesh(
+        new THREE.PlaneGeometry(0.35, POI_RADIUS * 1.35),
+        new THREE.MeshStandardMaterial({ color: 0xd8b840, roughness: 0.7, metalness: 0.05 })
+      );
+      line.rotation.x = -Math.PI / 2;
+      line.rotation.y = -angle;
+      line.position.set(x / 2, 0.06, z / 2);
+      scene.add(line);
+    }
   }
 
-  // Vegetation — instanced; fewer trees on low, no tree shadows on mobile
+  const coords = poiCoords();
   const treeCount = TREE_COUNTS[quality];
-  if (treeCount > 0) {
-    const poiCoords: [number, number][] = [];
-    for (let j = 0; j < 4; j++) {
-      const a = (j / 4) * Math.PI * 2;
-      poiCoords.push([Math.cos(a) * POI_RADIUS, Math.sin(a) * POI_RADIUS]);
-    }
-    const skipNearPoi = (x: number, z: number) =>
-      poiCoords.some(([px, pz]) => Math.abs(x - px) < 40 && Math.abs(z - pz) < 40);
-
+  if (treeCount > 0 && map.treeKind === 'forest') {
     scatterInstancedTrees(scene, {
       count: treeCount,
       minDist: 30,
       maxDist: MAP_BOUND - 40,
-      skipNear: skipNearPoi,
+      skipNear: skipNearPoi(coords, 40),
       castShadow: quality !== 'low' && !isMobileDevice(),
+    });
+  } else if (treeCount > 0 && map.treeKind === 'palm') {
+    const palms = isMobileDevice() ? Math.floor(treeCount * 0.45) : treeCount;
+    scatterPalms(scene, {
+      count: palms,
+      minDist: 14,
+      maxDist: MAP_BOUND - 24,
+      skipNear: skipNearPoi(coords, 32),
+    });
+  } else if (map.treeKind === 'sparse' && quality !== 'low') {
+    scatterInstancedTrees(scene, {
+      count: Math.floor(treeCount * 0.35),
+      minDist: 36,
+      maxDist: MAP_BOUND - 36,
+      skipNear: skipNearPoi(coords, 40),
+      castShadow: false,
     });
   }
 
-  let grassCount = GRASS_COUNTS[quality];
+  let grassCount = Math.floor(GRASS_COUNTS[quality] * map.grassMul);
   if (grassCount > 0 && isMobileDevice()) grassCount = Math.floor(grassCount * 0.55);
   if (grassCount > 0) {
-    const poiCoords: [number, number][] = [];
-    for (let j = 0; j < 4; j++) {
-      const a = (j / 4) * Math.PI * 2;
-      poiCoords.push([Math.cos(a) * POI_RADIUS, Math.sin(a) * POI_RADIUS]);
-    }
-    const skipNearPoiGrass = (x: number, z: number) =>
-      poiCoords.some(([px, pz]) => Math.abs(x - px) < 28 && Math.abs(z - pz) < 28);
-
     scatterInstancedGrass(scene, {
       count: grassCount,
       minDist: 8,
       maxDist: MAP_BOUND - 20,
-      skipNear: skipNearPoiGrass,
+      skipNear: skipNearPoi(coords, 28),
     });
   }
 
-  // POIs — distinct district silhouettes (town, factory, docks, hilltop)
-  const pois: { name: string; group: THREE.Group; position: THREE.Vector3 }[] = [];
-  const poiCount = 4;
-  const shadows = quality !== 'low';
+  if (map.parkedCars && quality !== 'low') {
+    scatterParkedCars(scene, isMobileDevice() ? 14 : 24, MAP_BOUND);
+  }
 
-  for (let i = 0; i < poiCount; i++) {
-    const angle = (i / poiCount) * Math.PI * 2;
+  const pois: { name: string; group: THREE.Group; position: THREE.Vector3 }[] = [];
+  const shadows = quality !== 'low';
+  for (let i = 0; i < 4; i++) {
+    const angle = (i / 4) * Math.PI * 2;
     const x = Math.cos(angle) * POI_RADIUS;
     const z = Math.sin(angle) * POI_RADIUS;
     const district = poiDistrictAt(i);
-    const group = buildPoiGroup(district, i, quality, shadows);
+    const group = buildPoiGroup(district, i, quality, shadows, {
+      scale: map.poiScale,
+      urban: map.urbanPoi,
+    });
     group.position.set(x, 0, z);
     scene.add(group);
     pois.push({ name: district, group, position: new THREE.Vector3(x, 0, z) });
   }
 
-  return { scene, camera, renderer, controls, pois };
+  return { scene, camera, renderer, controls, pois, mapId };
 }

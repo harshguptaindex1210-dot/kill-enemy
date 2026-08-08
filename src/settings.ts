@@ -1,7 +1,10 @@
 import { isMobileDevice } from './platform';
+import { sanitizeMapId, type MapId } from './mapPresets';
 
 export interface Settings {
   quality: 'low' | 'medium' | 'high';
+  /** Selected play map — applies on next match start. */
+  mapId: MapId;
   sensitivity: number;
   /** Touch look horizontal multiplier for phone aiming. */
   touchSensitivityX: number;
@@ -35,14 +38,16 @@ export interface StorageLike {
   setItem(key: string, value: string): void;
 }
 
-/** v2: clears sticky invertLookHorizontal left from earlier phone look sign flips. */
-const KEY = 'robot_arena_settings_v2';
+/** v3: adds mapId for multi-map selection. */
+const KEY = 'robot_arena_settings_v3';
+const LEGACY_V2 = 'robot_arena_settings_v2';
 const LEGACY_KEY = 'robot_arena_settings_v1';
 
 export function defaultSettings(): Settings {
   const isMobile = isMobileDevice();
   return {
     quality: isMobile ? 'low' : 'medium',
+    mapId: 'meadow',
     sensitivity: 1,
     touchSensitivityX: isMobile ? 1.2 : 1,
     touchSensitivityY: isMobile ? 1.05 : 1,
@@ -69,6 +74,7 @@ export function sanitizeSettings(raw: unknown): Settings {
   return {
     quality:
       r.quality === 'low' || r.quality === 'medium' || r.quality === 'high' ? r.quality : d.quality,
+    mapId: sanitizeMapId(r.mapId),
     sensitivity:
       typeof r.sensitivity === 'number' && isFinite(r.sensitivity)
         ? Math.min(Math.max(r.sensitivity, 0.2), 3)
@@ -121,7 +127,13 @@ export function loadSettings(storage: StorageLike = defaultStorage()): Settings 
   try {
     const raw = storage.getItem(KEY);
     if (raw) return sanitizeSettings(JSON.parse(raw));
-    // One-time migrate v1 → v2, forcing horizontal invert off (accidental/compensating toggles).
+    const v2 = storage.getItem(LEGACY_V2);
+    if (v2) {
+      const migrated = sanitizeSettings(JSON.parse(v2));
+      saveSettings(migrated, storage);
+      return migrated;
+    }
+    // One-time migrate v1 → v3
     const legacy = storage.getItem(LEGACY_KEY);
     if (legacy) {
       const migrated = sanitizeSettings(JSON.parse(legacy));

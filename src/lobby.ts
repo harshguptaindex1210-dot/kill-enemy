@@ -11,6 +11,7 @@ import {
   gunSkinById,
 } from './cosmetics';
 import { isTouchDevice, safeScrollToTop } from './platform';
+import { MAP_IDS, mapPreset } from './mapPresets';
 import { GAME_SHARE_TEXT, GAME_SHARE_URL } from './siteUrl';
 import './lobby.css';
 
@@ -377,6 +378,16 @@ export function showLobby(
         </div>
         ${shopMessage ? `<p id="shop-msg" class="lobby-shop-msg">${escapeHtml(shopMessage)}</p>` : ''}
       </section>
+      <section class="lobby-panel lobby-map-panel" aria-label="Map selection">
+        <b class="lobby-panel-title">Map</b>
+        <div class="lobby-map-grid">
+          ${MAP_IDS.map((id) => {
+            const m = mapPreset(id);
+            return `<button id="btn-map-${id}" type="button" class="lobby-map-card${settings.mapId === id ? ' is-active' : ''}" data-map="${id}"><span class="lobby-map-name">${escapeHtml(m.label)}</span><span class="lobby-map-tag">${escapeHtml(m.tagline)}</span></button>`;
+          }).join('')}
+        </div>
+        <p class="lobby-map-note muted">Selected map loads on your next match. Change anytime in ⚙ settings in-game.</p>
+      </section>
       <section class="lobby-panel lobby-preset-panel" aria-label="Performance presets">
         <b class="lobby-panel-title">Device Presets</b>
         <div class="lobby-presets">
@@ -432,6 +443,14 @@ export function showLobby(
         <section class="lobby-panel">
           <b class="lobby-panel-title">Settings</b>
           <div class="lobby-settings">
+            ${row(
+              'Map',
+              select(
+                'sel-map',
+                MAP_IDS.map((id) => [id, mapPreset(id).label]),
+                settings.mapId
+              )
+            )}
             ${row(
               'Quality',
               select(
@@ -742,6 +761,7 @@ export function showLobby(
     input.addEventListener('input', push);
     input.addEventListener('change', push);
   };
+  wire('sel-map', 'mapId');
   wire('sel-quality', 'quality');
   wire('sel-sensitivity', 'sensitivity');
   wireRange('rng-touch-sens-x', 'touchSensitivityX', 'x');
@@ -767,6 +787,11 @@ export function showLobby(
   for (const [id, quality] of Object.entries(presetMap)) {
     document.getElementById(id)?.addEventListener('click', () => {
       callbacks.onSettingsChange({ quality });
+    });
+  }
+  for (const id of MAP_IDS) {
+    document.getElementById(`btn-map-${id}`)?.addEventListener('click', () => {
+      callbacks.onSettingsChange({ mapId: id });
     });
   }
 }
