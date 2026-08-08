@@ -9,6 +9,7 @@ import {
   scatterInstancedTrees,
   scatterInstancedGrass,
 } from './graphics';
+import { buildPoiGroup, poiDistrictAt } from './poiVisuals';
 import { MAP_BOUND, MAP_SIZE, POI_RADIUS } from './constants';
 import { isMobileDevice } from './platform';
 
@@ -149,85 +150,20 @@ export function createScene(
     });
   }
 
-  // POIs — detailed buildings with distinct district colors
+  // POIs — distinct district silhouettes (town, factory, docks, hilltop)
   const pois: { name: string; group: THREE.Group; position: THREE.Vector3 }[] = [];
-  const names = ['Town', 'Factory', 'Docks', 'Hilltop'];
-  const colors = [0x8a7a62, 0x5a6578, 0x7a5a42, 0x6a7a58];
-  const roofColors = [0x3d3028, 0x2a3038, 0x352820, 0x3a4530];
-  const accentColors = [0x9a8040, 0x506070, 0x8a6840, 0x4a5a38];
+  const poiCount = 4;
+  const shadows = quality !== 'low';
 
-  for (let i = 0; i < names.length; i++) {
-    const angle = (i / names.length) * Math.PI * 2;
+  for (let i = 0; i < poiCount; i++) {
+    const angle = (i / poiCount) * Math.PI * 2;
     const x = Math.cos(angle) * POI_RADIUS;
     const z = Math.sin(angle) * POI_RADIUS;
-    const group = new THREE.Group();
+    const district = poiDistrictAt(i);
+    const group = buildPoiGroup(district, i, quality, shadows);
     group.position.set(x, 0, z);
-    group.userData.name = names[i];
-
-    const wallMat = new THREE.MeshStandardMaterial({
-      color: colors[i],
-      roughness: 0.82,
-      metalness: 0.06,
-    });
-    const roofMat = new THREE.MeshStandardMaterial({
-      color: roofColors[i],
-      roughness: 0.88,
-      metalness: 0.04,
-    });
-    const accentMat = new THREE.MeshStandardMaterial({
-      color: accentColors[i],
-      roughness: 0.72,
-      metalness: 0.18,
-    });
-
-    // Main building
-    const mainH = 25 + Math.random() * 15;
-    const mainGeo = new THREE.BoxGeometry(30, mainH, 25);
-    const main = new THREE.Mesh(mainGeo, wallMat);
-    main.position.y = mainH / 2;
-    main.castShadow = quality !== 'low';
-    main.receiveShadow = quality !== 'low';
-    group.add(main);
-
-    // Roof
-    const roof = new THREE.Mesh(new THREE.BoxGeometry(28, 2, 23), roofMat);
-    roof.position.y = mainH + 1;
-    group.add(roof);
-
-    // Windows — skip on low preset to cut draw calls
-    if (quality !== 'low') {
-      const winMat = new THREE.MeshStandardMaterial({
-        color: 0xd4c090,
-        emissive: 0xb89040,
-        emissiveIntensity: 0.32,
-        roughness: 0.42,
-        metalness: 0.12,
-      });
-      for (let w = 0; w < 4; w++) {
-        const win = new THREE.Mesh(new THREE.BoxGeometry(2, 3, 0.1), winMat);
-        const wx = -10 + w * 7;
-        win.position.set(wx, mainH * 0.6, 12.6);
-        group.add(win);
-      }
-    }
-
-    // Side building
-    const sideH = 12 + Math.random() * 8;
-    const side = new THREE.Mesh(new THREE.BoxGeometry(15, sideH, 15), accentMat);
-    side.position.set(22, sideH / 2, 5);
-    side.castShadow = quality !== 'low';
-    group.add(side);
-
-    // Ground pad
-    const pad = new THREE.Mesh(
-      new THREE.BoxGeometry(50, 0.5, 40),
-      new THREE.MeshStandardMaterial({ color: 0x3a4048, roughness: 0.92, metalness: 0.1 })
-    );
-    pad.position.y = -0.25;
-    group.add(pad);
-
     scene.add(group);
-    pois.push({ name: names[i], group, position: new THREE.Vector3(x, 0, z) });
+    pois.push({ name: district, group, position: new THREE.Vector3(x, 0, z) });
   }
 
   return { scene, camera, renderer, controls, pois };
