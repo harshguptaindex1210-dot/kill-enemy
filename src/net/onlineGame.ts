@@ -126,6 +126,7 @@ export class OnlineMatchGame {
   private hudNext = 0;
   private minimapNext = 0;
   private healPressed = false;
+  private dead = false;
   private hudIntervalMs = HUD_INTERVAL_MS;
   private minimapIntervalMs = MINIMAP_INTERVAL_MS;
   private fpsSamples: number[] = [];
@@ -150,6 +151,7 @@ export class OnlineMatchGame {
   };
   private onKeyDown = (e: KeyboardEvent) => {
     if (e.code === 'KeyN') this.minimapFullscreen = !this.minimapFullscreen;
+    if (e.code === 'KeyR' && this.dead) this.respawnHuman();
   };
 
   constructor(opts: OnlineGameOptions) {
@@ -188,8 +190,11 @@ export class OnlineMatchGame {
         this.opts.settings = { ...this.opts.settings, ...changes };
         saveSettings(this.opts.settings);
       },
+      showRespawn: () => this.dead && this.client.interp.latest?.phase === 'playing',
+      onRespawn: () => this.respawnHuman(),
     });
     this.hud = createHUD();
+    this.hud.onRespawn?.(() => this.respawnHuman());
     this.hud.onHealAction?.(() => {
       this.healPressed = true;
     });
@@ -422,6 +427,13 @@ export class OnlineMatchGame {
     const heal = Boolean(rawInput.heal || this.healPressed);
     this.healPressed = false;
 
+    if (playing && !alive && !this.dead) {
+      this.dead = true;
+      document.exitPointerLock();
+    } else if (playing && alive && this.dead) {
+      this.dead = false;
+    }
+
     this.client.sendInput({
       seq: 0,
       forward: rawInput.forward,
@@ -502,6 +514,14 @@ export class OnlineMatchGame {
     } else if (phase === 'playing') {
       this.lastPhaseBanner = '';
     }
+  }
+
+  private respawnHuman() {
+    if (!this.dead) return;
+    const sim = this.client.localServer?.sim;
+    if (!sim?.respawnUnit(this.client.selfId)) return;
+    this.dead = false;
+    safeRequestPointerLock(this.opts.canvas);
   }
 
   private finishFromSnapshot(snap: WireSnapshot) {
@@ -692,6 +712,7 @@ export class OnlineMatchGame {
       bearing: this.compassBearing(self.yaw),
       healActionLabel,
       healActionEnabled: canHeal,
+      showRespawn: this.dead && snap?.phase === 'playing',
     };
     this.hud.update(data);
   }

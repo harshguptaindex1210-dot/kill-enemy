@@ -270,9 +270,11 @@ export class MatchGame {
         this.settings = { ...this.settings, ...changes };
         saveSettings(this.settings);
       },
+      showRespawn: () => this.dead && this.sim.match.phase === 'playing',
+      onRespawn: this.respawnHuman,
     });
     this.hud = createHUD();
-    this.hud.onRespawn?.(() => this.respawnHuman());
+    this.hud.onRespawn?.(this.respawnHuman);
     this.hud.onHealAction?.(() => {
       this.healMedPressed = true;
     });
@@ -738,7 +740,7 @@ export class MatchGame {
     document.body.appendChild(overlay);
   }
 
-  private respawnHuman() {
+  private respawnHuman = () => {
     if (!this.dead) return;
     if (!this.sim.respawnUnit(this.humanId)) return;
     this.dead = false;
@@ -747,7 +749,7 @@ export class MatchGame {
     const rig = this.rigs.get(this.humanId);
     if (rig) rig.dead = false;
     safeRequestPointerLock(this.opts.canvas);
-  }
+  };
 
   private updateSpectateOverlay() {
     const overlay = document.getElementById('spectate-overlay');

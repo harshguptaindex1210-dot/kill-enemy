@@ -28,6 +28,8 @@ export interface InputManagerOptions {
   getSettings?: () => Settings;
   /** Persist any setting change from the mobile gear panel. */
   onSettingsChange?: (changes: Partial<Settings>) => void;
+  showRespawn?: () => boolean;
+  onRespawn?: () => void;
 }
 
 export interface InputManager {
@@ -60,10 +62,8 @@ export function createInputManager(
   let touchSprint = false;
   let touchFirePressed = false;
   let touchAimPressed = false;
-  let touchJumpOnce = false;
   let touchJumpHeld = false;
   let touchJumpLatchUntil = 0;
-  const JUMP_LATCH_MS = 180;
   let touchReloadOnce = false;
   let touchSkillOnce = false;
   let touchHealOnce = false;
@@ -136,6 +136,7 @@ export function createInputManager(
   let touchStartHandler: ((e: TouchEvent) => void) | null = null;
   let firstTouchHandler: (() => void) | null = null;
   let lastTouchUiSignature = '';
+  let touchRespawnBtn: HTMLButtonElement | null = null;
 
   const touchDefaults: TouchRuntimeSettings = {
     invertLookHorizontal: false,
@@ -160,6 +161,7 @@ export function createInputManager(
 
   const applyTouchUiSettings = () => {
     if (!touchOverlay) return;
+    options.showRespawn && touchRespawnBtn?.classList.toggle('is-visible', options.showRespawn());
     const touchSettings = resolveTouchSettings();
     const signature = JSON.stringify(touchSettings);
     if (signature === lastTouchUiSignature) return;
@@ -240,9 +242,9 @@ export function createInputManager(
     touchOverlay = document.createElement('div');
     touchOverlay.id = 'touch-controls-overlay';
     touchOverlay.style.cssText =
-      'position:fixed;inset:0;pointer-events:none;z-index:9996;user-select:none;-webkit-user-select:none;touch-action:none;';
+      'position:fixed;inset:0;pointer-events:none;z-index:10000;user-select:none;-webkit-user-select:none;touch-action:none;';
 
-    touchOverlay.innerHTML = `<div id="touch-joystick-area"><div id="touch-joystick-knob"></div></div><button id="tb-fire-left" type="button">🔥</button><div id="touch-actions-area"><div><button id="tb-heal" type="button">HEAL</button><button id="tb-skill" type="button">⚡</button><button id="tb-jump" type="button">⬆</button></div><div><button id="tb-reload" type="button">↻</button><button id="tb-aim" type="button">🎯</button><button id="tb-fire" type="button">🔥</button></div></div><div id="touch-weapons-area"><button id="tb-w1" type="button">R1</button><button id="tb-w2" type="button">P2</button><button id="tb-w3" type="button">M3</button></div>`;
+    touchOverlay.innerHTML = `<div id="touch-joystick-area"><div id="touch-joystick-knob"></div></div><button id="tb-fire-left" type="button">🔥</button><button id="tb-rs">RESPAWN</button><div id="touch-actions-area"><div><button id="tb-heal" type="button">HEAL</button><button id="tb-skill" type="button">⚡</button><button id="tb-jump" type="button">⬆</button></div><div><button id="tb-reload" type="button">↻</button><button id="tb-aim" type="button">🎯</button><button id="tb-fire" type="button">🔥</button></div></div><div id="touch-weapons-area"><button id="tb-w1" type="button">R1</button><button id="tb-w2" type="button">P2</button><button id="tb-w3" type="button">M3</button></div>`;
 
     document.body.appendChild(touchOverlay);
     const setStyle = (id: string, css: string) => {
@@ -460,9 +462,8 @@ export function createInputManager(
     const btnJump = touchOverlay.querySelector('#tb-jump') as HTMLButtonElement;
     const armJump = (e: Event) => {
       e.preventDefault();
-      touchJumpOnce = true;
       touchJumpHeld = true;
-      touchJumpLatchUntil = Date.now() + JUMP_LATCH_MS;
+      touchJumpLatchUntil = Date.now() + 450;
     };
     const releaseJump = (e: Event) => {
       e.preventDefault();
@@ -471,7 +472,18 @@ export function createInputManager(
     btnJump.addEventListener('touchstart', armJump, { passive: false });
     btnJump.addEventListener('touchend', releaseJump);
     btnJump.addEventListener('touchcancel', releaseJump);
-    btnJump.addEventListener('click', armJump);
+
+    if (options.onRespawn) {
+      touchRespawnBtn = touchOverlay.querySelector('#tb-rs') as HTMLButtonElement;
+      touchRespawnBtn.addEventListener(
+        'touchstart',
+        (e) => {
+          e.preventDefault();
+          options.onRespawn!();
+        },
+        { passive: false }
+      );
+    }
 
     const btnSkill = touchOverlay.querySelector('#tb-skill') as HTMLButtonElement;
     btnSkill.addEventListener('touchstart', (e) => {
@@ -559,6 +571,7 @@ export function createInputManager(
 
   function getInput(): PlayerInput {
     if (touchOverlay) applyTouchUiSettings();
+    const touchJump = touchJumpHeld || Date.now() < touchJumpLatchUntil;
     const input: PlayerInput = {
       forward: keys.has('KeyW') || keys.has('ArrowUp') || touchForward,
       backward: keys.has('KeyS') || keys.has('ArrowDown') || touchBackward,
@@ -566,12 +579,7 @@ export function createInputManager(
       right: keys.has('KeyD') || keys.has('ArrowRight') || touchRight,
       sprint: keys.has('ShiftLeft') || keys.has('ShiftRight') || touchSprint,
       crouch: keys.has('ControlLeft') || keys.has('ControlRight'),
-      jump:
-        keys.has('Space') ||
-        jumpOnce ||
-        touchJumpOnce ||
-        touchJumpHeld ||
-        Date.now() < touchJumpLatchUntil,
+      jump: keys.has('Space') || jumpOnce || touchJump,
       aim: aimPressed || touchAimPressed,
       fire: firePressed || touchFirePressed,
       reload: reloadOnce || touchReloadOnce,
@@ -594,7 +602,6 @@ export function createInputManager(
     w2 = false;
     w3 = false;
 
-    touchJumpOnce = false;
     touchReloadOnce = false;
     touchSkillOnce = false;
     touchHealOnce = false;

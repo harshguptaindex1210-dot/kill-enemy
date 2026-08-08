@@ -7,15 +7,23 @@ describe('touch jump input', () => {
     const src = readFileSync(resolve(__dirname, '../src/input.ts'), 'utf8');
     expect(src).toMatch(/touchJumpHeld/);
     expect(src).toMatch(/touchJumpLatchUntil/);
-    expect(src).toMatch(/JUMP_LATCH_MS/);
-    expect(src).toMatch(/touchJumpOnce\s*\|\|\s*touchJumpHeld/);
+    expect(src).toMatch(/Date\.now\(\)\s*\+\s*450/);
+    expect(src).toMatch(/touchJumpHeld\s*\|\|\s*Date\.now\(\)\s*<\s*touchJumpLatchUntil/);
+    expect(src).toMatch(/z-index:10000/);
   });
 
-  it('jump button is a proper touch button with hold + click handlers', () => {
+  it('jump button is a proper touch button with hold handlers', () => {
     const src = readFileSync(resolve(__dirname, '../src/input.ts'), 'utf8');
     expect(src).toMatch(/id="tb-jump"\s+type="button"/);
     expect(src).toMatch(/btnJump\.addEventListener\('touchstart', armJump/);
-    expect(src).toMatch(/btnJump\.addEventListener\('click', armJump/);
+  });
+
+  it('ships a touch respawn button wired to onRespawn', () => {
+    const src = readFileSync(resolve(__dirname, '../src/input.ts'), 'utf8');
+    expect(src).toMatch(/id="tb-rs"/);
+    expect(src).toMatch(/showRespawn/);
+    expect(src).toMatch(/onRespawn/);
+    expect(src).toMatch(/touchRespawnBtn/);
   });
 });
 

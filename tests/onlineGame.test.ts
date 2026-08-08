@@ -1,4 +1,6 @@
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import * as THREE from 'three';
 import { resolveLocalPlayerPose } from '../src/net/onlineGame';
 import { MatchClient } from '../src/net/client';
@@ -96,5 +98,17 @@ describe('camera snap option', () => {
     updateCamera(camera, 0, 0, 1.6, 'tps', target, 1 / 60, { snapPosition: true });
     expect(camera.position.x).toBeCloseTo(target.x + Math.sin(0) * 5.2 + -Math.cos(0) * 0.55, 1);
     expect(camera.position.z).toBeCloseTo(target.z + Math.cos(0) * 5.2 + Math.sin(0) * 0.55, 1);
+  });
+});
+
+describe('online respawn wiring', () => {
+  it('onlineGame.ts tracks death and wires touch respawn', () => {
+    const src = readFileSync(resolve(__dirname, '../src/net/onlineGame.ts'), 'utf8');
+    expect(src).toMatch(/private dead = false/);
+    expect(src).toMatch(/respawnHuman/);
+    expect(src).toMatch(/showRespawn:\s*this\.dead/);
+    expect(src).toMatch(/showRespawn/);
+    expect(src).toMatch(/onRespawn/);
+    expect(src).toMatch(/respawnUnit\(this\.client\.selfId\)/);
   });
 });

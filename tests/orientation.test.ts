@@ -104,6 +104,8 @@ describe('orientation markup', () => {
     const css = readFileSync(resolve(__dirname, '../src/orientation.css'), 'utf8');
     expect(css).toMatch(/#tb-heal/);
     expect(css).toMatch(/#hud-heal-action[\s\S]*display:\s*none/);
+    expect(css).toMatch(/#tb-rs/);
+    expect(css).toMatch(/#hud-respawn[\s\S]*display:\s*none/);
   });
 });
 

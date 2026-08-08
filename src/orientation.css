@@ -156,6 +156,35 @@
     display: none !important;
   }
 
+  html[data-phone-device='true'] #hud-respawn {
+    display: none !important;
+  }
+
+  html[data-phone-device='true'] #tb-rs {
+    display: none;
+    position: fixed !important;
+    left: 50% !important;
+    bottom: max(72px, env(safe-area-inset-bottom)) !important;
+    transform: translateX(-50%) !important;
+    padding: 12px 28px !important;
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.1em !important;
+    text-transform: uppercase !important;
+    color: #f0f4e8 !important;
+    background: linear-gradient(180deg, #5a6e42, #3a4e28) !important;
+    border: 1px solid rgba(156, 176, 110, 0.35) !important;
+    border-radius: 2px !important;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45) !important;
+    pointer-events: auto !important;
+    touch-action: manipulation !important;
+    z-index: 10011 !important;
+  }
+
+  html[data-phone-device='true'] #tb-rs.is-visible {
+    display: flex !important;
+  }
+
   html[data-phone-device='true'] #tb-heal {
     width: 56px !important;
     height: 56px !important;
@@ -179,10 +208,8 @@
     font-size: 12px !important;
   }
 
-  html[data-phone-device='true'] #hud-respawn {
-    bottom: 72px !important;
-    padding: 10px 24px !important;
-    font-size: 14px !important;
+  html[data-phone-device='true'] #hud-respawn:not(.is-visible) {
+    display: none !important;
   }
 
   html[data-phone-device='true'] #touch-joystick-area {
@@ -583,9 +610,38 @@
   color: #f0e6c8 !important;
 }
 
+#tb-rs {
+  position: absolute;
+  left: 50%;
+  bottom: max(88px, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 32px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: linear-gradient(180deg, #5a6e42, #3a4e28);
+  color: #f0f4e8;
+  border: 1px solid rgba(156, 176, 110, 0.35);
+  border-radius: 2px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+  pointer-events: auto;
+  touch-action: manipulation;
+  z-index: 3;
+}
+
+#tb-rs.is-visible {
+  display: flex;
+}
+
 #touch-controls-overlay button {
   font-family: system-ui, sans-serif;
   letter-spacing: 0.02em;
+  pointer-events: auto;
+  touch-action: manipulation;
 }
 
 #tb-settings-gear,
