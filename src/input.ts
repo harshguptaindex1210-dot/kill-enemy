@@ -332,6 +332,7 @@ export function createInputManager(
       const touchSettings = resolveTouchSettings();
       const autoSprint = touchSettings.touchSprintMode === 'auto';
 
+      // right = +normX (screen right). Must match joystickNormToMoveFlags in tests.
       touchForward = normY < -0.25;
       touchBackward = normY > 0.25;
       touchLeft = normX < -0.25;

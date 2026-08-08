@@ -129,17 +129,14 @@ export class RollbackEngine {
   }
 
   /**
-   * Single movement step used by both prediction and replay. Mirrors
-   * src/player.ts: forward is yaw-rotated (-sin(yaw), 0, -cos(yaw)); right is
-   * (forward.z, 0, -forward.x). This must match the server sim or reconciliation
-   * will fight the client every tick.
+   * Prediction/replay step. Mirrors player.ts: fwd=(-sin,0,-cos), right=(-fz,0,fx).
    */
   private step(state: EntityState, input: InputFrame, dt: number, groundY: number, yaw = 0) {
     const speed = input.sprint ? 9 : 6;
     const fwdX = -Math.sin(yaw);
     const fwdZ = -Math.cos(yaw);
-    const rgtX = fwdZ;
-    const rgtZ = -fwdX;
+    const rgtX = -fwdZ;
+    const rgtZ = fwdX;
 
     let mx = 0;
     let mz = 0;

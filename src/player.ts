@@ -129,7 +129,8 @@ export function createPlayer(startPos: THREE.Vector3 = new THREE.Vector3(0, 0.9,
     pPitch = Math.max(-MAX_PITCH, Math.min(MAX_PITCH, pPitch));
 
     const forwardVec = new THREE.Vector3(-Math.sin(pYaw), 0, -Math.cos(pYaw));
-    const rightVec = new THREE.Vector3(forwardVec.z, 0, -forwardVec.x);
+    // right = forward × up (prior formula was world-left)
+    const rightVec = new THREE.Vector3(-forwardVec.z, 0, forwardVec.x);
 
     const moveDir = new THREE.Vector3(0, 0, 0);
     if (input.forward) moveDir.add(forwardVec);

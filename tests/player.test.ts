@@ -235,6 +235,60 @@ describe('player', () => {
     expect(p.yaw).toBeLessThan(0);
   });
 
+  it('strafe right at yaw 0 moves toward +X (world right)', () => {
+    const p = createPlayer();
+    p.update(
+      {
+        forward: false,
+        backward: false,
+        left: false,
+        right: true,
+        sprint: false,
+        crouch: false,
+        jump: false,
+        aim: false,
+        fire: false,
+        reload: false,
+        weapon1: false,
+        weapon2: false,
+        weapon3: false,
+        mouseX: 0,
+        mouseY: 0,
+      },
+      1 / 60,
+      0
+    );
+    expect(p.position.x).toBeGreaterThan(0);
+    expect(p.position.z).toBeCloseTo(0, 5);
+  });
+
+  it('strafe left at yaw 0 moves toward -X (world left)', () => {
+    const p = createPlayer();
+    p.update(
+      {
+        forward: false,
+        backward: false,
+        left: true,
+        right: false,
+        sprint: false,
+        crouch: false,
+        jump: false,
+        aim: false,
+        fire: false,
+        reload: false,
+        weapon1: false,
+        weapon2: false,
+        weapon3: false,
+        mouseX: 0,
+        mouseY: 0,
+      },
+      1 / 60,
+      0
+    );
+    expect(p.position.x).toBeLessThan(0);
+    expect(p.position.z).toBeCloseTo(0, 5);
+  });
+
   it('eye height changes with crouch', () => {
     const p = createPlayer();
     const eyeStand = p.getEyeHeight();

@@ -187,6 +187,20 @@ describe('#39 reconciliation replay', () => {
     expect(Math.abs(engine.localState.pos.z)).toBeLessThan(0.01);
   });
 
+  it('strafe right at yaw 0 predicts toward +X (matches player.ts)', () => {
+    const engine = new RollbackEngine('p1', new THREE.Vector3(0, 0.9, 0));
+    engine.applyInput(frame(1, { right: true }), 1 / 20, 0);
+    expect(engine.localState.pos.x).toBeGreaterThan(0);
+    expect(engine.localState.pos.z).toBeCloseTo(0, 5);
+  });
+
+  it('strafe left at yaw 0 predicts toward -X', () => {
+    const engine = new RollbackEngine('p1', new THREE.Vector3(0, 0.9, 0));
+    engine.applyInput(frame(1, { left: true }), 1 / 20, 0);
+    expect(engine.localState.pos.x).toBeLessThan(0);
+    expect(engine.localState.pos.z).toBeCloseTo(0, 5);
+  });
+
   it('reconcile honours server yaw when replaying unacked inputs', () => {
     const engine = new RollbackEngine('p1', new THREE.Vector3(0, 0.9, 0));
     engine.applyInput(frame(1, { forward: true }), 1 / 20, 0);
