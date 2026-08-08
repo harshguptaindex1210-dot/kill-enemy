@@ -7,6 +7,7 @@ import {
   configureSunShadow,
   createDirtGroundTexture,
   scatterInstancedTrees,
+  scatterInstancedGrass,
 } from './graphics';
 import { MAP_BOUND, MAP_SIZE, POI_RADIUS } from './constants';
 import { isMobileDevice } from './platform';
@@ -14,6 +15,7 @@ import { isMobileDevice } from './platform';
 export type QualityPreset = 'low' | 'medium' | 'high';
 
 const TREE_COUNTS: Record<QualityPreset, number> = { low: 0, medium: 80, high: 80 };
+const GRASS_COUNTS: Record<QualityPreset, number> = { low: 0, medium: 220, high: 320 };
 
 export interface SceneBundle {
   scene: THREE.Scene;
@@ -44,12 +46,12 @@ export function createScene(
   const scene = new THREE.Scene();
   const skyDetail = quality === 'low' ? { segments: 16, rings: 8 } : { segments: 24, rings: 12 };
   addGradientSky(scene, {
-    topColor: 0x243a52,
-    bottomColor: 0xb8a898,
+    topColor: 0x2a4a68,
+    bottomColor: 0xe8c090,
     radius: MAP_BOUND * 3,
     ...skyDetail,
   });
-  applyTealFog(scene, MAP_BOUND * 0.45, MAP_BOUND * 1.58, 0x9aa8a0);
+  applyTealFog(scene, MAP_BOUND * 0.52, MAP_BOUND * 1.45, 0xd8c0a0);
 
   const camera = new THREE.PerspectiveCamera(75, canvas.width / canvas.height, 0.1, MAP_BOUND * 4);
   camera.position.set(0, 50, 100);
@@ -62,27 +64,27 @@ export function createScene(
   controls.maxDistance = 300;
   controls.maxPolarAngle = Math.PI / 2.1;
 
-  const ambientLight = new THREE.AmbientLight(0x607080, 0.22);
+  const ambientLight = new THREE.AmbientLight(0x706860, 0.26);
   scene.add(ambientLight);
 
-  const dirLight = new THREE.DirectionalLight(0xfff0d0, 3.1);
+  const dirLight = new THREE.DirectionalLight(0xffe0b8, 3.35);
   dirLight.position.set(118, 78, 152);
   if (quality !== 'low')
     configureSunShadow(dirLight, MAP_BOUND, quality === 'high' ? 2048 : 1024, quality === 'high');
   scene.add(dirLight);
 
-  const fillLight = new THREE.DirectionalLight(0x4a7090, 0.16);
+  const fillLight = new THREE.DirectionalLight(0x6a88a8, 0.2);
   fillLight.position.set(-88, 46, -108);
   scene.add(fillLight);
 
-  const hemiLight = new THREE.HemisphereLight(0x90b8d0, 0x2c2820, 0.34);
+  const hemiLight = new THREE.HemisphereLight(0xa8c8e8, 0x3a3428, 0.38);
   scene.add(hemiLight);
 
   // Ground — textured grid
   const groundGeo = new THREE.PlaneGeometry(MAP_SIZE, MAP_SIZE);
   const groundMat = new THREE.MeshStandardMaterial({
-    map: createDirtGroundTexture(MAP_SIZE / 10),
-    color: 0xffffff,
+    map: createDirtGroundTexture(MAP_SIZE / 18),
+    color: 0xe0ead8,
     roughness: 0.96,
     metalness: 0.02,
   });
@@ -91,20 +93,15 @@ export function createScene(
   ground.receiveShadow = quality !== 'low';
   scene.add(ground);
 
-  // Grid helper
-  const gridHelper = new THREE.GridHelper(MAP_SIZE, 28, 0x323828, 0x1e2818);
-  gridHelper.position.y = 0.02;
-  scene.add(gridHelper);
-
   // Road circles connecting POIs
   for (let i = 0; i < 4; i++) {
     const angle = (i / 4) * Math.PI * 2;
     const x = Math.cos(angle) * POI_RADIUS;
     const z = Math.sin(angle) * POI_RADIUS;
     const roadMat = new THREE.MeshStandardMaterial({
-      color: 0x1e1e28,
-      roughness: 0.94,
-      metalness: 0.12,
+      color: 0x282430,
+      roughness: 0.9,
+      metalness: 0.08,
     });
     const road = new THREE.Mesh(new THREE.PlaneGeometry(4, POI_RADIUS * 1.4), roadMat);
     road.rotation.x = -Math.PI / 2;
@@ -130,6 +127,25 @@ export function createScene(
       maxDist: MAP_BOUND - 40,
       skipNear: skipNearPoi,
       castShadow: quality !== 'low' && !isMobileDevice(),
+    });
+  }
+
+  let grassCount = GRASS_COUNTS[quality];
+  if (grassCount > 0 && isMobileDevice()) grassCount = Math.floor(grassCount * 0.55);
+  if (grassCount > 0) {
+    const poiCoords: [number, number][] = [];
+    for (let j = 0; j < 4; j++) {
+      const a = (j / 4) * Math.PI * 2;
+      poiCoords.push([Math.cos(a) * POI_RADIUS, Math.sin(a) * POI_RADIUS]);
+    }
+    const skipNearPoiGrass = (x: number, z: number) =>
+      poiCoords.some(([px, pz]) => Math.abs(x - px) < 28 && Math.abs(z - pz) < 28);
+
+    scatterInstancedGrass(scene, {
+      count: grassCount,
+      minDist: 8,
+      maxDist: MAP_BOUND - 20,
+      skipNear: skipNearPoiGrass,
     });
   }
 
@@ -183,7 +199,7 @@ export function createScene(
       const winMat = new THREE.MeshStandardMaterial({
         color: 0xd4c090,
         emissive: 0xb89040,
-        emissiveIntensity: 0.22,
+        emissiveIntensity: 0.32,
         roughness: 0.42,
         metalness: 0.12,
       });

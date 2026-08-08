@@ -3,7 +3,7 @@ import type { QualityPreset } from './scene';
 
 export function applyRendererLook(renderer: THREE.WebGLRenderer, quality: QualityPreset): void {
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = quality === 'high' ? 1.22 : quality === 'medium' ? 1.14 : 1.04;
+  renderer.toneMappingExposure = quality === 'high' ? 1.26 : quality === 'medium' ? 1.18 : 1.06;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
 }
 
@@ -35,7 +35,7 @@ export function addGradientSky(scene: THREE.Scene, options: SkyOptions = {}): TH
       vertexShader:
         'varying vec3 vWorldPosition;void main(){vec4 wp=modelMatrix*vec4(position,1.0);vWorldPosition=wp.xyz;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
       fragmentShader:
-        'uniform vec3 topColor,bottomColor,sunDir;varying vec3 vWorldPosition;void main(){vec3 d=normalize(vWorldPosition);float h=pow(clamp(d.y*.5+.5,0.,1.),.55);vec3 c=mix(bottomColor,topColor,h);c+=vec3(1.,.9,.75)*pow(max(dot(d,sunDir),0.),96.)*.38;gl_FragColor=vec4(c,1.);}',
+        'uniform vec3 topColor,bottomColor,sunDir;varying vec3 vWorldPosition;void main(){vec3 d=normalize(vWorldPosition);float h=pow(clamp(d.y*.5+.5,0.,1.),.48);vec3 c=mix(bottomColor,topColor,h);c=mix(c,c*.82+vec3(.14,.09,.04),pow(1.-h,2.2)*.42);c+=vec3(1.,.88,.68)*pow(max(dot(d,sunDir),0.),88.)*.45;gl_FragColor=vec4(c,1.);}',
       side: THREE.BackSide,
       depthWrite: false,
       fog: false,
@@ -47,15 +47,27 @@ export function addGradientSky(scene: THREE.Scene, options: SkyOptions = {}): TH
 
 export function createDirtGroundTexture(repeat = 16): THREE.CanvasTexture {
   const c = document.createElement('canvas');
-  c.width = 64;
-  c.height = 64;
+  c.width = 128;
+  c.height = 128;
   const g = c.getContext('2d')!;
-  g.fillStyle = '#455838';
-  g.fillRect(0, 0, 64, 64);
-  for (let i = 0; i < 160; i++) {
-    const v = 42 + Math.random() * 48;
-    g.fillStyle = `rgba(${v | 0},${(v * 0.88) | 0},${(v * 0.52) | 0},0.14)`;
-    g.fillRect((Math.random() * 64) | 0, (Math.random() * 64) | 0, 2, 2);
+  g.fillStyle = '#4a5c38';
+  g.fillRect(0, 0, 128, 128);
+  for (let i = 0; i < 220; i++) {
+    const v = 34 + Math.random() * 58;
+    g.fillStyle = `rgba(${v | 0},${(v * 0.94) | 0},${(v * 0.5) | 0},0.14)`;
+    const s = 2 + ((Math.random() * 3) | 0);
+    g.fillRect((Math.random() * 128) | 0, (Math.random() * 128) | 0, s, s);
+  }
+  for (let i = 0; i < 18; i++) {
+    const v = 52 + Math.random() * 36;
+    g.fillStyle = `rgba(${v | 0},${(v * 1.02) | 0},${(v * 0.55) | 0},0.1)`;
+    g.beginPath();
+    g.arc((Math.random() * 128) | 0, (Math.random() * 128) | 0, 8 + Math.random() * 14, 0, Math.PI * 2);
+    g.fill();
+  }
+  for (let i = 0; i < 28; i++) {
+    g.fillStyle = 'rgba(58,48,32,0.1)';
+    g.fillRect((Math.random() * 120) | 0, (Math.random() * 128) | 0, 8 + ((Math.random() * 10) | 0), 1);
   }
   const t = new THREE.CanvasTexture(c);
   t.wrapS = t.wrapT = THREE.RepeatWrapping;
@@ -108,7 +120,7 @@ export function scatterInstancedTrees(scene: THREE.Scene, opts: TreeScatterOptio
     metalness: 0.02,
   });
   const leafMat = new THREE.MeshStandardMaterial({
-    color: 0x3a6a32,
+    color: 0x4a7a38,
     roughness: 0.88,
     metalness: 0.03,
   });
@@ -156,4 +168,62 @@ export function scatterInstancedTrees(scene: THREE.Scene, opts: TreeScatterOptio
 
   scene.add(trunkMesh);
   scene.add(leafMesh);
+}
+
+export interface GrassScatterOptions {
+  count: number;
+  minDist: number;
+  maxDist: number;
+  skipNear?: (x: number, z: number) => boolean;
+}
+
+/** Crossed grass billboards — cheap meadow fill for battle-royale outdoor maps. */
+export function scatterInstancedGrass(scene: THREE.Scene, opts: GrassScatterOptions): void {
+  const { count, minDist, maxDist, skipNear } = opts;
+  const bladeGeo = new THREE.PlaneGeometry(0.35, 0.75);
+  bladeGeo.translate(0, 0.38, 0);
+  const bladeMat = new THREE.MeshStandardMaterial({
+    color: 0xffffff,
+    side: THREE.DoubleSide,
+    roughness: 0.96,
+    metalness: 0,
+    vertexColors: false,
+  });
+  const blades = new THREE.InstancedMesh(bladeGeo, bladeMat, count * 2);
+  blades.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(count * 2 * 3), 3);
+
+  const dummy = new THREE.Object3D();
+  const tint = new THREE.Color();
+  let placed = 0;
+  let attempts = 0;
+  const maxAttempts = count * 5;
+
+  while (placed < count && attempts < maxAttempts) {
+    attempts++;
+    const angle = Math.random() * Math.PI * 2;
+    const dist = minDist + Math.random() * (maxDist - minDist);
+    const x = Math.cos(angle) * dist;
+    const z = Math.sin(angle) * dist;
+    if (skipNear?.(x, z)) continue;
+
+    const scale = 0.7 + Math.random() * 0.55;
+    const yaw = Math.random() * Math.PI;
+    tint.setHSL(0.28 + Math.random() * 0.06, 0.42 + Math.random() * 0.12, 0.34 + Math.random() * 0.1);
+
+    for (let b = 0; b < 2; b++) {
+      dummy.position.set(x, 0, z);
+      dummy.rotation.set(0, yaw + b * (Math.PI / 2), 0);
+      dummy.scale.set(scale, scale * (0.9 + Math.random() * 0.2), scale);
+      dummy.updateMatrix();
+      const idx = placed * 2 + b;
+      blades.setMatrixAt(idx, dummy.matrix);
+      blades.setColorAt(idx, tint);
+    }
+    placed++;
+  }
+
+  blades.count = placed * 2;
+  blades.instanceMatrix.needsUpdate = true;
+  if (blades.instanceColor) blades.instanceColor.needsUpdate = true;
+  scene.add(blades);
 }
