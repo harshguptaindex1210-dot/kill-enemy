@@ -146,10 +146,18 @@
   }
 
   html[data-phone-device='true'] #hud-bottom {
-    bottom: 10px !important;
-    padding: 6px 12px !important;
-    gap: 10px !important;
+    bottom: max(86px, env(safe-area-inset-bottom)) !important;
+    padding: 6px 10px !important;
+    gap: 8px !important;
     font-size: 10px !important;
+    max-width: min(96vw, 520px);
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  html[data-phone-device='true'] #hud-bottom .hud-skill,
+  html[data-phone-device='true'] #hud-bottom .hud-supplies {
+    display: none !important;
   }
 
   html[data-phone-device='true'] #hud-heal-action {
@@ -273,7 +281,8 @@
   position: absolute;
   top: 12px;
   left: 50%;
-  transform: translateX(-50%);
+  transform: translateX(-50%) scale(var(--hud-scale, 1));
+  transform-origin: top center;
   display: flex;
   gap: 20px;
   padding: 6px 16px;
@@ -318,7 +327,8 @@
   position: absolute;
   bottom: 24px;
   left: 50%;
-  transform: translateX(-50%);
+  transform: translateX(-50%) scale(var(--hud-scale, 1));
+  transform-origin: bottom center;
   display: flex;
   gap: 16px;
   align-items: center;
@@ -402,8 +412,10 @@
 }
 
 .hud-ammo {
-  font-size: 11px;
-  color: #8a94a4;
+  font-size: 13px;
+  font-weight: 700;
+  color: #e8ecf0;
+  letter-spacing: 0.04em;
 }
 
 .hud-reload {

@@ -1,5 +1,14 @@
 import { MAP_SIZE } from './constants';
 
+export function applyHudChrome(settings: { hudOpacity: number; hudScale: number }): void {
+  const hud = document.getElementById('game-hud');
+  if (!hud) return;
+  const opacity = Math.min(1, Math.max(0.35, settings.hudOpacity));
+  const scale = Math.min(1.3, Math.max(0.8, settings.hudScale));
+  hud.style.opacity = String(opacity);
+  hud.style.setProperty('--hud-scale', String(scale));
+}
+
 export function createHUD(): {
   update: (data: HUDData) => void;
   remove: () => void;
@@ -9,7 +18,8 @@ export function createHUD(): {
   const el = document.createElement('div');
   el.id = 'game-hud';
   el.className = 'game-hud';
-  el.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:9997;display:none;';
+  el.style.cssText =
+    'position:fixed;inset:0;pointer-events:none;z-index:10005;display:none;overflow:visible;--hud-scale:1;';
   el.innerHTML = `
     <div id="hud-top" class="hud-panel hud-top">
       <span id="hud-kills" class="hud-stat">KILLS 0</span>

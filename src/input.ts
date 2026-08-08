@@ -1,5 +1,6 @@
 import type { PlayerInput } from './player';
 import type { Settings } from './settings';
+import { applyHudChrome } from './hud';
 import { isPhoneDevice, safeRequestPointerLock } from './platform';
 import { shouldUseMouseLook, touchDragToLookDelta, TOUCH_LOOK_SCALE } from './touchLook';
 
@@ -246,12 +247,7 @@ export function createInputManager(
     });
 
     touchOverlay.style.opacity = String(opacity);
-    const hud = document.getElementById('game-hud');
-    if (hud) {
-      hud.style.opacity = String(opacity);
-      hud.style.transform = `scale(${scale})`;
-      hud.style.transformOrigin = '50% 12%';
-    }
+    applyHudChrome({ hudOpacity: opacity, hudScale: scale });
     const minimap = document.getElementById('minimap');
     if (minimap) minimap.style.opacity = String(Math.min(1, opacity + 0.06));
   };

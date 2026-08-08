@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { createHUD, type HUDData } from '../src/hud';
+import { applyHudChrome, createHUD, type HUDData } from '../src/hud';
 
 function baseHudData(overrides: Partial<HUDData> = {}): HUDData {
   return {
@@ -32,6 +32,16 @@ function baseHudData(overrides: Partial<HUDData> = {}): HUDData {
 }
 
 describe('HUD heal action button', () => {
+  it('applyHudChrome scales panels without clipping the bottom vitals bar', () => {
+    const hud = createHUD();
+    applyHudChrome({ hudOpacity: 0.9, hudScale: 1.2 });
+    const root = document.getElementById('game-hud') as HTMLElement;
+    expect(root.style.transform).toBe('');
+    expect(root.style.getPropertyValue('--hud-scale')).toBe('1.2');
+    expect(root.style.opacity).toBe('0.9');
+    hud.remove();
+  });
+
   it('fires heal callback when enabled', () => {
     const hud = createHUD();
     const onHeal = vi.fn();

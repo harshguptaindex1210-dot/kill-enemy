@@ -7,6 +7,7 @@ import { createRobotModel, updateRobotAnim, type RobotAnimState } from '../robot
 import { ZoneSystem } from '../zone';
 import {
   createHUD,
+  applyHudChrome,
   createMinimap,
   addKillFeedEntry,
   addCompassPing,
@@ -189,15 +190,22 @@ export class OnlineMatchGame {
         this.opts.settings = { ...this.opts.settings, ...changes };
         saveSettings(this.opts.settings);
         if (changes.volume !== undefined) this.opts.audio.setVolume(this.opts.settings.volume);
+        if (changes.hudOpacity !== undefined || changes.hudScale !== undefined) {
+          applyHudChrome(this.opts.settings);
+        }
       },
       onTouchSettingsChange: (changes) => {
         this.opts.settings = { ...this.opts.settings, ...changes };
         saveSettings(this.opts.settings);
+        if (changes.hudOpacity !== undefined || changes.hudScale !== undefined) {
+          applyHudChrome(this.opts.settings);
+        }
       },
       showRespawn: () => this.dead && this.client.interp.latest?.phase === 'playing',
       onRespawn: () => this.respawnHuman(),
     });
     this.hud = createHUD();
+    applyHudChrome(this.opts.settings);
     this.hud.onRespawn?.(() => this.respawnHuman());
     this.hud.onHealAction?.(() => {
       this.healPressed = true;

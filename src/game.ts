@@ -10,6 +10,7 @@ import { updateCamera } from './camera';
 import { createRobotModel, transitionAnim, updateRobotAnim, type RobotAnimState } from './robot';
 import {
   createHUD,
+  applyHudChrome,
   createMinimap,
   addKillFeedEntry,
   addCompassPing,
@@ -273,15 +274,22 @@ export class MatchGame {
         this.settings = { ...this.settings, ...changes };
         saveSettings(this.settings);
         if (changes.volume !== undefined) this.audio.setVolume(this.settings.volume);
+        if (changes.hudOpacity !== undefined || changes.hudScale !== undefined) {
+          applyHudChrome(this.settings);
+        }
       },
       onTouchSettingsChange: (changes) => {
         this.settings = { ...this.settings, ...changes };
         saveSettings(this.settings);
+        if (changes.hudOpacity !== undefined || changes.hudScale !== undefined) {
+          applyHudChrome(this.settings);
+        }
       },
       showRespawn: () => this.dead && this.sim.match.phase === 'playing',
       onRespawn: this.respawnHuman,
     });
     this.hud = createHUD();
+    applyHudChrome(this.settings);
     this.hud.onRespawn?.(this.respawnHuman);
     this.hud.onHealAction?.(() => {
       this.healMedPressed = true;
