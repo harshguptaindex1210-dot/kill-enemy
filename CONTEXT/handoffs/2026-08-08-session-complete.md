@@ -1,145 +1,87 @@
-# Handoff — mobile polish, controls, graphics, playability
+# Handoff — mobile polish, graphics gauntlet, POI landmarks
 
 **Date:** 2026-08-08  
-**Mode:** multi-lap delivery (controls, mobile UX, graphics gauntlet, playability)  
-**Branch:** `main` @ `e84ec80`  
+**Mode:** `/work` judge lap (live URL verify + handoff refresh)  
+**Branch:** `main` @ `baa301b`  
 **Remote:** `origin` → `https://github.com/harshguptaindex1210-dot/kill-enemy.git`
 
 ## Current objective
 
-Ship a playable browser battle-royale on **phone (landscape)** and **laptop/PC** with stable controls, tactical visuals, and a reliable GitHub Pages deploy. User is actively testing on phone and laptop; expects working movement, look, minimap, med-kits, profile name, and founder perks.
+Playable browser battle royale on **phone (landscape)** and **laptop/PC** with stable touch controls, BGMI-style outdoor visuals, distinct map landmarks, and reliable GitHub Pages deploy.
 
 ## Live URLs
 
 | Use | URL |
 |-----|-----|
-| **Phone / laptop (cache-bust)** | https://harshguptaindex1210-dot.github.io/kill-enemy/?v=e84ec80 |
+| **Cache-bust (current)** | https://harshguptaindex1210-dot.github.io/kill-enemy/?v=baa301b |
 | **Direct** | https://harshguptaindex1210-dot.github.io/kill-enemy/ |
-| **Short redirect** | https://harshguptaindex1210-dot.github.io/ → `/kill-enemy/` (separate user-site repo `harshguptaindex1210-dot.github.io`) |
 
-## Repository & important paths
+**Deploy:** GitHub Pages **success** for `baa301b` (workflow run `31267536622`).
 
-| Area | Paths |
-|------|-------|
-| Boot / lobby | `src/main.ts`, `src/lobby.ts`, `src/lobby.css` |
-| Match (local) | `src/game.ts`, `src/gameplay.ts` |
-| Match (demo online) | `src/net/onlineGame.ts`, `src/net/localServer.ts`, `src/net/client.ts` |
-| Input / touch | `src/input.ts`, `src/touchLook.ts`, `src/settings.ts`, `src/orientation.ts`, `src/orientation.css` |
-| Player / movement | `src/player.ts`, `src/netcode.ts` |
-| HUD / minimap | `src/hud.ts` |
-| Graphics (Three.js) | `src/renderer.ts`, `src/scene.ts`, `src/graphics.ts`, `src/lobbyScene.ts` |
-| Profile / founder | `src/profile.ts`, `src/persistence.ts` |
-| Share URLs | `src/siteUrl.ts` |
-| Bundle gate | `scripts/bundle-size.js` |
-| Deploy | `.github/workflows/deploy.yml` |
-| Context index | `CONTEXT/CONTEXT-MAP.md`, `CONTEXT/handoffs/` |
-
-**Stack:** Already **Three.js** (`three@^0.166.1`) end-to-end. No custom WebGL migration needed.
-
-## What changed this session
-
-### Mobile & links
-- Phone-only landscape gate (`index.html` + `orientation.ts/css`).
-- Root URL redirect hardened in separate `harshguptaindex1210-dot.github.io` repo (mobile-safe fallback button).
-- Share links point at direct `/kill-enemy/` URL (`src/siteUrl.ts`, README).
-
-### Controls (critical fixes)
-- **Look invert:** touch `mouseX` sign + settings v2 migration clearing sticky `invertLookHorizontal`; Invert Look toggle in lobby/settings.
-- **Movement invert:** strafe `rightVec` corrected in `player.ts` + `netcode.ts` (`9ced9c8`) — joystick/A-D right goes right.
-- Touch/mouse arbitration lockout in `input.ts` / `touchLook.ts`.
-
-### Mobile UX
-- Free Fire–style touch settings (sensitivity X/Y, button presets, HUD scale/opacity, sprint mode, left-fire).
-- **HEAL** button on touch HUD; start with **5 med-kits** (`START_MEDKITS`).
-- Car / Bike touch buttons (nearby vehicle enter/exit).
-- Minimap **top-right** + visible local player marker (layered dot).
-
-### Profile & founder
-- Profile / Player Name panel in lobby (20-char max).
-- Reserved founder name `HARSH FOUNDERCEO_01` (owner token; others rejected).
-- Founder owner gets max level on load/sync.
-- PIN lock was added then **removed** per user request (`ed0c914`); legacy PIN fields migrated out.
-
-### Graphics (gauntlet loop)
-- CoD/PUBG-inspired realism pass: lighting, fog, sky, terrain, lobby atmosphere, tactical HUD (`5d5058b`).
-- No proprietary assets copied.
-
-### Playability / Three.js consolidation (`e84ec80`)
-- Bundle gate was failing after graphics commit (662184 > 662000); trimmed minimap stroke strings to pass.
-- Online match GPU disposal fixed (`onlineGame.ts` dispose traverses scene).
-- Lobby reuses `configureSunShadow()` from `graphics.ts`.
-
-## Verification (latest known green)
+## Verification (green @ baa301b)
 
 ```text
-npm test     → 384 passed (50 files), exit 0
-npm run build → OK — raw 661951 / limit 662000, gzip 177007 / 200000
+npm test     → 402 passed (53 files), exit 0
+npm run build → OK — raw 661441 / limit 662000, gzip 177362 / 200000
 ```
 
-**Deploy:** GitHub Pages success for `e84ec80` ([run 31242725142](https://github.com/harshguptaindex1210-dot/kill-enemy/actions/runs/31242725142) area; final playability push on same SHA family).
+Live lobby loads at `?v=baa301b` (WebGL may fail in headless automation; real browsers OK).
 
-**CI caveats:**
-- `nakama-integration` job fails (Docker infra) — not a unit-test regression.
-- Occasional Prettier lint failures on unrelated files; Pages deploy still succeeds when build gate passes.
-
-## Key commits (newest first)
+## Shipped this session (since `e84ec80`)
 
 | SHA | Summary |
 |-----|---------|
-| `e84ec80` | Playability: minimap marker restore, bundle gate pass, GPU dispose |
-| `5d5058b` | Graphics: BR-style lighting, fog, tactical HUD |
-| `9ced9c8` | Fix strafe right vector (A/D + joystick) |
-| `c3fb804` / `c571cf3` | Mobile heal HUD, 5 medkits, clear sticky look invert |
-| `7a55954` / `6be2d67` | Heal action + touch vehicle selectors |
-| `6712b8c` | Minimap top-right + player marker fix |
-| `ed0c914` | Remove founder PIN system |
-| `2dbea53` / `7625160` | Founder name lock + max level |
-| `be0351e` | Profile / player name UI |
-| `293c13d` | Mobile hardening (9 bots, quality presets, vehicle action) |
-| `fadd131` | Touch look + invert toggle |
-| `baf94a0` | Yaw sign fix (touch/player/netcode/bots) |
+| `baa301b` | POI district silhouettes (Town/Factory/Docks/Hilltop) via `poiVisuals.ts` |
+| `293005b` | BGMI atmosphere: warm sky/fog, meadow grass, richer ground |
+| `007ec7d` | Mobile jump latch + phone RESPAWN touch button (`#tb-rs`) |
+| `0b6e6e2` | BGMI gauntlet pass, in-match settings, bot fire, map size 90 |
+| `fd39bfa` | Minimap anchored top-left |
 
-Full history: `git log --oneline -30`
+### Graphics gauntlet (bar: BGMI Erangel outdoor)
 
-## Known blockers & risks
+| Round | Slice | Status |
+|-------|-------|--------|
+| 1 | Sky, fog, lighting, remove debug grid | Shipped |
+| 2 | Instanced grass + 128px ground texture | Shipped |
+| 3 | Distinct POI landmarks | Shipped |
+| 4 | Robot material polish / muzzle FX | **Next** (~559 B bundle headroom) |
 
-1. **Bundle gate headroom ~49 bytes** — any new JS risks deploy failure. Prefer CSS over inline strings; trim before adding features.
-2. **No real server auth** — founder name lock is client-side (localStorage owner token). Not enforceable across all devices globally.
-3. **GitHub Pages = demo online** (`VITE_ONLINE_DEMO=true`) — uses `LocalServer`, not live Nakama. Lua Nakama yaw fixes do not affect Pages play path.
-4. **Phone cache** — users must hard-refresh or use `?v=<sha>` cache-bust links after deploy.
-5. **GitHub Projects board** — `read:project` scope missing; `/work` laps run locally with issue comments instead.
+### Mobile invariants (do not regress)
 
-## What remains / next
+- Landscape gate; touch joystick + look; HEAL + **RESPAWN** on touch HUD
+- Jump: 450ms latch, touch overlay z-index 10000
+- 5 med-kits at start; minimap **top-left**
+- Strafe right = right; settings v2 clears sticky invert
 
-- [ ] User acceptance on phone after `?v=e84ec80` (movement + look + HEAL + minimap).
-- [ ] Increase bundle headroom or split chunks if adding features (currently at ceiling).
-- [ ] Real Nakama multiplayer deploy (local: `docker compose up -d`) — not on Pages.
-- [ ] Optional: `/wayfinder` issues #69 cosmetics, #70 shop economy (deferred).
-- [ ] Fix repo-wide Prettier CI if desired (cosmetic, blocks CI not Pages).
-- [ ] Founder lock could move to server-side if Nakama auth is added later.
+## Key paths
 
-## Commands already run (representative)
+| Area | Paths |
+|------|-------|
+| Touch / jump / respawn | `src/input.ts`, `src/orientation.css` |
+| Graphics / grass | `src/graphics.ts`, `src/scene.ts` |
+| POI landmarks | `src/poiVisuals.ts` |
+| Online demo | `src/net/onlineGame.ts`, `src/net/localServer.ts` |
+| Tests | `tests/graphics.test.ts`, `tests/poiVisuals.test.ts`, `tests/touchJump.test.ts` |
+| Bundle gate | `scripts/bundle-size.js` |
 
-```powershell
-npm test
-npm run build
-git push origin main
-gh run list --workflow=deploy.yml --limit 3
-```
+## Blockers & risks
 
-## Suggested skills for next agent
+1. **Bundle headroom ~559 bytes** — any new JS risks deploy failure. Prefer CSS or constant tweaks.
+2. **GitHub Projects** — `read:project` scope missing; `/work` runs on handoff + local frontier.
+3. **Pages = demo online** (`LocalServer`), not live Nakama.
+4. **Founder name** client-side only (`HARSH FOUNDERCEO_01`).
+
+## Next frontier (local queue)
+
+1. **Graphics R4** — robot readability (material/emissive tweaks, zero-byte growth)
+2. **User acceptance** — phone jump + respawn + POI flyover on `?v=baa301b`
+3. **Bundle relief** — trim dead strings or split async chunk before major features
+4. Optional: Nakama real multiplayer (`docker compose up -d`)
+
+## Suggested skills
 
 | Skill | When |
 |-------|------|
-| `work` | Next bug/feature lap with gates |
-| `gauntlet-loop` | Further visual polish vs CoD/PUBG bar |
-| `debugger` | Control/input regression |
-| `push-handoff` | After verified ticket delivery |
-| `github-projects-pipeline` | If board scope restored |
-
-## User preferences (this session)
-
-- Wants **direct game link** shown in-game, not root `harshguptaindex1210-dot.github.io/`.
-- Phone: landscape only, Free Fire–style settings, 9 bots + 1 player, minimap top-right.
-- Founder name: `HARSH FOUNDERCEO_01`, max level, no PIN (removed).
-- Expects autonomous delivery: fix → test → git push → live link with `?v=<sha>`.
+| `gauntlet-loop` | Graphics R4 vs BGMI bar |
+| `debugger` | Mobile input regression |
+| `work` | Next ticket lap when board scope restored |
