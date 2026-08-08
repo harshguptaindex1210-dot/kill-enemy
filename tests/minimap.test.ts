@@ -79,7 +79,7 @@ describe('createMinimap', () => {
     minimap.remove();
   });
 
-  it('anchors minimap to top-right with safe spacing after fullscreen toggle', () => {
+  it('anchors minimap to top-left with safe spacing after fullscreen toggle', () => {
     const minimap = createMinimap();
     minimap.update(makeMinimapData({ fullscreen: true }));
     const canvas = document.getElementById('minimap') as HTMLCanvasElement;
@@ -88,7 +88,8 @@ describe('createMinimap', () => {
 
     minimap.update(makeMinimapData({ fullscreen: false }));
     expect(canvas.style.top).toContain('safe-area-inset-top');
-    expect(canvas.style.right).toContain('safe-area-inset-right');
+    expect(canvas.style.left).toContain('safe-area-inset-left');
+    expect(canvas.style.right).toBe('auto');
     expect(canvas.style.transform).toBe('none');
 
     minimap.remove();

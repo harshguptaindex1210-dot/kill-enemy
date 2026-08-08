@@ -217,13 +217,13 @@ export function createMinimap(onToggleFullscreen?: () => void): {
   remove: () => void;
 } {
   const minimapAnchorTop = 'calc(env(safe-area-inset-top, 0px) + 12px)';
-  const minimapAnchorRight = 'calc(env(safe-area-inset-right, 0px) + 12px)';
+  const minimapAnchorLeft = 'calc(env(safe-area-inset-left, 0px) + 12px)';
   const canvas = document.createElement('canvas');
   canvas.id = 'minimap';
   canvas.width = 160;
   canvas.height = 160;
   canvas.className = 'minimap-canvas';
-  canvas.style.cssText = `position:fixed;top:${minimapAnchorTop};right:${minimapAnchorRight};z-index:9997;`;
+  canvas.style.cssText = `position:fixed;top:${minimapAnchorTop};left:${minimapAnchorLeft};z-index:9997;`;
   canvas.addEventListener('click', () => onToggleFullscreen?.());
   document.body.appendChild(canvas);
   const ctx = canvas.getContext('2d')!;
@@ -231,7 +231,8 @@ export function createMinimap(onToggleFullscreen?: () => void): {
   let lastFullscreen = false;
   const setAnchoredPosition = () => {
     canvas.style.top = minimapAnchorTop;
-    canvas.style.right = minimapAnchorRight;
+    canvas.style.left = minimapAnchorLeft;
+    canvas.style.right = 'auto';
     canvas.style.transform = 'none';
     canvas.style.zIndex = '9997';
   };
