@@ -3,7 +3,7 @@ import type { QualityPreset } from './scene';
 
 export function applyRendererLook(renderer: THREE.WebGLRenderer, quality: QualityPreset): void {
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = quality === 'high' ? 1.18 : quality === 'medium' ? 1.12 : 1.0;
+  renderer.toneMappingExposure = quality === 'high' ? 1.22 : quality === 'medium' ? 1.14 : 1.04;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
 }
 
@@ -15,9 +15,11 @@ export interface SkyOptions {
   rings?: number;
 }
 
+const SKY_SUN_DIR = new THREE.Vector3(0.52, 0.4, 0.72).normalize();
+
 export function addGradientSky(scene: THREE.Scene, options: SkyOptions = {}): THREE.Mesh {
-  const topColor = new THREE.Color(options.topColor ?? 0x1a4a6a);
-  const bottomColor = new THREE.Color(options.bottomColor ?? 0x6a9ab8);
+  const topColor = new THREE.Color(options.topColor ?? 0x243a52);
+  const bottomColor = new THREE.Color(options.bottomColor ?? 0xb8a898);
   const radius = options.radius ?? 800;
   const segments = options.segments ?? 24;
   const rings = options.rings ?? 12;
@@ -28,11 +30,12 @@ export function addGradientSky(scene: THREE.Scene, options: SkyOptions = {}): TH
       uniforms: {
         topColor: { value: topColor },
         bottomColor: { value: bottomColor },
+        sunDir: { value: SKY_SUN_DIR },
       },
       vertexShader:
         'varying vec3 vWorldPosition;void main(){vec4 wp=modelMatrix*vec4(position,1.0);vWorldPosition=wp.xyz;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
       fragmentShader:
-        'uniform vec3 topColor,bottomColor;varying vec3 vWorldPosition;void main(){float h=pow(clamp(normalize(vWorldPosition).y*.5+.5,0.,1.),.72);gl_FragColor=vec4(mix(bottomColor,topColor,h),1.);}',
+        'uniform vec3 topColor,bottomColor,sunDir;varying vec3 vWorldPosition;void main(){vec3 d=normalize(vWorldPosition);float h=pow(clamp(d.y*.5+.5,0.,1.),.55);vec3 c=mix(bottomColor,topColor,h);c+=vec3(1.,.9,.75)*pow(max(dot(d,sunDir),0.),96.)*.38;gl_FragColor=vec4(c,1.);}',
       side: THREE.BackSide,
       depthWrite: false,
       fog: false,
@@ -42,11 +45,29 @@ export function addGradientSky(scene: THREE.Scene, options: SkyOptions = {}): TH
   return mesh;
 }
 
+export function createDirtGroundTexture(repeat = 16): THREE.CanvasTexture {
+  const c = document.createElement('canvas');
+  c.width = 64;
+  c.height = 64;
+  const g = c.getContext('2d')!;
+  g.fillStyle = '#455838';
+  g.fillRect(0, 0, 64, 64);
+  for (let i = 0; i < 160; i++) {
+    const v = 42 + Math.random() * 48;
+    g.fillStyle = `rgba(${v | 0},${(v * 0.88) | 0},${(v * 0.52) | 0},0.14)`;
+    g.fillRect((Math.random() * 64) | 0, (Math.random() * 64) | 0, 2, 2);
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.repeat.set(repeat, repeat);
+  return t;
+}
+
 export function applyTealFog(
   scene: THREE.Scene,
   near: number,
   far: number,
-  color = 0x5a9ab0
+  color = 0x9aa8a0
 ): void {
   scene.fog = new THREE.Fog(color, near, far);
   scene.background = null;
@@ -66,9 +87,9 @@ export function configureSunShadow(
   light.shadow.camera.right = bound;
   light.shadow.camera.top = bound;
   light.shadow.camera.bottom = -bound;
-  light.shadow.bias = -0.0004;
-  light.shadow.normalBias = 0.025;
-  light.shadow.radius = soft ? 2 : 0;
+  light.shadow.bias = -0.00035;
+  light.shadow.normalBias = 0.028;
+  light.shadow.radius = soft ? 2.5 : 0;
 }
 
 export interface TreeScatterOptions {
@@ -82,14 +103,14 @@ export interface TreeScatterOptions {
 export function scatterInstancedTrees(scene: THREE.Scene, opts: TreeScatterOptions): void {
   const { count, minDist, maxDist, skipNear, castShadow = false } = opts;
   const trunkMat = new THREE.MeshStandardMaterial({
-    color: 0x6b4423,
-    roughness: 0.92,
+    color: 0x4a3520,
+    roughness: 0.94,
     metalness: 0.02,
   });
   const leafMat = new THREE.MeshStandardMaterial({
-    color: 0x2f8f3a,
-    roughness: 0.82,
-    metalness: 0.04,
+    color: 0x3a6a32,
+    roughness: 0.88,
+    metalness: 0.03,
   });
 
   const trunkGeo = new THREE.CylinderGeometry(0.15, 0.25, 2, 5);

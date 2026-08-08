@@ -117,7 +117,7 @@ function renderFriendsPanel(profile: PlayerProfile): string {
     <b class="lobby-panel-title">Squad · Friends</b>
     <div class="lobby-friends-add">
       <input id="inp-friend" maxlength="20" placeholder="Add by username" aria-label="Friend username" />
-      <button id="btn-add-friend" class="lobby-btn lobby-btn-primary" type="button" style="width:auto;padding:8px 14px;min-height:40px;font-size:0.75rem;">Add</button>
+      <button id="btn-add-friend" class="lobby-btn lobby-btn-primary lobby-btn-compact" type="button">Add</button>
     </div>
     <div class="lobby-friends-list">${rows}</div>
     <p class="lobby-friends-hint muted">Online invites sync when Nakama friends API is wired (#67).</p>
@@ -217,11 +217,11 @@ export function showLobby(
     `<select id="${id}">${opts.map(([v, l]) => `<option value="${v}"${v === cur ? ' selected' : ''}>${l}</option>`).join('')}</select>`;
 
   const row = (label: string, sel: string) =>
-    `<label style="display:flex;justify-content:space-between;align-items:center;gap:10px;">${label}${sel}</label>`;
+    `<label class="lobby-settings-row">${label}${sel}</label>`;
   const range = (id: string, value: number, min: number, max: number, step: number, suffix = '') =>
-    `<span style="display:flex;align-items:center;gap:8px;min-width:58%;">
-      <input id="${id}" type="range" min="${min}" max="${max}" step="${step}" value="${value}" style="flex:1;" />
-      <b id="${id}-value" style="min-width:54px;text-align:right;color:#fff;font-size:0.75rem;">${value.toFixed(2)}${suffix}</b>
+    `<span class="lobby-settings-range">
+      <input id="${id}" type="range" min="${min}" max="${max}" step="${step}" value="${value}" />
+      <b id="${id}-value" class="lobby-settings-range-value">${value.toFixed(2)}${suffix}</b>
     </span>`;
   const toggle = (id: string, checked: boolean, onLabel = 'On', offLabel = 'Off') =>
     `<select id="${id}"><option value="false"${!checked ? ' selected' : ''}>${offLabel}</option><option value="true"${checked ? ' selected' : ''}>${onLabel}</option></select>`;
@@ -253,7 +253,7 @@ export function showLobby(
     const locked = stats.level < c.unlockLevel;
     const equipped = profile.chassisId === c.id;
     let action = '';
-    if (equipped) action = '<span style="color:#4f4;">Equipped</span>';
+    if (equipped) action = '<span class="lobby-card-equipped">Equipped</span>';
     else if (owned) action = `<button data-equip-chassis="${c.id}">Equip</button>`;
     else if (locked) action = `<span style="color:#a66;">Lv ${c.unlockLevel}</span>`;
     else if (c.unlock === 'buy')
@@ -275,7 +275,7 @@ export function showLobby(
       (s.weapon === 'rifle' && profile.equippedRifleSkin === s.id) ||
       (s.weapon === 'pistol' && profile.equippedPistolSkin === s.id);
     let action = '';
-    if (equipped) action = '<span style="color:#4f4;">Equipped</span>';
+    if (equipped) action = '<span class="lobby-card-equipped">Equipped</span>';
     else if (owned) action = `<button data-equip-skin="${s.id}">Equip</button>`;
     else if (locked) action = `<span style="color:#a66;">Lv ${s.unlockLevel}</span>`;
     else if (s.unlock === 'buy')
@@ -296,7 +296,7 @@ export function showLobby(
       (s.vehicle === 'sedan' && profile.equippedSedanSkin === s.id) ||
       (s.vehicle === 'buggy' && profile.equippedBuggySkin === s.id);
     let action = '';
-    if (equipped) action = '<span style="color:#4f4;">Equipped</span>';
+    if (equipped) action = '<span class="lobby-card-equipped">Equipped</span>';
     else if (owned) action = `<button data-equip-car="${s.id}">Equip</button>`;
     else if (locked) action = `<span style="color:#a66;">Lv ${s.unlockLevel}</span>`;
     else if (s.unlock === 'buy')
@@ -336,9 +336,9 @@ export function showLobby(
         <p class="lobby-tagline">Drop in, loot fast, drive hard, and survive the last-circle chaos.</p>
         <div class="lobby-hero-stats">
           <span><b>Lv ${stats.level}</b> <span class="muted">${escapeHtml(profile.name)}</span></span>
-          <span><b style="color:#fa0;">${profile.credits}</b> <span class="muted">Credits</span></span>
-          <span><b style="color:#4f4;">${stats.wins}</b> <span class="muted">Wins</span></span>
-          <span><b style="color:#f44;">${stats.kills}</b> <span class="muted">Kills</span></span>
+          <span><b class="lobby-stat-gold">${profile.credits}</b> <span class="muted">Credits</span></span>
+          <span><b class="lobby-stat-wins">${stats.wins}</b> <span class="muted">Wins</span></span>
+          <span><b class="lobby-stat-kills">${stats.kills}</b> <span class="muted">Kills</span></span>
         </div>
         <p class="lobby-share" aria-label="Share game link">
           <a class="lobby-share-link" href="${GAME_SHARE_URL}" target="_blank" rel="noopener noreferrer">${GAME_SHARE_URL}</a>
@@ -352,9 +352,9 @@ export function showLobby(
             <span class="lobby-mode-tag">ONLINE</span>
           </div>
           <p class="lobby-mode-desc">Matchmake with players worldwide. Bots fill empty slots.</p>
-          <button id="btn-online" class="lobby-btn lobby-btn-primary" type="button">${queue.active ? 'Searching for match...' : 'Play Online'}</button>
+          <button id="btn-online" class="lobby-btn lobby-btn-primary" type="button">${queue.active ? 'SEARCHING…' : 'DEPLOY'}</button>
           ${queue.message && !queue.active ? `<p class="lobby-queue-msg">${escapeHtml(queue.message)}</p>` : ''}
-          <button id="btn-cancel-queue" class="lobby-btn lobby-btn-danger" type="button" style="display:${queue.active ? 'inline-block' : 'none'};margin-top:8px;width:100%;">Cancel Search</button>
+          <button id="btn-cancel-queue" class="lobby-btn lobby-btn-danger lobby-queue-cancel${queue.active ? ' is-visible' : ''}" type="button">Cancel Search</button>
         </article>
         <article class="lobby-mode-card">
           <div class="lobby-mode-head">
@@ -362,7 +362,7 @@ export function showLobby(
             <span class="lobby-mode-tag lobby-mode-tag-muted">LOCAL</span>
           </div>
           <p class="lobby-mode-desc">Instant match vs AI bots. No account required.</p>
-          <button id="btn-local" class="lobby-btn lobby-btn-secondary" type="button" style="width:100%;"${queue.active ? ' disabled' : ''}>Play Local</button>
+          <button id="btn-local" class="lobby-btn lobby-btn-secondary lobby-btn-block" type="button"${queue.active ? ' disabled' : ''}>Training Ground</button>
         </article>
       </section>
       <section class="lobby-panel lobby-profile-panel" aria-label="Profile">
@@ -370,7 +370,7 @@ export function showLobby(
         <p class="lobby-profile-help">Saved locally.</p>
         <div class="lobby-name-row">
           <input id="inp-name" maxlength="20" value="${escapeHtml(profile.name)}" placeholder="Name" aria-label="Player name" />
-          <button id="btn-rename" class="lobby-btn lobby-btn-primary" type="button" style="width:auto;padding:8px 14px;min-height:40px;font-size:0.75rem;">Save</button>
+          <button id="btn-rename" class="lobby-btn lobby-btn-primary lobby-btn-compact" type="button">Save</button>
         </div>
         <div class="lobby-founder-lock">
           <p id="founder-status" class="${founderStatusClass}">${escapeHtml(founderStatusText)}</p>
@@ -394,38 +394,38 @@ export function showLobby(
           <div class="lobby-stats">
             <span class="muted">Level</span><span>${stats.level}</span>
             <span class="muted">XP</span><span>${stats.xp}</span>
-            <span class="muted">Credits</span><span style="color:#fa0;">${profile.credits}</span>
-            <span class="muted">Wins</span><span style="color:#4f4;">${stats.wins}</span>
-            <span class="muted">Kills</span><span style="color:#f44;">${stats.kills}</span>
+            <span class="muted">Credits</span><span class="lobby-stat-gold">${profile.credits}</span>
+            <span class="muted">Wins</span><span class="lobby-stat-wins">${stats.wins}</span>
+            <span class="muted">Kills</span><span class="lobby-stat-kills">${stats.kills}</span>
             <span class="muted">Matches</span><span>${stats.matches}</span>
           </div>
         </section>
-        <section class="lobby-panel" style="display:flex;flex-direction:column;align-items:center;">
+        <section class="lobby-panel lobby-loadout-panel">
           <b class="lobby-panel-title">Equipped Loadout</b>
           <div class="lobby-loadout-head">
             ${renderRobotSvg(equippedChassis?.color ?? 0x3366cc)}
             <div>
-              <div style="font-weight:bold;">${escapeHtml(equippedChassis?.name ?? 'Blue Pilot')}</div>
-              <div style="font-size:0.6875rem;color:#00ffff;">⚡ ${escapeHtml(equippedSkill?.name ?? 'Speed Boost [F]')}</div>
-              <div style="font-size:0.625rem;color:var(--lobby-muted);">${escapeHtml(equippedSkill?.description ?? '')}</div>
+              <div class="lobby-equipped-name">${escapeHtml(equippedChassis?.name ?? 'Blue Pilot')}</div>
+              <div class="lobby-equipped-skill">⚡ ${escapeHtml(equippedSkill?.name ?? 'Speed Boost [F]')}</div>
+              <div class="lobby-equipped-desc">${escapeHtml(equippedSkill?.description ?? '')}</div>
             </div>
           </div>
           <div class="lobby-loadout-guns">
-            <div style="text-align:center;">
+            <div class="lobby-loadout-item">
               ${renderGunSvg('rifle', equippedRifle?.color ?? 0xffcc33)}
-              <div style="font-size:0.625rem;color:#aaa;">${escapeHtml(equippedRifle?.name ?? 'Rifle')}</div>
+              <div class="lobby-loadout-item-label">${escapeHtml(equippedRifle?.name ?? 'Rifle')}</div>
             </div>
-            <div style="text-align:center;">
+            <div class="lobby-loadout-item">
               ${renderGunSvg('pistol', equippedPistol?.color ?? 0xff8844)}
-              <div style="font-size:0.625rem;color:#aaa;">${escapeHtml(equippedPistol?.name ?? 'Pistol')}</div>
+              <div class="lobby-loadout-item-label">${escapeHtml(equippedPistol?.name ?? 'Pistol')}</div>
             </div>
-            <div style="text-align:center;">
+            <div class="lobby-loadout-item">
               ${renderCarSvg('sedan', equippedSedan?.color ?? 0x457b9d)}
-              <div style="font-size:0.625rem;color:#aaa;">${escapeHtml(equippedSedan?.name ?? 'Sedan')}</div>
+              <div class="lobby-loadout-item-label">${escapeHtml(equippedSedan?.name ?? 'Sedan')}</div>
             </div>
-            <div style="text-align:center;">
+            <div class="lobby-loadout-item">
               ${renderCarSvg('buggy', equippedBuggy?.color ?? 0x80b918)}
-              <div style="font-size:0.625rem;color:#aaa;">${escapeHtml(equippedBuggy?.name ?? 'Buggy')}</div>
+              <div class="lobby-loadout-item-label">${escapeHtml(equippedBuggy?.name ?? 'Buggy')}</div>
             </div>
           </div>
         </section>

@@ -69,7 +69,9 @@ export function createRenderer(
   renderer.setPixelRatio(pixelRatio);
   renderer.shadowMap.enabled = effectiveQuality !== 'low' && !mobile;
 
-  if (effectiveQuality !== 'low' && !mobile) {
+  if (effectiveQuality === 'high' && !mobile) {
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  } else if (effectiveQuality !== 'low' && !mobile) {
     renderer.shadowMap.type = THREE.PCFShadowMap;
   }
 

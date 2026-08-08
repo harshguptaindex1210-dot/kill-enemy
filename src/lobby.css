@@ -1,18 +1,20 @@
-/* ROBOT ARENA lobby — visual interface pass */
+/* Tactical lobby — military olive / steel palette */
 
 @import url('https://fonts.googleapis.com/css2?family=Exo+2:wght@400;600;700;800&family=Orbitron:wght@600;700;800&display=swap');
 
 .lobby-overlay {
-  --lobby-bg0: #060c14;
-  --lobby-bg1: #0c1624;
-  --lobby-accent: #5a9a88;
-  --lobby-accent-dim: rgba(90, 154, 136, 0.12);
+  --lobby-bg0: #080a0c;
+  --lobby-bg1: #0e1218;
+  --lobby-accent: #7a8f5c;
+  --lobby-accent-bright: #9cb06e;
+  --lobby-accent-dim: rgba(122, 143, 92, 0.14);
+  --lobby-steel: #6a7a8a;
   --lobby-warn: #c89830;
-  --lobby-muted: #7a8898;
-  --lobby-panel: rgba(8, 14, 22, 0.92);
-  --lobby-line: rgba(90, 154, 136, 0.2);
+  --lobby-muted: #7a8494;
+  --lobby-panel: rgba(10, 14, 20, 0.94);
+  --lobby-line: rgba(122, 143, 92, 0.22);
   --lobby-max: 1100px;
-  --lobby-radius: 4px;
+  --lobby-radius: 2px;
 
   position: fixed;
   inset: 0;
@@ -32,9 +34,9 @@
   font-family: 'Exo 2', 'Segoe UI', sans-serif;
   -webkit-font-smoothing: antialiased;
   background:
-    radial-gradient(900px 520px at 50% 18%, rgba(6, 12, 20, 0.2), rgba(6, 12, 20, 0.78) 48%, rgba(4, 8, 14, 0.96) 100%),
-    radial-gradient(700px 400px at 100% 30%, rgba(90, 154, 136, 0.05), transparent 50%),
-    linear-gradient(165deg, var(--lobby-bg0), var(--lobby-bg1) 55%, #080e18);
+    radial-gradient(900px 520px at 50% 12%, rgba(122, 143, 92, 0.06), transparent 55%),
+    radial-gradient(700px 400px at 0% 80%, rgba(60, 80, 100, 0.08), transparent 50%),
+    linear-gradient(168deg, var(--lobby-bg0), var(--lobby-bg1) 50%, #0a0e14);
 }
 
 .lobby-overlay::before {
@@ -138,25 +140,38 @@
   gap: 10px;
   padding: 24px 16px 18px;
   border: 1px solid var(--lobby-line);
-  border-radius: calc(var(--lobby-radius) + 4px);
+  border-radius: var(--lobby-radius);
   background:
-    linear-gradient(180deg, rgba(140, 20, 28, 0.12), transparent 45%),
-    linear-gradient(180deg, rgba(90, 154, 136, 0.08), transparent 55%),
-    rgba(6, 10, 18, 0.72);
-  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(6px);
+    linear-gradient(180deg, rgba(122, 143, 92, 0.1), transparent 40%),
+    linear-gradient(0deg, rgba(20, 28, 38, 0.85), rgba(10, 14, 20, 0.78));
+  box-shadow:
+    0 18px 50px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(8px);
+  position: relative;
+}
+
+.lobby-hero::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 12%;
+  right: 12%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--lobby-accent), transparent);
+  opacity: 0.65;
 }
 
 .lobby-hero-badge {
   font-family: Orbitron, 'Exo 2', sans-serif;
   font-size: 0.62rem;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: var(--lobby-accent);
-  background: rgba(45, 212, 191, 0.1);
-  border: 1px solid rgba(45, 212, 191, 0.28);
-  padding: 4px 12px;
-  border-radius: 999px;
+  color: var(--lobby-accent-bright);
+  background: rgba(122, 143, 92, 0.12);
+  border: 1px solid rgba(122, 143, 92, 0.35);
+  padding: 5px 14px;
+  border-radius: var(--lobby-radius);
 }
 
 .lobby-hero-stats {
@@ -217,9 +232,10 @@
 }
 
 .lobby-mode-card-primary {
-  border-color: rgba(90, 154, 136, 0.35);
+  border-color: rgba(122, 143, 92, 0.4);
   background:
-    linear-gradient(135deg, rgba(90, 154, 136, 0.08), transparent 55%), var(--lobby-panel);
+    linear-gradient(135deg, rgba(122, 143, 92, 0.1), transparent 55%), var(--lobby-panel);
+  box-shadow: inset 0 0 0 1px rgba(122, 143, 92, 0.08);
 }
 
 .lobby-mode-head {
@@ -241,9 +257,9 @@
   font-size: 0.62rem;
   letter-spacing: 0.12em;
   padding: 3px 8px;
-  border-radius: 2px;
-  background: rgba(90, 154, 136, 0.18);
-  color: #7ec8b0;
+  border-radius: var(--lobby-radius);
+  background: rgba(122, 143, 92, 0.22);
+  color: var(--lobby-accent-bright);
   font-weight: 700;
 }
 
@@ -264,7 +280,7 @@
 }
 
 .lobby-profile-panel {
-  border-color: rgba(45, 212, 191, 0.3);
+  border-color: rgba(122, 143, 92, 0.28);
 }
 
 .lobby-profile-help {
@@ -282,21 +298,28 @@
 
 .lobby-preset {
   width: 100%;
-  min-height: 42px;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgba(0, 0, 0, 0.32);
-  color: #e5eef7;
+  min-height: 44px;
+  border-radius: var(--lobby-radius);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.38);
+  color: #dde4ec;
   font-family: inherit;
-  font-size: 0.77rem;
+  font-size: 0.75rem;
   font-weight: 700;
+  letter-spacing: 0.03em;
   cursor: pointer;
+  transition: border-color 0.12s ease, background 0.12s ease;
+}
+
+.lobby-preset:hover {
+  border-color: rgba(122, 143, 92, 0.35);
 }
 
 .lobby-preset.is-active {
-  border-color: rgba(90, 154, 136, 0.5);
-  background: rgba(90, 154, 136, 0.14);
-  color: #7ec8b0;
+  border-color: rgba(122, 143, 92, 0.55);
+  background: rgba(122, 143, 92, 0.16);
+  color: var(--lobby-accent-bright);
+  box-shadow: inset 0 0 0 1px rgba(122, 143, 92, 0.2);
 }
 
 .lobby-body {
@@ -411,25 +434,24 @@
   margin: 0;
   font-family: Orbitron, 'Exo 2', sans-serif;
   font-size: clamp(1.65rem, 7vw, 3rem);
-  letter-spacing: 0.14em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: #c4121a;
+  color: #e8ece8;
   font-weight: 800;
   line-height: 1.1;
   text-shadow:
-    0 0 12px rgba(160, 0, 0, 0.85),
-    0 0 28px rgba(220, 20, 30, 0.55),
-    0 2px 0 #4a0508;
+    0 2px 0 rgba(0, 0, 0, 0.6),
+    0 0 24px rgba(122, 143, 92, 0.25);
 }
 
 .lobby-hero h1::after {
   content: '';
   display: block;
-  width: min(180px, 45vw);
-  height: 3px;
+  width: min(200px, 50vw);
+  height: 2px;
   margin: 12px auto 0;
-  border-radius: 2px;
-  background: linear-gradient(90deg, transparent, #c4121a, #8b0000, #c4121a, transparent);
+  border-radius: 0;
+  background: linear-gradient(90deg, transparent, var(--lobby-accent), var(--lobby-steel), var(--lobby-accent), transparent);
 }
 
 .lobby-hero .lobby-tagline {
@@ -469,17 +491,31 @@
   color: #eef3f8;
 }
 
+.lobby-stat-gold {
+  color: #c89830;
+}
+
+.lobby-stat-wins {
+  color: #7a9a6a;
+}
+
+.lobby-stat-kills {
+  color: #c87060;
+}
+
 .lobby-btn {
   border: none;
-  border-radius: 8px;
+  border-radius: var(--lobby-radius);
   cursor: pointer;
   font-weight: 700;
   font-family: inherit;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   transition:
     transform 0.12s ease,
     filter 0.12s ease,
-    background 0.12s ease;
+    background 0.12s ease,
+    box-shadow 0.12s ease;
 }
 
 .lobby-btn:active {
@@ -489,18 +525,43 @@
 .lobby-btn-primary {
   width: 100%;
   padding: 15px 28px;
-  font-size: 1.05rem;
-  background: linear-gradient(180deg, #4a9a88, var(--lobby-accent) 40%, #2a6a58);
-  color: #e8f4f0;
+  font-size: 1rem;
+  background: linear-gradient(180deg, #5a6e42 0%, #4a5e34 45%, #3a4e28 100%);
+  color: #f0f4e8;
   min-height: 52px;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(156, 176, 110, 0.35);
+  letter-spacing: 0.12em;
 }
 
 .lobby-btn-primary:hover {
-  filter: brightness(1.06);
+  filter: brightness(1.08);
+  box-shadow:
+    0 6px 20px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+.lobby-btn-compact {
+  width: auto;
+  padding: 8px 14px;
+  min-height: 44px;
+  font-size: 0.75rem;
+}
+
+.lobby-btn-block {
+  width: 100%;
+}
+
+.lobby-queue-cancel {
+  display: none;
+  margin-top: 8px;
+  width: 100%;
+}
+
+.lobby-queue-cancel.is-visible {
+  display: inline-block;
 }
 
 .lobby-btn-secondary {
@@ -683,9 +744,13 @@
   justify-content: center;
   background: rgba(0, 0, 0, 0.28);
   padding: 10px 12px;
-  border-radius: 8px;
+  border-radius: var(--lobby-radius);
   width: 100%;
   border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.lobby-loadout-item {
+  text-align: center;
 }
 
 .lobby-settings {
@@ -695,7 +760,8 @@
   color: var(--lobby-muted);
 }
 
-.lobby-settings label {
+.lobby-settings label,
+.lobby-settings-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -713,7 +779,55 @@
 }
 
 .lobby-settings input[type='range'] {
-  accent-color: #5a9a88;
+  accent-color: var(--lobby-accent);
+}
+
+.lobby-settings-range {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 58%;
+}
+
+.lobby-settings-range input {
+  flex: 1;
+}
+
+.lobby-settings-range-value {
+  min-width: 54px;
+  text-align: right;
+  color: #fff;
+  font-size: 0.75rem;
+}
+
+.lobby-loadout-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.lobby-equipped-name {
+  font-weight: bold;
+}
+
+.lobby-equipped-skill {
+  font-size: 0.6875rem;
+  color: var(--lobby-accent-bright);
+}
+
+.lobby-equipped-desc {
+  font-size: 0.625rem;
+  color: var(--lobby-muted);
+}
+
+.lobby-loadout-item-label {
+  text-align: center;
+  font-size: 0.625rem;
+  color: #8a94a4;
+}
+
+.lobby-card-equipped {
+  color: #7a9a6a;
 }
 
 .lobby-section {
@@ -754,7 +868,7 @@
 .lobby-card.is-equipped {
   border-color: var(--lobby-accent);
   background: var(--lobby-accent-dim);
-  box-shadow: 0 0 0 1px rgba(45, 212, 191, 0.22);
+  box-shadow: 0 0 0 1px rgba(122, 143, 92, 0.25);
 }
 
 .lobby-card-name {
@@ -764,10 +878,10 @@
 
 .lobby-card-meta {
   font-size: 0.65rem;
-  color: #5eead4;
-  background: rgba(45, 212, 191, 0.12);
+  color: var(--lobby-accent-bright);
+  background: rgba(122, 143, 92, 0.14);
   padding: 3px 7px;
-  border-radius: 999px;
+  border-radius: var(--lobby-radius);
 }
 
 .lobby-card-weapon {
@@ -840,7 +954,9 @@
 
   .lobby-btn-primary,
   .lobby-btn-secondary,
-  .lobby-btn-danger {
+  .lobby-btn-danger,
+  .lobby-preset,
+  .lobby-btn-compact {
     min-height: 48px;
   }
 

@@ -32,8 +32,8 @@ export function createLobbyScene(
 
   const renderer = createRenderer(canvas, quality);
   const scene = new THREE.Scene();
-  addGradientSky(scene, { topColor: 0x0a1420, bottomColor: 0x1a3048, radius: 40 });
-  applyTealFog(scene, 5, 18, 0x0c1828);
+  addGradientSky(scene, { topColor: 0x0a1018, bottomColor: 0x1a2838, radius: 40 });
+  applyTealFog(scene, 5, 20, 0x0a1218);
 
   const shadowsOn = quality === 'medium';
 
@@ -49,33 +49,33 @@ export function createLobbyScene(
   controls.maxPolarAngle = Math.PI / 2.05;
   controls.enablePan = false;
 
-  const ambient = new THREE.AmbientLight(0x506888, 0.38);
+  const ambient = new THREE.AmbientLight(0x4a5868, 0.32);
   scene.add(ambient);
 
-  const key = new THREE.DirectionalLight(0xffe0b8, 1.85);
-  key.position.set(3, 5, 2);
+  const key = new THREE.DirectionalLight(0xd8c8a8, 1.65);
+  key.position.set(3, 5.5, 2.5);
   if (shadowsOn) configureSunShadow(key, 3, 1024, true);
   scene.add(key);
 
-  const rim = new THREE.DirectionalLight(0x3a9a8a, 0.55);
+  const rim = new THREE.DirectionalLight(0x6a8a5a, 0.48);
   rim.position.set(-2.5, 2.5, -3);
   scene.add(rim);
 
-  const backRim = new THREE.DirectionalLight(0x3a6898, 0.22);
+  const backRim = new THREE.DirectionalLight(0x4a6078, 0.28);
   backRim.position.set(0, 2, -4);
   scene.add(backRim);
 
-  const podiumGlow = new THREE.PointLight(0xc4121a, 0.8, 4, 2);
+  const podiumGlow = new THREE.PointLight(0x7a8f5c, 0.65, 4.5, 2);
   podiumGlow.position.set(0, 0.5, 0);
   scene.add(podiumGlow);
 
-  const floorGlow = new THREE.PointLight(0x2dd4bf, 0.35, 6, 2);
+  const floorGlow = new THREE.PointLight(0x5a7a8a, 0.28, 6, 2);
   floorGlow.position.set(0, 0.1, 1.5);
   scene.add(floorGlow);
 
   const floor = new THREE.Mesh(
     new THREE.CircleGeometry(4.5, 32),
-    new THREE.MeshStandardMaterial({ color: 0x101820, roughness: 0.82, metalness: 0.28 })
+    new THREE.MeshStandardMaterial({ color: 0x0c1018, roughness: 0.88, metalness: 0.32 })
   );
   floor.rotation.x = -Math.PI / 2;
   floor.position.y = -0.01;
@@ -84,7 +84,7 @@ export function createLobbyScene(
 
   const podium = new THREE.Mesh(
     new THREE.CylinderGeometry(0.9, 1.05, 0.35, 24),
-    new THREE.MeshStandardMaterial({ color: 0x2a3348, roughness: 0.45, metalness: 0.45 })
+    new THREE.MeshStandardMaterial({ color: 0x2a3440, roughness: 0.5, metalness: 0.52 })
   );
   podium.position.y = 0.175;
   podium.castShadow = shadowsOn;
@@ -94,11 +94,11 @@ export function createLobbyScene(
   const ring = new THREE.Mesh(
     new THREE.TorusGeometry(1.15, 0.04, 8, 48),
     new THREE.MeshStandardMaterial({
-      color: 0xc4121a,
-      emissive: 0x8b1018,
-      emissiveIntensity: 0.55,
-      metalness: 0.7,
-      roughness: 0.25,
+      color: 0x7a8f5c,
+      emissive: 0x4a5e34,
+      emissiveIntensity: 0.5,
+      metalness: 0.75,
+      roughness: 0.22,
     })
   );
   ring.rotation.x = Math.PI / 2;

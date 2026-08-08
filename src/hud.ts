@@ -8,53 +8,54 @@ export function createHUD(): {
 } {
   const el = document.createElement('div');
   el.id = 'game-hud';
+  el.className = 'game-hud';
   el.style.cssText =
-    'position:fixed;inset:0;pointer-events:none;z-index:9997;font-family:sans-serif;display:none;';
+    'position:fixed;inset:0;pointer-events:none;z-index:9997;display:none;';
   el.innerHTML = `
-    <div id="hud-top" style="position:absolute;top:12px;left:50%;transform:translateX(-50%);display:flex;gap:24px;background:rgba(0,0,0,0.5);padding:6px 16px;border-radius:4px;color:#fff;font-size:13px;">
-      <span id="hud-kills">☠️ 0</span>
-      <span id="hud-targets">🎯 0</span>
-      <span id="hud-alive">👥 0 Alive</span>
-      <span id="hud-phase" style="color:#2dd4bf;">LOBBY</span>
-      <span id="hud-timer">⏲ 0:00</span>
-      <span id="hud-zone" style="color:#2dd4bf;">⏱ Zone in 0:00</span>
-      <span id="hud-storm" style="display:none;color:#f44;">⚠️ STORM</span>
+    <div id="hud-top" class="hud-panel hud-top">
+      <span id="hud-kills" class="hud-stat">☠️ 0</span>
+      <span id="hud-targets" class="hud-stat">🎯 0</span>
+      <span id="hud-alive" class="hud-stat">👥 0 Alive</span>
+      <span id="hud-phase" class="hud-stat hud-phase">LOBBY</span>
+      <span id="hud-timer" class="hud-stat">⏲ 0:00</span>
+      <span id="hud-zone" class="hud-stat hud-zone">⏱ Zone in 0:00</span>
+      <span id="hud-storm" class="hud-stat hud-storm">⚠️ STORM</span>
     </div>
-    <div id="hud-prompt" style="position:absolute;bottom:160px;left:50%;transform:translateX(-50%);display:none;background:rgba(0,0,0,0.6);padding:6px 14px;border-radius:4px;color:#fff;font-size:14px;"></div>
-    <div id="hud-bottom" style="position:absolute;bottom:24px;left:50%;transform:translateX(-50%);display:flex;gap:16px;align-items:center;background:rgba(0,0,0,0.5);padding:8px 20px;border-radius:6px;color:#fff;">
-      <div style="display:flex;flex-direction:column;gap:4px;min-width:140px;">
-        <div style="display:flex;justify-content:space-between;font-size:11px;color:#aaa;">
-          <span>HEALTH</span><span id="hud-health-num">100</span>
+    <div id="hud-prompt" class="hud-panel hud-prompt"></div>
+    <div id="hud-bottom" class="hud-panel hud-bottom">
+      <div class="hud-vitals">
+        <div class="hud-vital-row">
+          <span class="hud-vital-label">HEALTH</span><span id="hud-health-num" class="hud-vital-value">100</span>
         </div>
-        <div style="height:8px;width:140px;background:#1a2a3a;border-radius:4px;overflow:hidden;"><div id="hud-health-bar" style="height:100%;width:100%;background:#2dd4bf;border-radius:4px;transition:width 0.2s;"></div></div>
-        <div style="display:flex;justify-content:space-between;font-size:11px;color:#aaa;">
-          <span>ARMOR</span><span id="hud-armor-num">0</span>
+        <div class="hud-bar-track hud-bar-health"><div id="hud-health-bar" class="hud-bar-fill"></div></div>
+        <div class="hud-vital-row">
+          <span class="hud-vital-label">ARMOR</span><span id="hud-armor-num" class="hud-vital-value">0</span>
         </div>
-        <div style="height:6px;width:140px;background:#1a2a3a;border-radius:4px;overflow:hidden;"><div id="hud-armor-bar" style="height:100%;width:0%;background:#38bdf8;border-radius:4px;transition:width 0.2s;"></div></div>
-        <div id="hud-heal-row" style="display:none;height:5px;width:140px;background:#333;border-radius:4px;overflow:hidden;"><div id="hud-heal-bar" style="height:100%;width:0%;background:#ffaa44;border-radius:4px;"></div></div>
+        <div class="hud-bar-track hud-bar-armor"><div id="hud-armor-bar" class="hud-bar-fill"></div></div>
+        <div id="hud-heal-row" class="hud-bar-track hud-bar-heal"><div id="hud-heal-bar" class="hud-bar-fill"></div></div>
       </div>
-      <div id="hud-weapon" style="text-align:center;">
-        <div id="hud-weapon-name" style="font-size:13px;font-weight:bold;">RIFLE</div>
-        <div id="hud-ammo" style="font-size:11px;color:#aaa;">30 / 90</div>
-        <div id="hud-reload" style="font-size:11px;color:#fa0;display:none;">RELOADING...</div>
+      <div id="hud-weapon" class="hud-weapon">
+        <div id="hud-weapon-name" class="hud-weapon-name">RIFLE</div>
+        <div id="hud-ammo" class="hud-ammo">30 / 90</div>
+        <div id="hud-reload" class="hud-reload">RELOADING...</div>
       </div>
-      <div id="hud-skill" style="text-align:center;font-size:11px;background:rgba(45,212,191,0.12);border:1px solid rgba(45,212,191,0.35);padding:4px 8px;border-radius:4px;">
-        <div id="hud-skill-name" style="font-weight:bold;color:#2dd4bf;">⚡ Speed [F]</div>
-        <div id="hud-skill-status" style="font-size:10px;color:#34d399;">READY</div>
+      <div id="hud-skill" class="hud-skill">
+        <div id="hud-skill-name" class="hud-skill-name">⚡ Speed [F]</div>
+        <div id="hud-skill-status" class="hud-skill-status">READY</div>
       </div>
-      <div style="text-align:center;font-size:11px;color:#aaa;">
+      <div class="hud-supplies">
         <div>💣 <span id="hud-grenades">2</span></div>
         <div>💊 <span id="hud-heals">3</span></div>
       </div>
-      <button id="hud-heal-action" type="button" style="pointer-events:auto;padding:8px 12px;min-width:64px;min-height:40px;border:2px solid #34d399;border-radius:8px;background:#047857;color:#ecfdf5;font:bold 13px sans-serif;">HEAL</button>
+      <button id="hud-heal-action" type="button" class="hud-heal-btn">HEAL</button>
     </div>
-    <div id="hud-killfeed" style="position:absolute;top:64px;left:12px;display:flex;flex-direction:column;gap:4px;align-items:flex-start;max-width:min(240px,calc(100vw - 200px));"></div>
-    <div id="hud-damage" style="position:absolute;inset:0;background:radial-gradient(transparent 50%, rgba(255,0,0,0.4) 100%);opacity:0;transition:opacity 0.1s;pointer-events:none;"></div>
-    <div id="hud-compass" style="position:absolute;top:56px;left:50%;transform:translateX(-50%);display:flex;gap:5px;background:rgba(0,0,0,0.45);padding:3px 10px;border-radius:4px;font-size:12px;">
-      ${['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'].map((d) => `<span data-dir="${d}" style="color:#889;min-width:15px;text-align:center;">${d}</span>`).join('')}
+    <div id="hud-killfeed" class="hud-killfeed"></div>
+    <div id="hud-damage" class="hud-damage-flash"></div>
+    <div id="hud-compass" class="hud-panel hud-compass">
+      ${['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'].map((d) => `<span data-dir="${d}" class="hud-compass-dir">${d}</span>`).join('')}
     </div>
-    <div id="hud-damage-numbers" style="position:absolute;inset:0;overflow:hidden;pointer-events:none;"></div>
-    <button id="hud-respawn" type="button" style="display:none;position:absolute;bottom:120px;left:50%;transform:translateX(-50%);pointer-events:auto;padding:14px 32px;font-size:16px;font-weight:bold;background:linear-gradient(180deg,#5eead4,#14b8a6);color:#042f2e;border:none;border-radius:8px;cursor:pointer;box-shadow:0 8px 24px rgba(45,212,191,0.35);letter-spacing:0.06em;z-index:10002;">RESPAWN</button>
+    <div id="hud-damage-numbers" class="hud-damage-numbers"></div>
+    <button id="hud-respawn" type="button" class="hud-respawn-btn">RESPAWN</button>
   `;
   document.body.appendChild(el);
 
@@ -95,50 +96,48 @@ export function createHUD(): {
       document.getElementById('hud-weapon-name')!.textContent = data.weapon;
       document.getElementById('hud-ammo')!.textContent = `${data.ammo} / ${data.reserve}`;
       const reloadEl = document.getElementById('hud-reload')!;
-      reloadEl.style.display = data.reloading ? 'block' : 'none';
+      reloadEl.classList.toggle('is-visible', data.reloading);
       document.getElementById('hud-grenades')!.textContent = String(data.grenades);
       document.getElementById('hud-heals')!.textContent = String(data.heals);
       if (data.skillName) {
         document.getElementById('hud-skill-name')!.textContent = `⚡ ${data.skillName}`;
         const statusEl = document.getElementById('hud-skill-status')!;
         statusEl.textContent = data.skillCooldownText || 'READY';
-        statusEl.style.color = data.skillReady ? '#34d399' : '#fbbf24';
+        statusEl.classList.toggle('is-ready', !!data.skillReady);
+        statusEl.classList.toggle('is-cooldown', !data.skillReady);
       }
       if (data.bearing) {
         document.querySelectorAll('#hud-compass span[data-dir]').forEach((s) => {
           const active = (s as HTMLElement).dataset.dir === data.bearing;
-          (s as HTMLElement).style.color = active ? '#fff' : '#889';
-          (s as HTMLElement).style.fontWeight = active ? 'bold' : 'normal';
+          s.classList.toggle('is-active', active);
         });
       }
       const stormEl = document.getElementById('hud-storm')!;
-      stormEl.style.display = data.inStorm ? 'block' : 'none';
+      stormEl.classList.toggle('is-visible', data.inStorm);
       const healRow = document.getElementById('hud-heal-row')!;
       if (data.healProgress > 0) {
-        healRow.style.display = 'block';
+        healRow.classList.add('is-visible');
         document.getElementById('hud-heal-bar')!.style.width =
           `${Math.round(data.healProgress * 100)}%`;
       } else {
-        healRow.style.display = 'none';
+        healRow.classList.remove('is-visible');
       }
       const promptEl = document.getElementById('hud-prompt')!;
       if (data.prompt) {
         promptEl.textContent = data.prompt;
-        promptEl.style.display = 'block';
+        promptEl.classList.add('is-visible');
       } else {
-        promptEl.style.display = 'none';
+        promptEl.classList.remove('is-visible');
       }
       healBtn.textContent = data.healActionLabel;
       healBtn.disabled = !data.healActionEnabled;
-      healBtn.style.opacity = data.healActionEnabled ? '1' : '0.52';
-      healBtn.style.cursor = data.healActionEnabled ? 'pointer' : 'not-allowed';
+      healBtn.classList.toggle('is-disabled', !data.healActionEnabled);
       if (data.justHit) {
         const dmg = document.getElementById('hud-damage')!;
         dmg.style.opacity = '1';
         setTimeout(() => (dmg.style.opacity = '0'), 150);
       }
-      respawnBtn.style.display = data.showRespawn ? 'block' : 'none';
-      respawnBtn.style.zIndex = data.showRespawn ? '10002' : '';
+      respawnBtn.classList.toggle('is-visible', !!data.showRespawn);
     },
     remove() {
       el.remove();
@@ -150,8 +149,7 @@ export function addKillFeedEntry(text: string) {
   const feed = document.getElementById('hud-killfeed');
   if (!feed) return;
   const entry = document.createElement('div');
-  entry.style.cssText =
-    'background:rgba(0,0,0,0.6);padding:3px 10px;border-radius:3px;color:#c4121a;font-size:12px;font-weight:bold;text-shadow:0 0 4px #6b0505;';
+  entry.className = 'hud-killfeed-entry';
   entry.textContent = text;
   feed.appendChild(entry);
   setTimeout(() => entry.remove(), 4000);
@@ -163,9 +161,9 @@ export function addCompassPing(bearing: string) {
     `#hud-compass span[data-dir="${bearing}"]`
   ) as HTMLElement | null;
   if (!span) return;
-  span.style.color = '#f66';
+  span.classList.add('is-ping');
   setTimeout(() => {
-    if (span.isConnected) span.style.color = '#889';
+    if (span.isConnected) span.classList.remove('is-ping');
   }, 350);
 }
 
@@ -225,7 +223,8 @@ export function createMinimap(onToggleFullscreen?: () => void): {
   canvas.id = 'minimap';
   canvas.width = 160;
   canvas.height = 160;
-  canvas.style.cssText = `position:fixed;top:${minimapAnchorTop};right:${minimapAnchorRight};z-index:9997;border:1px solid rgba(120,140,160,.35);border-radius:2px;background:#080c12;cursor:pointer;`;
+  canvas.className = 'minimap-canvas';
+  canvas.style.cssText = `position:fixed;top:${minimapAnchorTop};right:${minimapAnchorRight};z-index:9997;`;
   canvas.addEventListener('click', () => onToggleFullscreen?.());
   document.body.appendChild(canvas);
   const ctx = canvas.getContext('2d')!;
@@ -268,7 +267,7 @@ export function createMinimap(onToggleFullscreen?: () => void): {
       ctx.fillStyle = '#080c12';
       ctx.fillRect(0, 0, size, size);
 
-      ctx.strokeStyle = '#2dd4bf';
+      ctx.strokeStyle = '#7a8f5c';
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.arc(data.sx * s + ox, data.sz * s + oz, data.sr * s, 0, Math.PI * 2);
@@ -299,7 +298,7 @@ export function createMinimap(onToggleFullscreen?: () => void): {
         ctx.fill();
       }
 
-      ctx.strokeStyle = '#2dd4bf';
+      ctx.strokeStyle = '#7a8f5c';
       ctx.lineWidth = 2;
       ctx.beginPath();
       const aimYaw = data.aimYaw ?? data.pyaw;
@@ -316,7 +315,7 @@ export function createMinimap(onToggleFullscreen?: () => void): {
       ctx.beginPath();
       ctx.arc(playerX, playerZ, 3.6, 0, Math.PI * 2);
       ctx.fill();
-      ctx.fillStyle = '#2dd4bf';
+      ctx.fillStyle = '#9cb06e';
       ctx.beginPath();
       ctx.arc(playerX, playerZ, 2.4, 0, Math.PI * 2);
       ctx.fill();

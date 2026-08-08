@@ -25,6 +25,8 @@ Where things live. Load `CONTEXT/CONTEXT.md` first.
 | `CONTEXT/docs/prd/tickets-held-weapons-lag.md` | Local ticket index (#44/#45 Planned; deferred behind #46) |
 | `CONTEXT/docs/prd/issues/` | Per-ticket bodies for local tracker |
 | `CONTEXT/handoffs/` | Per-effort handoffs (newest: `2026-08-08-session-complete.md`) |
+| `.cursor/skills/kill-enemy/SKILL.md` | Master agent skill catalog (all Cursor/agent skills) |
+| `SKILL.md` (repo root) | Pointer to skill catalog |
 
 ## Source (`src/`)
 

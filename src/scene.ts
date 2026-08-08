@@ -5,6 +5,7 @@ import {
   addGradientSky,
   applyTealFog,
   configureSunShadow,
+  createDirtGroundTexture,
   scatterInstancedTrees,
 } from './graphics';
 import { MAP_BOUND, MAP_SIZE, POI_RADIUS } from './constants';
@@ -43,12 +44,12 @@ export function createScene(
   const scene = new THREE.Scene();
   const skyDetail = quality === 'low' ? { segments: 16, rings: 8 } : { segments: 24, rings: 12 };
   addGradientSky(scene, {
-    topColor: 0x1a3d5c,
-    bottomColor: 0x6a98b8,
+    topColor: 0x243a52,
+    bottomColor: 0xb8a898,
     radius: MAP_BOUND * 3,
     ...skyDetail,
   });
-  applyTealFog(scene, MAP_BOUND * 0.38, MAP_BOUND * 1.42, 0x6a98a8);
+  applyTealFog(scene, MAP_BOUND * 0.45, MAP_BOUND * 1.58, 0x9aa8a0);
 
   const camera = new THREE.PerspectiveCamera(75, canvas.width / canvas.height, 0.1, MAP_BOUND * 4);
   camera.position.set(0, 50, 100);
@@ -61,27 +62,34 @@ export function createScene(
   controls.maxDistance = 300;
   controls.maxPolarAngle = Math.PI / 2.1;
 
-  const ambientLight = new THREE.AmbientLight(0x8aa8c8, 0.32);
+  const ambientLight = new THREE.AmbientLight(0x607080, 0.22);
   scene.add(ambientLight);
 
-  const dirLight = new THREE.DirectionalLight(0xffe4b8, 2.55);
-  dirLight.position.set(121, 92, 158);
-  if (quality !== 'low') configureSunShadow(dirLight, MAP_BOUND, 1024, false);
+  const dirLight = new THREE.DirectionalLight(0xfff0d0, 3.1);
+  dirLight.position.set(118, 78, 152);
+  if (quality !== 'low')
+    configureSunShadow(
+      dirLight,
+      MAP_BOUND,
+      quality === 'high' ? 2048 : 1024,
+      quality === 'high'
+    );
   scene.add(dirLight);
 
-  const fillLight = new THREE.DirectionalLight(0x7098b8, 0.28);
-  fillLight.position.set(-90, 50, -110);
+  const fillLight = new THREE.DirectionalLight(0x4a7090, 0.16);
+  fillLight.position.set(-88, 46, -108);
   scene.add(fillLight);
 
-  const hemiLight = new THREE.HemisphereLight(0x88b8d8, 0x2a4a1e, 0.48);
+  const hemiLight = new THREE.HemisphereLight(0x90b8d0, 0x2c2820, 0.34);
   scene.add(hemiLight);
 
   // Ground — textured grid
   const groundGeo = new THREE.PlaneGeometry(MAP_SIZE, MAP_SIZE);
   const groundMat = new THREE.MeshStandardMaterial({
-    color: 0x3a5c28,
-    roughness: 0.92,
-    metalness: 0.04,
+    map: createDirtGroundTexture(MAP_SIZE / 10),
+    color: 0xffffff,
+    roughness: 0.96,
+    metalness: 0.02,
   });
   const ground = new THREE.Mesh(groundGeo, groundMat);
   ground.rotation.x = -Math.PI / 2;
@@ -89,7 +97,7 @@ export function createScene(
   scene.add(ground);
 
   // Grid helper
-  const gridHelper = new THREE.GridHelper(MAP_SIZE, 28, 0x3a5a2a, 0x243818);
+  const gridHelper = new THREE.GridHelper(MAP_SIZE, 28, 0x323828, 0x1e2818);
   gridHelper.position.y = 0.02;
   scene.add(gridHelper);
 
@@ -99,9 +107,9 @@ export function createScene(
     const x = Math.cos(angle) * POI_RADIUS;
     const z = Math.sin(angle) * POI_RADIUS;
     const roadMat = new THREE.MeshStandardMaterial({
-      color: 0x2e2e38,
-      roughness: 0.92,
-      metalness: 0.08,
+      color: 0x1e1e28,
+      roughness: 0.94,
+      metalness: 0.12,
     });
     const road = new THREE.Mesh(new THREE.PlaneGeometry(4, POI_RADIUS * 1.4), roadMat);
     road.rotation.x = -Math.PI / 2;
@@ -133,9 +141,9 @@ export function createScene(
   // POIs — detailed buildings with distinct district colors
   const pois: { name: string; group: THREE.Group; position: THREE.Vector3 }[] = [];
   const names = ['Town', 'Factory', 'Docks', 'Hilltop'];
-  const colors = [0xc4a35a, 0x6a7a9a, 0xb87333, 0x8fbc8f];
-  const roofColors = [0x5c4033, 0x3d4555, 0x4a3728, 0x556b2f];
-  const accentColors = [0xd4a017, 0x708090, 0xcd853f, 0x6b8e23];
+  const colors = [0x8a7a62, 0x5a6578, 0x7a5a42, 0x6a7a58];
+  const roofColors = [0x3d3028, 0x2a3038, 0x352820, 0x3a4530];
+  const accentColors = [0x9a8040, 0x506070, 0x8a6840, 0x4a5a38];
 
   for (let i = 0; i < names.length; i++) {
     const angle = (i / names.length) * Math.PI * 2;
@@ -147,18 +155,18 @@ export function createScene(
 
     const wallMat = new THREE.MeshStandardMaterial({
       color: colors[i],
-      roughness: 0.68,
-      metalness: 0.08,
+      roughness: 0.82,
+      metalness: 0.06,
     });
     const roofMat = new THREE.MeshStandardMaterial({
       color: roofColors[i],
-      roughness: 0.75,
-      metalness: 0.05,
+      roughness: 0.88,
+      metalness: 0.04,
     });
     const accentMat = new THREE.MeshStandardMaterial({
       color: accentColors[i],
-      roughness: 0.45,
-      metalness: 0.35,
+      roughness: 0.72,
+      metalness: 0.18,
     });
 
     // Main building
@@ -178,11 +186,11 @@ export function createScene(
     // Windows — skip on low preset to cut draw calls
     if (quality !== 'low') {
       const winMat = new THREE.MeshStandardMaterial({
-        color: 0xffe08a,
-        emissive: 0xffc04d,
-        emissiveIntensity: 0.45,
-        roughness: 0.3,
-        metalness: 0.1,
+        color: 0xd4c090,
+        emissive: 0xb89040,
+        emissiveIntensity: 0.22,
+        roughness: 0.42,
+        metalness: 0.12,
       });
       for (let w = 0; w < 4; w++) {
         const win = new THREE.Mesh(new THREE.BoxGeometry(2, 3, 0.1), winMat);
@@ -202,7 +210,7 @@ export function createScene(
     // Ground pad
     const pad = new THREE.Mesh(
       new THREE.BoxGeometry(50, 0.5, 40),
-      new THREE.MeshStandardMaterial({ color: 0x4a5568, roughness: 0.85, metalness: 0.15 })
+      new THREE.MeshStandardMaterial({ color: 0x3a4048, roughness: 0.92, metalness: 0.1 })
     );
     pad.position.y = -0.25;
     group.add(pad);
