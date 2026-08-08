@@ -59,19 +59,32 @@ function addWindows(
   });
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
-      const win = box(1.8, 2.4, 0.12, winMat, -spacing + c * spacing, baseY + r * 3.2, faceZ, shadows);
+      const win = box(
+        1.8,
+        2.4,
+        0.12,
+        winMat,
+        -spacing + c * spacing,
+        baseY + r * 3.2,
+        faceZ,
+        shadows
+      );
       group.add(win);
     }
   }
 }
 
 function addPad(group: THREE.Group, shadows: boolean) {
-  group.add(
-    box(52, 0.5, 42, stdMat(0x3a4048, 0.92, 0.1), 0, -0.25, 0, shadows)
-  );
+  group.add(box(52, 0.5, 42, stdMat(0x3a4048, 0.92, 0.1), 0, -0.25, 0, shadows));
 }
 
-function buildTown(group: THREE.Group, idx: number, shadows: boolean, quality: QualityPreset, urban: boolean) {
+function buildTown(
+  group: THREE.Group,
+  idx: number,
+  shadows: boolean,
+  quality: QualityPreset,
+  urban: boolean
+) {
   const pal = urban ? URBAN_PALETTE : PALETTE;
   const p = pal.Town;
   const wall = stdMat(p.wall);
@@ -88,7 +101,13 @@ function buildTown(group: THREE.Group, idx: number, shadows: boolean, quality: Q
   addPad(group, shadows);
 }
 
-function buildFactory(group: THREE.Group, idx: number, shadows: boolean, quality: QualityPreset, urban: boolean) {
+function buildFactory(
+  group: THREE.Group,
+  idx: number,
+  shadows: boolean,
+  quality: QualityPreset,
+  urban: boolean
+) {
   const pal = urban ? URBAN_PALETTE : PALETTE;
   const p = pal.Factory;
   const wall = stdMat(p.wall);
@@ -109,7 +128,13 @@ function buildFactory(group: THREE.Group, idx: number, shadows: boolean, quality
   addPad(group, shadows);
 }
 
-function buildDocks(group: THREE.Group, _idx: number, shadows: boolean, quality: QualityPreset, urban: boolean) {
+function buildDocks(
+  group: THREE.Group,
+  _idx: number,
+  shadows: boolean,
+  quality: QualityPreset,
+  urban: boolean
+) {
   const pal = urban ? URBAN_PALETTE : PALETTE;
   const p = pal.Docks;
   const wood = stdMat(p.wall, 0.92, 0.04);
@@ -130,7 +155,13 @@ function buildDocks(group: THREE.Group, _idx: number, shadows: boolean, quality:
   addPad(group, shadows);
 }
 
-function buildHilltop(group: THREE.Group, idx: number, shadows: boolean, quality: QualityPreset, urban: boolean) {
+function buildHilltop(
+  group: THREE.Group,
+  idx: number,
+  shadows: boolean,
+  quality: QualityPreset,
+  urban: boolean
+) {
   const pal = urban ? URBAN_PALETTE : PALETTE;
   const p = pal.Hilltop;
   const wall = stdMat(p.wall);
@@ -146,7 +177,10 @@ function buildHilltop(group: THREE.Group, idx: number, shadows: boolean, quality
   dish.position.set(16, towerH + 2.5, -8);
   dish.castShadow = shadows;
   group.add(dish);
-  const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.35, towerH + 4, 5), stdMat(0x707880, 0.5, 0.4));
+  const mast = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.25, 0.35, towerH + 4, 5),
+    stdMat(0x707880, 0.5, 0.4)
+  );
   mast.position.set(16, (towerH + 4) / 2, -8);
   mast.castShadow = shadows;
   group.add(mast);

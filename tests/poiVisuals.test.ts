@@ -19,7 +19,9 @@ describe('poiVisuals', () => {
 
   it('factory district includes chimney cylinders', () => {
     const group = buildPoiGroup('Factory', 1, 'medium', false);
-    const hasCylinder = group.children.some((c) => c instanceof THREE.Mesh && c.geometry instanceof THREE.CylinderGeometry);
+    const hasCylinder = group.children.some(
+      (c) => c instanceof THREE.Mesh && c.geometry instanceof THREE.CylinderGeometry
+    );
     expect(hasCylinder).toBe(true);
   });
 

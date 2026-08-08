@@ -95,5 +95,96 @@ function buildPanelHtml(s: Settings): string {
       String(checked)
     );
 
-  return `<div class="mobile-settings-backdrop"></div><div class="mobile-settings-sheet" role="dialog" aria-label="Settings"><header class="mobile-settings-header"><b>SETTINGS</b><button id="ms-close" type="button" aria-label="Close">✕</button></header><div class="mobile-settings-body">${row('Map', sel('ms-map', MAP_IDS.map((id) => [id, mapPreset(id).label]), s.mapId))}${row('Quality', sel('ms-quality', [['low', 'Low'], ['medium', 'Med'], ['high', 'High']], s.quality))}${row('Sensitivity', sel('ms-sensitivity', [['0.5', '0.5x'], ['1', '1x'], ['1.5', '1.5x'], ['2', '2x']], String(s.sensitivity)))}${row('Touch X', range('ms-touch-sens-x', s.touchSensitivityX, 0.35, 3, 0.05, 'x'))}${row('Touch Y', range('ms-touch-sens-y', s.touchSensitivityY, 0.35, 3, 0.05, 'x'))}${row('Camera', sel('ms-camera', [['tps', 'TPS'], ['fps', 'FPS']], s.cameraMode))}${row('Invert H', toggle('ms-invert-h', s.invertLookHorizontal))}${row('Invert V', toggle('ms-invert-v', s.invertLookVertical))}${row('Left Fire', toggle('ms-left-fire', s.leftFireButton))}${row('Sprint', sel('ms-touch-sprint', [['auto', 'Auto'], ['hold', 'Hold']], s.touchSprintMode))}${row('Buttons', sel('ms-touch-buttons', [['compact', 'Compact'], ['standard', 'Std']], s.touchButtonPreset))}${row('Layout', sel('ms-touch-layout', [['thumbs', 'Thumbs'], ['classic', 'Classic']], s.touchLayoutPreset))}${row('Minimap', sel('ms-minimap', [['small', 'Small'], ['large', 'Large']], s.minimapSize))}${row('HUD Alpha', range('ms-hud-opacity', s.hudOpacity, 0.35, 1, 0.05))}${row('HUD Scale', range('ms-hud-scale', s.hudScale, 0.8, 1.3, 0.05, 'x'))}${row('Volume', sel('ms-volume', [['0', 'Mute'], ['0.5', 'Med'], ['1', 'Max']], String(s.volume)))}</div></div>`;
+  return `<div class="mobile-settings-backdrop"></div><div class="mobile-settings-sheet" role="dialog" aria-label="Settings"><header class="mobile-settings-header"><b>SETTINGS</b><button id="ms-close" type="button" aria-label="Close">✕</button></header><div class="mobile-settings-body">${row(
+    'Map',
+    sel(
+      'ms-map',
+      MAP_IDS.map((id) => [id, mapPreset(id).label]),
+      s.mapId
+    )
+  )}${row(
+    'Quality',
+    sel(
+      'ms-quality',
+      [
+        ['low', 'Low'],
+        ['medium', 'Med'],
+        ['high', 'High'],
+      ],
+      s.quality
+    )
+  )}${row(
+    'Sensitivity',
+    sel(
+      'ms-sensitivity',
+      [
+        ['0.5', '0.5x'],
+        ['1', '1x'],
+        ['1.5', '1.5x'],
+        ['2', '2x'],
+      ],
+      String(s.sensitivity)
+    )
+  )}${row('Touch X', range('ms-touch-sens-x', s.touchSensitivityX, 0.35, 3, 0.05, 'x'))}${row('Touch Y', range('ms-touch-sens-y', s.touchSensitivityY, 0.35, 3, 0.05, 'x'))}${row(
+    'Camera',
+    sel(
+      'ms-camera',
+      [
+        ['tps', 'TPS'],
+        ['fps', 'FPS'],
+      ],
+      s.cameraMode
+    )
+  )}${row('Invert H', toggle('ms-invert-h', s.invertLookHorizontal))}${row('Invert V', toggle('ms-invert-v', s.invertLookVertical))}${row('Left Fire', toggle('ms-left-fire', s.leftFireButton))}${row(
+    'Sprint',
+    sel(
+      'ms-touch-sprint',
+      [
+        ['auto', 'Auto'],
+        ['hold', 'Hold'],
+      ],
+      s.touchSprintMode
+    )
+  )}${row(
+    'Buttons',
+    sel(
+      'ms-touch-buttons',
+      [
+        ['compact', 'Compact'],
+        ['standard', 'Std'],
+      ],
+      s.touchButtonPreset
+    )
+  )}${row(
+    'Layout',
+    sel(
+      'ms-touch-layout',
+      [
+        ['thumbs', 'Thumbs'],
+        ['classic', 'Classic'],
+      ],
+      s.touchLayoutPreset
+    )
+  )}${row(
+    'Minimap',
+    sel(
+      'ms-minimap',
+      [
+        ['small', 'Small'],
+        ['large', 'Large'],
+      ],
+      s.minimapSize
+    )
+  )}${row('HUD Alpha', range('ms-hud-opacity', s.hudOpacity, 0.35, 1, 0.05))}${row('HUD Scale', range('ms-hud-scale', s.hudScale, 0.8, 1.3, 0.05, 'x'))}${row(
+    'Volume',
+    sel(
+      'ms-volume',
+      [
+        ['0', 'Mute'],
+        ['0.5', 'Med'],
+        ['1', 'Max'],
+      ],
+      String(s.volume)
+    )
+  )}</div></div>`;
 }

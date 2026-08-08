@@ -233,7 +233,11 @@ export class MatchGame {
     c.style.cssText = 'position:fixed;inset:0;width:100vw;height:100vh;display:block;';
 
     const quality: QualityPreset = this.settings.quality;
-    const { scene, camera, renderer, controls, pois } = createScene(c, quality, this.settings.mapId);
+    const { scene, camera, renderer, controls, pois } = createScene(
+      c,
+      quality,
+      this.settings.mapId
+    );
     controls.enabled = false;
     this.scene = scene;
     this.camera = camera;

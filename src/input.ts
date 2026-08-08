@@ -161,7 +161,9 @@ export function createInputManager(
 
   const applyTouchUiSettings = () => {
     if (!touchOverlay) return;
-    options.showRespawn && touchRespawnBtn?.classList.toggle('is-visible', options.showRespawn());
+    if (options.showRespawn) {
+      touchRespawnBtn?.classList.toggle('is-visible', options.showRespawn());
+    }
     const touchSettings = resolveTouchSettings();
     const signature = JSON.stringify(touchSettings);
     if (signature === lastTouchUiSignature) return;

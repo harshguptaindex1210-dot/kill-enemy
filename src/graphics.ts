@@ -62,12 +62,23 @@ export function createDirtGroundTexture(repeat = 16): THREE.CanvasTexture {
     const v = 52 + Math.random() * 36;
     g.fillStyle = `rgba(${v | 0},${(v * 1.02) | 0},${(v * 0.55) | 0},0.1)`;
     g.beginPath();
-    g.arc((Math.random() * 128) | 0, (Math.random() * 128) | 0, 8 + Math.random() * 14, 0, Math.PI * 2);
+    g.arc(
+      (Math.random() * 128) | 0,
+      (Math.random() * 128) | 0,
+      8 + Math.random() * 14,
+      0,
+      Math.PI * 2
+    );
     g.fill();
   }
   for (let i = 0; i < 28; i++) {
     g.fillStyle = 'rgba(58,48,32,0.1)';
-    g.fillRect((Math.random() * 120) | 0, (Math.random() * 128) | 0, 8 + ((Math.random() * 10) | 0), 1);
+    g.fillRect(
+      (Math.random() * 120) | 0,
+      (Math.random() * 128) | 0,
+      8 + ((Math.random() * 10) | 0),
+      1
+    );
   }
   const t = new THREE.CanvasTexture(c);
   t.wrapS = t.wrapT = THREE.RepeatWrapping;
@@ -259,7 +270,11 @@ export function scatterInstancedGrass(scene: THREE.Scene, opts: GrassScatterOpti
 
     const scale = 0.7 + Math.random() * 0.55;
     const yaw = Math.random() * Math.PI;
-    tint.setHSL(0.28 + Math.random() * 0.06, 0.42 + Math.random() * 0.12, 0.34 + Math.random() * 0.1);
+    tint.setHSL(
+      0.28 + Math.random() * 0.06,
+      0.42 + Math.random() * 0.12,
+      0.34 + Math.random() * 0.1
+    );
 
     for (let b = 0; b < 2; b++) {
       dummy.position.set(x, 0, z);
@@ -281,8 +296,16 @@ export function scatterInstancedGrass(scene: THREE.Scene, opts: GrassScatterOpti
 
 export function scatterPalms(scene: THREE.Scene, opts: GrassScatterOptions): void {
   const { count, minDist, maxDist, skipNear } = opts;
-  const trunkMat = new THREE.MeshStandardMaterial({ color: 0x8a6840, roughness: 0.92, metalness: 0.02 });
-  const leafMat = new THREE.MeshStandardMaterial({ color: 0x4a8a38, roughness: 0.88, metalness: 0.03 });
+  const trunkMat = new THREE.MeshStandardMaterial({
+    color: 0x8a6840,
+    roughness: 0.92,
+    metalness: 0.02,
+  });
+  const leafMat = new THREE.MeshStandardMaterial({
+    color: 0x4a8a38,
+    roughness: 0.88,
+    metalness: 0.03,
+  });
   const trunkGeo = new THREE.CylinderGeometry(0.12, 0.18, 3.2, 5);
   const leafGeo = new THREE.SphereGeometry(0.55, 5, 4);
   const trunks = new THREE.InstancedMesh(trunkGeo, trunkMat, count);

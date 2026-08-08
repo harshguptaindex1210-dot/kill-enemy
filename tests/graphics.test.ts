@@ -2,11 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import * as THREE from 'three';
-import {
-  applyRendererLook,
-  applyTealFog,
-  addGradientSky,
-} from '../src/graphics';
+import { applyRendererLook, applyTealFog, addGradientSky } from '../src/graphics';
 
 describe('battle royale visuals', () => {
   it('applyTealFog uses horizon-matched fog for seamless sky blend', () => {
