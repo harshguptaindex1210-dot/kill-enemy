@@ -959,7 +959,11 @@ export class MatchGame {
     const rig = this.rigs.get(unit.id);
     if (!rig) return;
     if (unit.alive) {
-      rig.group.visible = shouldShowUnitRig(true);
+      const isLocalFps =
+        unit.id === this.humanId &&
+        unit.inVehicleId === null &&
+        (unit.player.cameraMode === 'fps' || this.settings.cameraMode === 'fps');
+      rig.group.visible = shouldShowUnitRig(true) && !isLocalFps;
       if (unit.inVehicleId !== null) {
         const v = this.sim.vehicles.find((vv) => vv.id === unit.inVehicleId);
         if (v) {
@@ -1138,7 +1142,7 @@ export class MatchGame {
         yaw,
         human.player.pitch,
         human.player.getEyeHeight(),
-        human.player.cameraMode,
+        human.player.cameraMode === 'fps' || this.settings.cameraMode === 'fps' ? 'fps' : 'tps',
         human.player.position,
         dt
       );

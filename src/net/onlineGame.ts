@@ -637,7 +637,9 @@ export class OnlineMatchGame {
       rig = { group: model.group, anim: model.anim };
       this.rigs.set(id, rig);
     }
-    rig.group.visible = shouldShowUnitRig(alive);
+    const fpsMode =
+      isLocal && alive && (this.lastAim || this.opts.settings.cameraMode === 'fps');
+    rig.group.visible = shouldShowUnitRig(alive) && !fpsMode;
     if (alive) {
       rig.group.position.set(x, y + ROBOT_GROUP_Y_OFFSET, z);
       rig.group.rotation.y = yaw;

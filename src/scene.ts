@@ -73,7 +73,7 @@ export function createScene(
   });
   applyTealFog(scene, MAP_BOUND * map.fogNear, MAP_BOUND * map.fogFar, map.fogColor);
 
-  const camera = new THREE.PerspectiveCamera(75, canvas.width / canvas.height, 0.1, MAP_BOUND * 4);
+  const camera = new THREE.PerspectiveCamera(80, canvas.width / canvas.height, 0.1, MAP_BOUND * 4);
   camera.position.set(0, 50, 100);
 
   const controls = new OrbitControls(camera, renderer.domElement);

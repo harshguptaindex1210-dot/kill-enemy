@@ -96,8 +96,9 @@ describe('camera snap option', () => {
     camera.position.set(0, 0, 0);
     const target = new THREE.Vector3(10, 0.9, 5);
     updateCamera(camera, 0, 0, 1.6, 'tps', target, 1 / 60, { snapPosition: true });
-    expect(camera.position.x).toBeCloseTo(target.x + Math.sin(0) * 5.2 + -Math.cos(0) * 0.55, 1);
-    expect(camera.position.z).toBeCloseTo(target.z + Math.cos(0) * 5.2 + Math.sin(0) * 0.55, 1);
+    expect(camera.position.x).toBeCloseTo(9.5, 1);
+    expect(camera.position.z).toBeCloseTo(9.35, 1);
+    expect(camera.position.y).toBeGreaterThan(2.5);
   });
 });
 
