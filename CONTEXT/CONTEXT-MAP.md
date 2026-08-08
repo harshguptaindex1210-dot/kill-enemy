@@ -24,7 +24,7 @@ Where things live. Load `CONTEXT/CONTEXT.md` first.
 | `CONTEXT/docs/prd/tickets-responsive-lobby.md` | Local ticket index (#46 Agent Ready, #47 Planned) |
 | `CONTEXT/docs/prd/tickets-held-weapons-lag.md` | Local ticket index (#44/#45 Planned; deferred behind #46) |
 | `CONTEXT/docs/prd/issues/` | Per-ticket bodies for local tracker |
-| `CONTEXT/handoffs/` | Per-effort handoffs (newest: `2026-08-08-session-complete.md`) |
+| `CONTEXT/handoffs/` | Per-effort handoffs (newest: `handoff-2026-08-08-2308.md`) |
 | `.cursor/skills/kill-enemy/SKILL.md` | Master agent skill catalog (all Cursor/agent skills) |
 | `SKILL.md` (repo root) | Pointer to skill catalog |
 
@@ -37,6 +37,8 @@ See [ARCHITECTURE.md](../ARCHITECTURE.md). Highlights:
 | `main.ts` | Lobby glue; lazy-loads online stack |
 | `gameplay.ts` | `MatchSim` — local authoritative rules |
 | `game.ts` | Local match renderer + results |
+| `mapPresets.ts` | Map IDs + visual presets (meadow/city/desert) |
+| `scene.ts` | `createScene(canvas, quality, mapId)` |
 | `net/client.ts` | Unified local/online client |
 | `net/protocol.ts` | Wire encode/decode |
 | `netcode.ts` | RollbackEngine |
