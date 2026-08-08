@@ -178,6 +178,12 @@ export class OnlineMatchGame {
         hudOpacity: this.opts.settings.hudOpacity,
         hudScale: this.opts.settings.hudScale,
       }),
+      getSettings: () => this.opts.settings,
+      onSettingsChange: (changes) => {
+        this.opts.settings = { ...this.opts.settings, ...changes };
+        saveSettings(this.opts.settings);
+        if (changes.volume !== undefined) this.opts.audio.setVolume(this.opts.settings.volume);
+      },
       onTouchSettingsChange: (changes) => {
         this.opts.settings = { ...this.opts.settings, ...changes };
         saveSettings(this.opts.settings);

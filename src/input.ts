@@ -24,6 +24,10 @@ export interface InputManagerOptions {
   getTouchSettings?: () => TouchRuntimeSettings;
   /** Persist touch setting changes from in-match controls. */
   onTouchSettingsChange?: (changes: Partial<TouchRuntimeSettings>) => void;
+  /** Full settings for in-match mobile gear panel. */
+  getSettings?: () => Settings;
+  /** Persist any setting change from the mobile gear panel. */
+  onSettingsChange?: (changes: Partial<Settings>) => void;
 }
 
 export interface InputManager {
@@ -57,6 +61,9 @@ export function createInputManager(
   let touchFirePressed = false;
   let touchAimPressed = false;
   let touchJumpOnce = false;
+  let touchJumpHeld = false;
+  let touchJumpLatchUntil = 0;
+  const JUMP_LATCH_MS = 180;
   let touchReloadOnce = false;
   let touchSkillOnce = false;
   let touchHealOnce = false;
@@ -235,7 +242,7 @@ export function createInputManager(
     touchOverlay.style.cssText =
       'position:fixed;inset:0;pointer-events:none;z-index:9996;user-select:none;-webkit-user-select:none;touch-action:none;';
 
-    touchOverlay.innerHTML = `<div id="touch-joystick-area"><div id="touch-joystick-knob"></div></div><button id="tb-fire-left">🔥</button><div id="touch-actions-area"><div><button id="tb-heal" type="button">HEAL</button><button id="tb-skill">⚡</button><button id="tb-jump">⬆️</button></div><div><button id="tb-reload">↻</button><button id="tb-aim">🎯</button><button id="tb-fire">🔥</button></div></div><div id="touch-weapons-area"><button id="tb-w1">R1</button><button id="tb-w2">P2</button><button id="tb-w3">M3</button></div>`;
+    touchOverlay.innerHTML = `<div id="touch-joystick-area"><div id="touch-joystick-knob"></div></div><button id="tb-fire-left" type="button">🔥</button><div id="touch-actions-area"><div><button id="tb-heal" type="button">HEAL</button><button id="tb-skill" type="button">⚡</button><button id="tb-jump" type="button">⬆</button></div><div><button id="tb-reload" type="button">↻</button><button id="tb-aim" type="button">🎯</button><button id="tb-fire" type="button">🔥</button></div></div><div id="touch-weapons-area"><button id="tb-w1" type="button">R1</button><button id="tb-w2" type="button">P2</button><button id="tb-w3" type="button">M3</button></div>`;
 
     document.body.appendChild(touchOverlay);
     const setStyle = (id: string, css: string) => {
@@ -244,11 +251,11 @@ export function createInputManager(
     };
     setStyle(
       '#touch-joystick-area',
-      'position:absolute;bottom:30px;left:30px;width:126px;height:126px;border-radius:50%;background:rgba(255,255,255,.12);border:2px solid rgba(255,255,255,.3);pointer-events:auto;touch-action:none;'
+      'position:absolute;bottom:30px;left:30px;width:126px;height:126px;border-radius:50%;background:rgba(8,12,16,.55);border:2px solid rgba(201,168,96,.35);pointer-events:auto;touch-action:none;'
     );
     setStyle(
       '#touch-joystick-knob',
-      'position:absolute;top:50%;left:50%;width:50px;height:50px;margin-top:-25px;margin-left:-25px;border-radius:50%;background:rgba(0,220,255,.7);box-shadow:0 0 10px rgba(0,240,255,.5);pointer-events:none;'
+      'position:absolute;top:50%;left:50%;width:50px;height:50px;margin-top:-25px;margin-left:-25px;border-radius:50%;background:rgba(201,168,96,.75);box-shadow:0 0 10px rgba(232,200,120,.35);pointer-events:none;'
     );
     setStyle(
       '#touch-actions-area',
@@ -267,13 +274,13 @@ export function createInputManager(
         `width:52px;height:52px;border-radius:50%;background:${bg};border:${border};color:#fff;font-size:20px;font-weight:bold;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.5);`
       );
     };
-    paintRoundBtn('#tb-heal', 'rgba(16,185,129,.85)', '3px solid #ecfdf5');
-    paintRoundBtn('#tb-skill', 'rgba(0,240,255,.6)');
-    paintRoundBtn('#tb-jump', 'rgba(50,220,100,.6)');
-    paintRoundBtn('#tb-reload', 'rgba(255,180,0,.6)');
-    paintRoundBtn('#tb-aim', 'rgba(50,150,255,.6)');
-    paintRoundBtn('#tb-fire', 'rgba(255,50,50,.75)', '3px solid #fff');
-    paintRoundBtn('#tb-fire-left', 'rgba(255,50,50,.72)', '3px solid #fff');
+    paintRoundBtn('#tb-heal', 'rgba(16,120,72,.88)', '2px solid #c9a860');
+    paintRoundBtn('#tb-skill', 'rgba(42,58,48,.85)', '2px solid rgba(201,168,96,.5)');
+    paintRoundBtn('#tb-jump', 'rgba(58,72,52,.9)', '2px solid #9cb06e');
+    paintRoundBtn('#tb-reload', 'rgba(72,62,40,.88)', '2px solid #c9a860');
+    paintRoundBtn('#tb-aim', 'rgba(38,52,64,.9)', '2px solid rgba(140,160,180,.55)');
+    paintRoundBtn('#tb-fire', 'rgba(140,48,32,.9)', '2px solid #e8c878');
+    paintRoundBtn('#tb-fire-left', 'rgba(140,48,32,.88)', '2px solid #e8c878');
     setStyle(
       '#tb-heal',
       `${(touchOverlay.querySelector('#tb-heal') as HTMLElement).style.cssText};font-size:11px;letter-spacing:.02em;`
@@ -451,10 +458,20 @@ export function createInputManager(
     });
 
     const btnJump = touchOverlay.querySelector('#tb-jump') as HTMLButtonElement;
-    btnJump.addEventListener('touchstart', (e) => {
+    const armJump = (e: Event) => {
       e.preventDefault();
       touchJumpOnce = true;
-    });
+      touchJumpHeld = true;
+      touchJumpLatchUntil = Date.now() + JUMP_LATCH_MS;
+    };
+    const releaseJump = (e: Event) => {
+      e.preventDefault();
+      touchJumpHeld = false;
+    };
+    btnJump.addEventListener('touchstart', armJump, { passive: false });
+    btnJump.addEventListener('touchend', releaseJump);
+    btnJump.addEventListener('touchcancel', releaseJump);
+    btnJump.addEventListener('click', armJump);
 
     const btnSkill = touchOverlay.querySelector('#tb-skill') as HTMLButtonElement;
     btnSkill.addEventListener('touchstart', (e) => {
@@ -499,6 +516,31 @@ export function createInputManager(
         touchW3 = true;
       }
     );
+
+    if (options.getSettings && options.onSettingsChange) {
+      const gear = document.createElement('button');
+      gear.id = 'tb-settings-gear';
+      gear.type = 'button';
+      gear.setAttribute('aria-label', 'Settings');
+      gear.className = 'touch-settings-gear';
+      gear.textContent = '⚙';
+      const openSettings = (e: Event) => {
+        e.preventDefault();
+        e.stopPropagation();
+        void import('./mobileSettingsPanel').then(({ openMobileSettingsPanel }) => {
+          openMobileSettingsPanel({
+            getSettings: options.getSettings!,
+            onChange: (changes) => {
+              options.onSettingsChange?.(changes);
+              options.onTouchSettingsChange?.(changes as Partial<TouchRuntimeSettings>);
+            },
+          });
+        });
+      };
+      gear.addEventListener('touchstart', openSettings, { passive: false });
+      gear.addEventListener('click', openSettings);
+      touchOverlay.appendChild(gear);
+    }
   }
 
   if (isTouchDeviceFlag) {
@@ -524,7 +566,12 @@ export function createInputManager(
       right: keys.has('KeyD') || keys.has('ArrowRight') || touchRight,
       sprint: keys.has('ShiftLeft') || keys.has('ShiftRight') || touchSprint,
       crouch: keys.has('ControlLeft') || keys.has('ControlRight'),
-      jump: keys.has('Space') || jumpOnce || touchJumpOnce,
+      jump:
+        keys.has('Space') ||
+        jumpOnce ||
+        touchJumpOnce ||
+        touchJumpHeld ||
+        Date.now() < touchJumpLatchUntil,
       aim: aimPressed || touchAimPressed,
       fire: firePressed || touchFirePressed,
       reload: reloadOnce || touchReloadOnce,

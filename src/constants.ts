@@ -1,15 +1,15 @@
 import * as THREE from 'three';
 
 /** Half-width of the square play area (meters from center). */
-export const MAP_BOUND = 120;
+export const MAP_BOUND = 90;
 
 /** Full ground plane width/depth in meters. */
 export const MAP_SIZE = MAP_BOUND * 2;
 
 /** Distance from map center to each POI cluster. */
-export const POI_RADIUS = 54;
+export const POI_RADIUS = 40;
 
-export const ZONE_PHASE_RADII = [98, 75, 49, 25, 8] as const;
+export const ZONE_PHASE_RADII = [74, 56, 37, 19, 6] as const;
 
 export const ZONE_PHASE_DPS = [1, 2, 4, 8, 16] as const;
 
@@ -32,5 +32,5 @@ export const DEFAULT_POI_POSITIONS: { name: string; position: THREE.Vector3 }[] 
 export const DEFAULT_OBSTACLES = DEFAULT_POI_POSITIONS.map((p) => ({
   x: p.position.x,
   z: p.position.z,
-  r: 27,
+  r: 20,
 }));

@@ -189,15 +189,15 @@ export function decideBotInput(ctx: BotContext): PlayerInput {
 
     const yawErr = wrapAngle(aimYaw - ctx.yaw);
     const pitchErr = Math.abs(aimPitch - ctx.pitch);
-    const reactionDone = ctx.time - brain.lastGoalChange >= p.reactionMs;
+    const reactionDone = ctx.time - brain.lastGoalChange >= p.reactionMs * 0.65;
     const cooldownDone = ctx.time - brain.lastShotTime >= p.fireIntervalMs;
     if (
       reactionDone &&
       cooldownDone &&
-      Math.abs(yawErr) < Math.max(0.28, p.aimError * 2.2) &&
-      pitchErr < 0.4
+      Math.abs(yawErr) < Math.max(0.38, p.aimError * 2.8) &&
+      pitchErr < 0.55
     ) {
-      if (ctx.weaponReady && Math.random() < 0.75) {
+      if (ctx.weaponReady && Math.random() < 0.88) {
         fire = true;
         brain.lastShotTime = ctx.time;
         if (Math.random() < 0.2) skill = true;
@@ -252,7 +252,7 @@ export function decideBotInput(ctx: BotContext): PlayerInput {
   }
 
   const yawDelta = wrapAngle(targetYaw - ctx.yaw);
-  const pitchDelta = wrapAngle(targetPitch - ctx.pitch);
+  const pitchDelta = targetPitch - ctx.pitch;
   const aimNoise = (Math.random() - 0.5) * p.aimError;
 
   return {

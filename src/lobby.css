@@ -5,9 +5,9 @@
 .lobby-overlay {
   --lobby-bg0: #080a0c;
   --lobby-bg1: #0e1218;
-  --lobby-accent: #7a8f5c;
-  --lobby-accent-bright: #9cb06e;
-  --lobby-accent-dim: rgba(122, 143, 92, 0.14);
+  --lobby-accent: #c9a860;
+  --lobby-accent-bright: #e8c878;
+  --lobby-accent-dim: rgba(201, 168, 96, 0.14);
   --lobby-steel: #6a7a8a;
   --lobby-warn: #c89830;
   --lobby-muted: #7a8494;

@@ -483,6 +483,24 @@ describe('hitscan combat', () => {
     expect(player.health).toBeLessThan(before);
     expect(player.health).toBeGreaterThan(before - 20); // BOT_DAMAGE_SCALE < 1
   });
+
+  it('bots fire at a nearby human during combat', () => {
+    const sim = makeSim(1, 4242);
+    sim.startMatch();
+    runFor(sim, 9);
+    const player = sim.units.get('player')!;
+    const bot = sim.units.get('bot_1')!;
+    player.player.position.set(0, 0.9, 0);
+    bot.player.position.set(0, 0.9, -12);
+    bot.player.setFacing(0, 0);
+    player.health = 100;
+    player.armor = 0;
+    const healthBefore = player.health;
+    runFor(sim, 6);
+    const botShots = sim.events.filter((e) => e.type === 'shot' && e.unitId === 'bot_1');
+    expect(botShots.length).toBeGreaterThan(0);
+    expect(player.health).toBeLessThan(healthBefore);
+  });
 });
 
 describe('melee gameplay (#27)', () => {

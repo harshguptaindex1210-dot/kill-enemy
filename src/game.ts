@@ -260,6 +260,12 @@ export class MatchGame {
         hudOpacity: this.settings.hudOpacity,
         hudScale: this.settings.hudScale,
       }),
+      getSettings: () => this.settings,
+      onSettingsChange: (changes) => {
+        this.settings = { ...this.settings, ...changes };
+        saveSettings(this.settings);
+        if (changes.volume !== undefined) this.audio.setVolume(this.settings.volume);
+      },
       onTouchSettingsChange: (changes) => {
         this.settings = { ...this.settings, ...changes };
         saveSettings(this.settings);
@@ -287,7 +293,7 @@ export class MatchGame {
 
     this.crosshairEl = document.createElement('div');
     this.crosshairEl.style.cssText =
-      'position:fixed;top:50%;left:50%;width:6px;height:6px;transform:translate(-50%,-50%);background:#fff;border-radius:50%;z-index:9998;pointer-events:none;mix-blend-mode:difference;';
+      'position:fixed;top:50%;left:50%;width:8px;height:8px;transform:translate(-50%,-50%);border:1px solid #e8c878;border-radius:50%;background:rgba(232,200,120,.4);box-shadow:0 0 6px rgba(0,0,0,.5);z-index:9998;pointer-events:none;';
     document.body.appendChild(this.crosshairEl);
 
     this.hitmarkerEl = document.createElement('div');

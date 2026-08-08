@@ -544,11 +544,168 @@
 
 #minimap,
 .minimap-canvas {
-  border: 1px solid rgba(100, 120, 100, 0.4) !important;
+  border: 1px solid rgba(201, 168, 96, 0.35) !important;
   border-radius: 2px !important;
-  background: #080c10 !important;
+  background: rgba(8, 12, 16, 0.92) !important;
   box-shadow:
     0 2px 10px rgba(0, 0, 0, 0.55),
-    inset 0 0 0 1px rgba(122, 143, 92, 0.08);
+    inset 0 0 0 1px rgba(201, 168, 96, 0.1);
   cursor: pointer;
+}
+
+/* BGMI-inspired tactical chrome */
+.hud-panel {
+  background: rgba(8, 12, 16, 0.9) !important;
+  border: 1px solid rgba(201, 168, 96, 0.22) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+}
+
+.hud-stat {
+  color: #d8dde4;
+}
+
+.hud-phase,
+.hud-zone {
+  color: #c9a860 !important;
+}
+
+.hud-bar-health .hud-bar-fill {
+  background: linear-gradient(90deg, #3d6b38, #6faa58) !important;
+}
+
+.hud-bar-armor .hud-bar-fill {
+  background: linear-gradient(90deg, #4a5a68, #8aa0b0) !important;
+}
+
+.hud-heal-btn {
+  border: 1px solid rgba(201, 168, 96, 0.45) !important;
+  background: linear-gradient(180deg, rgba(58, 78, 40, 0.95), rgba(36, 48, 28, 0.95)) !important;
+  color: #f0e6c8 !important;
+}
+
+#touch-controls-overlay button {
+  font-family: system-ui, sans-serif;
+  letter-spacing: 0.02em;
+}
+
+#tb-settings-gear,
+.touch-settings-gear {
+  position: absolute;
+  top: max(10px, env(safe-area-inset-top));
+  right: max(10px, env(safe-area-inset-right));
+  width: 44px;
+  height: 44px;
+  border-radius: 4px;
+  border: 1px solid rgba(201, 168, 96, 0.45);
+  background: rgba(12, 16, 22, 0.88);
+  color: #d4b878;
+  font-size: 20px;
+  font-weight: 700;
+  pointer-events: auto;
+  touch-action: manipulation;
+  z-index: 2;
+}
+
+#tb-settings-gear:active,
+.touch-settings-gear:active {
+  transform: scale(0.96);
+}
+
+/* In-match mobile settings sheet */
+.mobile-settings-panel {
+  position: fixed;
+  inset: 0;
+  z-index: 100020;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  font-family: system-ui, sans-serif;
+}
+
+.mobile-settings-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.mobile-settings-sheet {
+  position: relative;
+  width: min(100%, 520px);
+  max-height: min(82vh, 640px);
+  margin-bottom: env(safe-area-inset-bottom, 0px);
+  background: linear-gradient(180deg, #10161e, #0a0e14);
+  border: 1px solid rgba(201, 168, 96, 0.28);
+  border-bottom: none;
+  border-radius: 6px 6px 0 0;
+  color: #e8ecf0;
+  overflow: hidden;
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.55);
+}
+
+.mobile-settings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(201, 168, 96, 0.2);
+  background: rgba(201, 168, 96, 0.06);
+  letter-spacing: 0.08em;
+  font-size: 12px;
+  color: #d4b878;
+}
+
+.mobile-settings-header button {
+  width: 36px;
+  height: 36px;
+  border: 1px solid rgba(201, 168, 96, 0.35);
+  border-radius: 4px;
+  background: rgba(8, 12, 16, 0.8);
+  color: #d4b878;
+  font-size: 16px;
+}
+
+.mobile-settings-body {
+  padding: 10px 14px 16px;
+  overflow: auto;
+  max-height: calc(min(82vh, 640px) - 52px);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mobile-settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 12px;
+  color: #b8c0cc;
+}
+
+.mobile-settings-row select,
+.mobile-settings-row input[type='range'] {
+  flex: 1;
+  max-width: 58%;
+  min-height: 36px;
+  background: #141c24;
+  color: #eef2f6;
+  border: 1px solid rgba(201, 168, 96, 0.25);
+  border-radius: 4px;
+  padding: 4px 8px;
+}
+
+.mobile-settings-range {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  max-width: 62%;
+  justify-content: flex-end;
+}
+
+.mobile-settings-range b {
+  min-width: 42px;
+  text-align: right;
+  color: #d4b878;
+  font-size: 11px;
 }

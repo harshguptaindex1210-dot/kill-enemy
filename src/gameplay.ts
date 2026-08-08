@@ -259,10 +259,10 @@ export class MatchSim {
     const spread = Math.min(count, 10);
     for (let i = 0; i < count; i++) {
       const a = (i / spread) * Math.PI * 2 + this.rng() * 0.12;
-      const radius = 72 + (i % 4) * 24;
+      const radius = 54 + (i % 4) * 18;
       const p = new THREE.Vector3(Math.cos(a) * radius, 0.9, Math.sin(a) * radius);
       if (this.obstacles.some((o) => Math.hypot(p.x - o.x, p.z - o.z) < o.r + 5)) {
-        p.set(Math.cos(a) * 60, 0.9, Math.sin(a) * 60);
+        p.set(Math.cos(a) * 45, 0.9, Math.sin(a) * 45);
       }
       pts.push(p);
     }
@@ -381,7 +381,8 @@ export class MatchSim {
     const inCombat = Boolean(
       enemy && enemy.player.position.distanceTo(unit.player.position) <= 140
     );
-    const THINK_MS = inCombat ? (isMobileDevice() ? 80 : 0) : isMobileDevice() ? 220 : 80;
+    // Never cache combat input — stale aim deltas prevent bots from aligning to fire.
+    const THINK_MS = inCombat ? 0 : isMobileDevice() ? 220 : 80;
     if (brain.lastInput && THINK_MS > 0 && this.time - brain.lastThinkMs < THINK_MS) {
       return brain.lastInput;
     }
