@@ -20,6 +20,7 @@ export function createHUD(): {
   el.className = 'game-hud';
   el.style.cssText =
     'position:fixed;inset:0;pointer-events:none;z-index:10005;display:none;overflow:visible;--hud-scale:1;';
+
   el.innerHTML = `
     <div id="hud-top" class="hud-panel hud-top">
       <span id="hud-kills" class="hud-stat">KILLS 0</span>
@@ -31,23 +32,23 @@ export function createHUD(): {
       <span id="hud-storm" class="hud-stat hud-storm">STORM</span>
     </div>
     <div id="hud-prompt" class="hud-panel hud-prompt"></div>
+    <div id="hud-vitals-dock" class="hud-dock">
+      <div class="hud-vital-row">
+        <span class="hud-vital-label">HEALTH</span><span id="hud-health-num" class="hud-vital-value">100</span>
+      </div>
+      <div class="hud-bar-track hud-bar-health"><div id="hud-health-bar" class="hud-bar-fill"></div></div>
+      <div class="hud-vital-row" style="margin-top:6px">
+        <span class="hud-vital-label">ARMOR</span><span id="hud-armor-num" class="hud-vital-value">0</span>
+      </div>
+      <div class="hud-bar-track hud-bar-armor"><div id="hud-armor-bar" class="hud-bar-fill"></div></div>
+      <div id="hud-heal-row" class="hud-bar-track hud-bar-heal"><div id="hud-heal-bar" class="hud-bar-fill"></div></div>
+    </div>
+    <div id="hud-weapon-dock" class="hud-dock">
+      <div id="hud-weapon-name" class="hud-weapon-name">RIFLE</div>
+      <div id="hud-ammo" class="hud-ammo">30 / 90</div>
+      <div id="hud-reload" class="hud-reload">RELOADING...</div>
+    </div>
     <div id="hud-bottom" class="hud-panel hud-bottom">
-      <div class="hud-vitals">
-        <div class="hud-vital-row">
-          <span class="hud-vital-label">HEALTH</span><span id="hud-health-num" class="hud-vital-value">100</span>
-        </div>
-        <div class="hud-bar-track hud-bar-health"><div id="hud-health-bar" class="hud-bar-fill"></div></div>
-        <div class="hud-vital-row">
-          <span class="hud-vital-label">ARMOR</span><span id="hud-armor-num" class="hud-vital-value">0</span>
-        </div>
-        <div class="hud-bar-track hud-bar-armor"><div id="hud-armor-bar" class="hud-bar-fill"></div></div>
-        <div id="hud-heal-row" class="hud-bar-track hud-bar-heal"><div id="hud-heal-bar" class="hud-bar-fill"></div></div>
-      </div>
-      <div id="hud-weapon" class="hud-weapon">
-        <div id="hud-weapon-name" class="hud-weapon-name">RIFLE</div>
-        <div id="hud-ammo" class="hud-ammo">30 / 90</div>
-        <div id="hud-reload" class="hud-reload">RELOADING...</div>
-      </div>
       <div id="hud-skill" class="hud-skill">
         <div id="hud-skill-name" class="hud-skill-name">SKILL Speed [F]</div>
         <div id="hud-skill-status" class="hud-skill-status">READY</div>

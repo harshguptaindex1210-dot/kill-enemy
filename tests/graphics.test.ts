@@ -42,7 +42,7 @@ describe('battle royale visuals', () => {
     } as unknown as THREE.WebGLRenderer;
     applyRendererLook(renderer, 'high');
     expect(renderer.toneMapping).toBe(THREE.ACESFilmicToneMapping);
-    expect(renderer.toneMappingExposure).toBeGreaterThan(1.1);
+    expect(renderer.toneMappingExposure).toBeGreaterThan(1.35);
     expect(renderer.outputColorSpace).toBe(THREE.SRGBColorSpace);
   });
 });

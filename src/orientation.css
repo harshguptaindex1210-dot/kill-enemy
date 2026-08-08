@@ -145,6 +145,11 @@
     max-width: min(180px, calc(100vw - 160px)) !important;
   }
 
+  html[data-phone-device='true'] #hud-vitals-dock,
+  html[data-phone-device='true'] #hud-weapon-dock {
+    bottom: max(86px, env(safe-area-inset-bottom)) !important;
+  }
+
   html[data-phone-device='true'] #hud-bottom {
     bottom: max(86px, env(safe-area-inset-bottom)) !important;
     padding: 6px 10px !important;
@@ -323,6 +328,51 @@
   display: block;
 }
 
+#hud-vitals-dock,
+#hud-weapon-dock {
+  position: fixed;
+  z-index: 10006;
+  pointer-events: none;
+  padding: 10px 12px;
+  min-width: 148px;
+  background: rgba(8, 12, 18, 0.94);
+  border: 1px solid rgba(201, 168, 96, 0.38);
+  border-radius: 4px;
+  color: #eef2f6;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5);
+}
+
+#hud-vitals-dock {
+  left: max(14px, env(safe-area-inset-left));
+  bottom: max(18px, env(safe-area-inset-bottom));
+}
+
+#hud-weapon-dock {
+  right: max(14px, env(safe-area-inset-right));
+  bottom: max(18px, env(safe-area-inset-bottom));
+  text-align: right;
+  min-width: 132px;
+  padding: 10px 14px;
+}
+
+#hud-vitals-dock .hud-bar-track {
+  height: 10px;
+  width: 100%;
+  min-width: 140px;
+  margin-top: 4px;
+}
+
+#hud-health-bar {
+  background: linear-gradient(90deg, #3d8a38, #6fd058) !important;
+}
+
+#hud-armor-bar {
+  background: linear-gradient(90deg, #3a5a78, #6aa8d8) !important;
+}
+
 .hud-bottom {
   position: absolute;
   bottom: 24px;
@@ -330,9 +380,9 @@
   transform: translateX(-50%) scale(var(--hud-scale, 1));
   transform-origin: bottom center;
   display: flex;
-  gap: 16px;
+  gap: 12px;
   align-items: center;
-  padding: 8px 18px;
+  padding: 6px 14px;
 }
 
 .hud-vitals {
@@ -352,8 +402,9 @@
 }
 
 .hud-vital-value {
-  color: #e4e8ec;
-  font-weight: 700;
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 13px;
 }
 
 .hud-bar-track {
@@ -412,10 +463,11 @@
 }
 
 .hud-ammo {
-  font-size: 13px;
-  font-weight: 700;
-  color: #e8ecf0;
-  letter-spacing: 0.04em;
+  font-size: 18px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: 0.06em;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.65);
 }
 
 .hud-reload {

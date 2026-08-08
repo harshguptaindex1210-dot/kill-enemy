@@ -9,9 +9,9 @@ import type { QualityPreset } from './scene';
 import type { MapId } from './mapPresets';
 
 const GRADE: Record<MapId, { warmMix: number; vignette: number; sat: number }> = {
-  meadow: { warmMix: 0.2, vignette: 0.42, sat: 1.1 },
-  city: { warmMix: 0.07, vignette: 0.34, sat: 1.04 },
-  desert: { warmMix: 0.24, vignette: 0.46, sat: 1.12 },
+  meadow: { warmMix: 0.1, vignette: 0.16, sat: 1.06 },
+  city: { warmMix: 0.04, vignette: 0.12, sat: 1.02 },
+  desert: { warmMix: 0.12, vignette: 0.18, sat: 1.08 },
 };
 
 const ColorGradeShader = {
@@ -32,8 +32,9 @@ const ColorGradeShader = {
       vec3 col = texture2D(tDiffuse, vUv).rgb;
       float luma = dot(col, vec3(0.299, 0.587, 0.114));
       col = mix(vec3(luma), col, saturation);
-      col = mix(col, col * vec3(1.04, 1.0, 0.92) + vec3(0.02, 0.01, 0.0), warmMix);
-      col = col * (col * 1.06 + 0.03);
+      col = mix(col, col * vec3(1.04, 1.0, 0.96) + vec3(0.02, 0.01, 0.0), warmMix);
+      col = col * (col * 1.04 + 0.05);
+      col = col * 1.08 + vec3(0.035);
       float grain = fract(sin(dot(vUv * 1400.0, vec2(12.9898, 78.233))) * 43758.5453);
       col += (grain - 0.5) * 0.022;
       float d = distance(vUv, vec2(0.5));

@@ -38,7 +38,8 @@ describe('HUD heal action button', () => {
     const root = document.getElementById('game-hud') as HTMLElement;
     expect(root.style.transform).toBe('');
     expect(root.style.getPropertyValue('--hud-scale')).toBe('1.2');
-    expect(root.style.opacity).toBe('0.9');
+    expect(document.getElementById('hud-vitals-dock')).toBeTruthy();
+    expect(document.getElementById('hud-weapon-dock')).toBeTruthy();
     hud.remove();
   });
 

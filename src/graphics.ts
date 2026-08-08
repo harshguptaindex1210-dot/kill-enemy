@@ -5,7 +5,7 @@ export { groundTextureFor } from './groundSurfaces';
 
 export function applyRendererLook(renderer: THREE.WebGLRenderer, quality: QualityPreset): void {
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = quality === 'high' ? 1.32 : quality === 'medium' ? 1.22 : 1.08;
+  renderer.toneMappingExposure = quality === 'high' ? 1.52 : quality === 'medium' ? 1.42 : 1.22;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
 }
 
@@ -37,7 +37,7 @@ export function addGradientSky(scene: THREE.Scene, options: SkyOptions = {}): TH
       vertexShader:
         'varying vec3 vWorldPosition;void main(){vec4 wp=modelMatrix*vec4(position,1.0);vWorldPosition=wp.xyz;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
       fragmentShader:
-        'uniform vec3 topColor,bottomColor,sunDir;varying vec3 vWorldPosition;void main(){vec3 d=normalize(vWorldPosition);float h=pow(clamp(d.y*.5+.5,0.,1.),.48);vec3 c=mix(bottomColor,topColor,h);c=mix(c,c*.82+vec3(.14,.09,.04),pow(1.-h,2.2)*.42);c+=vec3(1.,.88,.68)*pow(max(dot(d,sunDir),0.),88.)*.45;c=mix(c,bottomColor,pow(1.-h,3.5)*.18);gl_FragColor=vec4(c,1.);}',
+        'uniform vec3 topColor,bottomColor,sunDir;varying vec3 vWorldPosition;void main(){vec3 d=normalize(vWorldPosition);float h=pow(clamp(d.y*.5+.5,0.,1.),.42);vec3 c=mix(bottomColor,topColor,h);c=mix(c,c*.9+vec3(.08,.06,.03),pow(1.-h,2.2)*.18);c+=vec3(1.,.92,.75)*pow(max(dot(d,sunDir),0.),72.)*.62;c=mix(c,bottomColor,pow(1.-h,3.5)*.08);gl_FragColor=vec4(c,1.);}',
       side: THREE.BackSide,
       depthWrite: false,
       fog: false,
@@ -54,7 +54,7 @@ export function applyTealFog(
   color = 0x9aa8a0
 ): void {
   void near;
-  const density = 2.35 / Math.max(far, 1);
+  const density = 1.85 / Math.max(far, 1);
   scene.fog = new THREE.FogExp2(color, density);
   scene.background = null;
 }
@@ -79,6 +79,8 @@ export function addMapLighting(
 ): THREE.DirectionalLight {
   scene.add(new THREE.AmbientLight(preset.ambientColor, preset.ambientIntensity));
 
+  scene.add(new THREE.AmbientLight(0xffffff, 0.12));
+
   const sun = new THREE.DirectionalLight(preset.sunColor, preset.sunIntensity);
   sun.position.set(118, 92, 148);
   if (quality !== 'low') {
@@ -86,7 +88,7 @@ export function addMapLighting(
   }
   scene.add(sun);
 
-  const fill = new THREE.DirectionalLight(0x7a9cb8, preset.mapId === 'city' ? 0.24 : 0.3);
+  const fill = new THREE.DirectionalLight(0xa8c8e8, preset.mapId === 'city' ? 0.42 : 0.48);
   fill.position.set(-96, 52, -118);
   scene.add(fill);
 
