@@ -15,6 +15,8 @@ export interface PlayerInput {
   fire: boolean;
   reload: boolean;
   skill?: boolean;
+  /** One-shot med-kit use (KeyH / touch Heal). */
+  heal?: boolean;
   weapon1: boolean;
   weapon2: boolean;
   weapon3: boolean;

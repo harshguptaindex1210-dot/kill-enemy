@@ -15,6 +15,13 @@ export const ZONE_PHASE_DPS = [1, 2, 4, 8, 16] as const;
 
 export const ZONE_PHASE_DURATIONS = [200, 150, 120, 90, 60] as const;
 
+/** Med-kits granted at match start (local + demo-online). */
+export const START_MEDKITS = 5;
+/** Max med-kits a unit may hold (pickup cap). */
+export const MAX_MEDKITS = 5;
+/** Bandages granted at match start. */
+export const START_BANDAGES = 2;
+
 export const DEFAULT_POI_POSITIONS: { name: string; position: THREE.Vector3 }[] = [
   { name: 'Town', position: new THREE.Vector3(POI_RADIUS, 0, 0) },
   { name: 'Factory', position: new THREE.Vector3(0, 0, POI_RADIUS) },

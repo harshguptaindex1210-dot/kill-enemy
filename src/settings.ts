@@ -35,7 +35,9 @@ export interface StorageLike {
   setItem(key: string, value: string): void;
 }
 
-const KEY = 'robot_arena_settings_v1';
+/** v2: clears sticky invertLookHorizontal left from earlier phone look sign flips. */
+const KEY = 'robot_arena_settings_v2';
+const LEGACY_KEY = 'robot_arena_settings_v1';
 
 export function defaultSettings(): Settings {
   const isMobile = isMobileDevice();
@@ -118,7 +120,21 @@ export function sanitizeSettings(raw: unknown): Settings {
 export function loadSettings(storage: StorageLike = defaultStorage()): Settings {
   try {
     const raw = storage.getItem(KEY);
-    return sanitizeSettings(raw ? JSON.parse(raw) : null);
+    if (raw) return sanitizeSettings(JSON.parse(raw));
+    // One-time migrate v1 → v2, forcing horizontal invert off (accidental/compensating toggles).
+    const legacy = storage.getItem(LEGACY_KEY);
+    if (legacy) {
+      const migrated = sanitizeSettings(JSON.parse(legacy));
+      migrated.invertLookHorizontal = false;
+      saveSettings(migrated, storage);
+      try {
+        storage.setItem(LEGACY_KEY, '');
+      } catch {
+        // ignore
+      }
+      return migrated;
+    }
+    return defaultSettings();
   } catch {
     return defaultSettings();
   }

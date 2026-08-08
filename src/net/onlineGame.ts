@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { createScene, type QualityPreset } from '../scene';
-import { MAP_SIZE, POI_RADIUS, ZONE_PHASE_DURATIONS } from '../constants';
+import { MAP_SIZE, POI_RADIUS, ZONE_PHASE_DURATIONS, START_MEDKITS } from '../constants';
 import { createRobotModel, updateRobotAnim, type RobotAnimState } from '../robot';
 import { ZoneSystem } from '../zone';
 import {
@@ -125,6 +125,7 @@ export class OnlineMatchGame {
   private lastPhaseBanner = '';
   private hudNext = 0;
   private minimapNext = 0;
+  private healPressed = false;
   private hudIntervalMs = HUD_INTERVAL_MS;
   private minimapIntervalMs = MINIMAP_INTERVAL_MS;
   private fpsSamples: number[] = [];
@@ -183,6 +184,9 @@ export class OnlineMatchGame {
       },
     });
     this.hud = createHUD();
+    this.hud.onHealAction?.(() => {
+      this.healPressed = true;
+    });
     this.minimap = createMinimap();
     this.buildTargetsFromSim();
 
@@ -398,6 +402,9 @@ export class OnlineMatchGame {
 
     this.lastAim = rawInput.aim || this.opts.settings.cameraMode === 'fps';
 
+    const heal = Boolean(rawInput.heal || this.healPressed);
+    this.healPressed = false;
+
     this.client.sendInput({
       seq: 0,
       forward: rawInput.forward,
@@ -411,6 +418,7 @@ export class OnlineMatchGame {
       mouseY: rawInput.mouseY * sensY,
       fire: rawInput.fire,
       reload: rawInput.reload,
+      heal,
     });
 
     if (snap) {
@@ -623,6 +631,28 @@ export class OnlineMatchGame {
     const zoneTimeMs = Math.max(0, (phaseDur - elapsedSec) * 1000);
     const sim = this.client.localServer?.sim;
     const mp = human ? this.client.localServer!.sim.match.players[this.client.selfId] : null;
+    let healProgress = 0;
+    if (human?.healing && sim) {
+      const dur = human.healing.kind === 'medkit' ? 4000 : 2000;
+      const left = human.healing.until - sim.time;
+      healProgress = Math.max(0, Math.min(1, 1 - left / dur));
+    }
+    const canHeal =
+      Boolean(human?.alive) &&
+      (snap?.phase ?? '') === 'playing' &&
+      !human?.healing &&
+      (human?.health ?? 100) < 100 &&
+      (human?.heals.medkit ?? 0) > 0;
+    let healActionLabel = 'HEAL';
+    if (human?.healing && sim) {
+      healActionLabel = `HEAL ${Math.max(0, Math.ceil((human.healing.until - sim.time) / 1000))}s`;
+    } else if ((human?.health ?? 100) >= 100) {
+      healActionLabel = 'FULL';
+    } else if ((human?.heals.medkit ?? 0) <= 0) {
+      healActionLabel = 'NO';
+    } else if (human) {
+      healActionLabel = `HEAL x${human.heals.medkit}`;
+    }
     const data: HUDData = {
       kills: mp?.kills ?? 0,
       targetsHit: sim?.getTargetHits(this.client.selfId) ?? 0,
@@ -634,17 +664,17 @@ export class OnlineMatchGame {
       reserve: human?.inventory.ammo[weapon?.def.type ?? 'rifle'] ?? 90,
       reloading: weapon?.reloading ?? false,
       grenades: human?.grenadeCount ?? 2,
-      heals: human ? human.heals.medkit + human.heals.bandage : 3,
+      heals: human ? human.heals.medkit + human.heals.bandage : START_MEDKITS + 2,
       matchTimer: formatTimer(snap?.time_ms ?? 0),
       phaseLabel: (snap?.phase ?? 'lobby').toUpperCase(),
       zoneTimer: formatTimer(zoneTimeMs),
-      healProgress: 0,
+      healProgress,
       inStorm: false,
       justHit: false,
       prompt: '',
       bearing: this.compassBearing(self.yaw),
-      healActionLabel: 'HEAL',
-      healActionEnabled: false,
+      healActionLabel,
+      healActionEnabled: canHeal,
     };
     this.hud.update(data);
   }

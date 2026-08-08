@@ -85,6 +85,7 @@ export class LocalServer {
       weapon1: false,
       weapon2: false,
       weapon3: false,
+      heal: w?.heal ?? false,
       mouseX: w?.mouseX ?? 0,
       mouseY: w?.mouseY ?? 0,
     };

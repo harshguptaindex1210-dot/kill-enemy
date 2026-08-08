@@ -545,7 +545,7 @@ export class MatchGame {
     const root = document.createElement('div');
     root.id = 't';
     root.style.cssText =
-      'display:none;position:fixed;right:12px;bottom:120px;z-index:10003;pointer-events:auto;flex-direction:column;gap:6px;';
+      'display:none;position:fixed;left:12px;bottom:210px;z-index:10003;pointer-events:auto;flex-direction:column;gap:6px;';
 
     const makeBtn = (label: string, bg: string) => {
       const btn = document.createElement('button');
@@ -558,9 +558,9 @@ export class MatchGame {
     };
 
     this.mBtn = makeBtn('E', '#0369a1');
-    this.healBtn = makeBtn('💊', '#047857');
-    this.carBtn = makeBtn('🚗', '#a16207');
-    this.bikeBtn = makeBtn('🏍', '#6b21a8');
+    this.healBtn = makeBtn('HEAL', '#047857');
+    this.carBtn = makeBtn('CAR', '#a16207');
+    this.bikeBtn = makeBtn('BIKE', '#6b21a8');
 
     const bindTouch = (btn: HTMLButtonElement, fn: () => void) => {
       const run = (e: Event) => {
@@ -1174,6 +1174,7 @@ export class MatchGame {
       const show = human.alive && this.sim.match.phase === 'playing';
       this.touchActionRoot.style.display = show ? 'flex' : 'none';
       this.healBtn.disabled = !this.canUseHealAction(human);
+      this.healBtn.textContent = this.healActionLabel(human);
       const now = this.sim.time;
       const inCooldown = now < this.vehicleActionCooldownUntil;
       this.carBtn.disabled = inCooldown;
@@ -1196,7 +1197,7 @@ export class MatchGame {
     }
     if (human.health >= 100) return 'FULL';
     if (human.heals.medkit <= 0) return 'NO';
-    return `HEAL [H]x${human.heals.medkit}`;
+    return `HEAL x${human.heals.medkit}`;
   }
 
   private phaseLabel(): string {

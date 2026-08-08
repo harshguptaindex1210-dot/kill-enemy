@@ -42,6 +42,7 @@ export function createInputManager(
   let aimPressed = false;
   let reloadOnce = false;
   let skillOnce = false;
+  let healOnce = false;
   let jumpOnce = false;
   let w1 = false,
     w2 = false,
@@ -58,6 +59,7 @@ export function createInputManager(
   let touchJumpOnce = false;
   let touchReloadOnce = false;
   let touchSkillOnce = false;
+  let touchHealOnce = false;
   let touchW1 = false;
   let touchW2 = false;
   let touchW3 = false;
@@ -71,6 +73,7 @@ export function createInputManager(
     keys.add(e.code);
     if (e.code === 'KeyR') reloadOnce = true;
     if (e.code === 'KeyF') skillOnce = true;
+    if (e.code === 'KeyH') healOnce = true;
     if (e.code === 'Space') jumpOnce = true;
     if (e.code === 'Digit1') w1 = true;
     if (e.code === 'Digit2') w2 = true;
@@ -148,13 +151,6 @@ export function createInputManager(
     };
   };
 
-  const saveTouchSettings = (changes: Partial<TouchRuntimeSettings>) => {
-    options.onTouchSettingsChange?.(changes);
-    if (typeof changes.invertLookHorizontal === 'boolean') {
-      options.onInvertLookHorizontalChange?.(changes.invertLookHorizontal);
-    }
-  };
-
   const applyTouchUiSettings = () => {
     if (!touchOverlay) return;
     const touchSettings = resolveTouchSettings();
@@ -168,7 +164,7 @@ export function createInputManager(
     const weaponsArea = touchOverlay.querySelector('#touch-weapons-area') as HTMLDivElement | null;
     const leftFire = touchOverlay.querySelector('#tb-fire-left') as HTMLButtonElement | null;
     const actionButtons = touchOverlay.querySelectorAll(
-      '#tb-skill,#tb-jump,#tb-reload,#tb-aim,#tb-fire,#tb-fire-left'
+      '#tb-heal,#tb-skill,#tb-jump,#tb-reload,#tb-aim,#tb-fire,#tb-fire-left'
     );
 
     const compact = touchSettings.touchButtonPreset === 'compact';
@@ -235,7 +231,7 @@ export function createInputManager(
     touchOverlay.style.cssText =
       'position:fixed;inset:0;pointer-events:none;z-index:9996;user-select:none;-webkit-user-select:none;touch-action:none;';
 
-    touchOverlay.innerHTML = `<div id="touch-joystick-area"><div id="touch-joystick-knob"></div></div><button id="tb-fire-left">🔥</button><div id="touch-actions-area"><div><button id="tb-skill">⚡</button><button id="tb-jump">⬆️</button></div><div><button id="tb-reload">↻</button><button id="tb-aim">🎯</button><button id="tb-fire">🔥</button></div></div><div id="touch-weapons-area"><button id="tb-w1">R1</button><button id="tb-w2">P2</button><button id="tb-w3">M3</button></div><button id="tb-invert-look" type="button">Invert H: Off</button>`;
+    touchOverlay.innerHTML = `<div id="touch-joystick-area"><div id="touch-joystick-knob"></div></div><button id="tb-fire-left">🔥</button><div id="touch-actions-area"><div><button id="tb-heal" type="button">HEAL</button><button id="tb-skill">⚡</button><button id="tb-jump">⬆️</button></div><div><button id="tb-reload">↻</button><button id="tb-aim">🎯</button><button id="tb-fire">🔥</button></div></div><div id="touch-weapons-area"><button id="tb-w1">R1</button><button id="tb-w2">P2</button><button id="tb-w3">M3</button></div>`;
 
     document.body.appendChild(touchOverlay);
     const setStyle = (id: string, css: string) => {
@@ -261,22 +257,23 @@ export function createInputManager(
       '#touch-weapons-area',
       'position:absolute;top:100px;right:15px;display:flex;gap:6px;pointer-events:auto;touch-action:none;'
     );
-    setStyle(
-      '#tb-invert-look',
-      'position:absolute;top:96px;left:12px;padding:6px 8px;background:#000a;border:1px solid #fff6;color:#fff;font:bold 11px sans-serif;pointer-events:auto;touch-action:none;'
-    );
     const paintRoundBtn = (id: string, bg: string, border = '2px solid #fff') => {
       setStyle(
         id,
         `width:52px;height:52px;border-radius:50%;background:${bg};border:${border};color:#fff;font-size:20px;font-weight:bold;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.5);`
       );
     };
+    paintRoundBtn('#tb-heal', 'rgba(16,185,129,.85)', '3px solid #ecfdf5');
     paintRoundBtn('#tb-skill', 'rgba(0,240,255,.6)');
     paintRoundBtn('#tb-jump', 'rgba(50,220,100,.6)');
     paintRoundBtn('#tb-reload', 'rgba(255,180,0,.6)');
     paintRoundBtn('#tb-aim', 'rgba(50,150,255,.6)');
     paintRoundBtn('#tb-fire', 'rgba(255,50,50,.75)', '3px solid #fff');
     paintRoundBtn('#tb-fire-left', 'rgba(255,50,50,.72)', '3px solid #fff');
+    setStyle(
+      '#tb-heal',
+      `${(touchOverlay.querySelector('#tb-heal') as HTMLElement).style.cssText};font-size:11px;letter-spacing:.02em;`
+    );
     setStyle('#tb-fire-left', `${(touchOverlay.querySelector('#tb-fire-left') as HTMLElement).style.cssText};position:absolute;left:22px;bottom:170px;pointer-events:auto;touch-action:none;box-shadow:0 4px 12px rgba(255,0,0,.6);`);
     setStyle('#tb-fire', `${(touchOverlay.querySelector('#tb-fire') as HTMLElement).style.cssText};box-shadow:0 4px 12px rgba(255,0,0,.6);`);
     touchOverlay.querySelectorAll('#touch-weapons-area button').forEach((el) => {
@@ -445,6 +442,16 @@ export function createInputManager(
       touchSkillOnce = true;
     });
 
+    const btnHeal = touchOverlay.querySelector('#tb-heal') as HTMLButtonElement;
+    btnHeal.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      touchHealOnce = true;
+    });
+    btnHeal.addEventListener('click', (e) => {
+      e.preventDefault();
+      touchHealOnce = true;
+    });
+
     const btnReload = touchOverlay.querySelector('#tb-reload') as HTMLButtonElement;
     btnReload.addEventListener('touchstart', (e) => {
       e.preventDefault();
@@ -472,25 +479,6 @@ export function createInputManager(
         touchW3 = true;
       }
     );
-
-    const btnInvert = touchOverlay.querySelector('#tb-invert-look') as HTMLButtonElement;
-    const syncInvertLabel = () => {
-      const on = resolveTouchSettings().invertLookHorizontal;
-      btnInvert.textContent = on ? 'Invert H: On' : 'Invert H: Off';
-      btnInvert.style.borderColor = on ? '#2dd4bf' : '#fff6';
-      btnInvert.style.color = on ? '#2dd4bf' : '#fff';
-    };
-    syncInvertLabel();
-    const toggleInvert = (e: Event) => {
-      e.preventDefault();
-      e.stopPropagation();
-      const next = !resolveTouchSettings().invertLookHorizontal;
-      saveTouchSettings({ invertLookHorizontal: next });
-      applyTouchUiSettings();
-      syncInvertLabel();
-    };
-    btnInvert.addEventListener('touchstart', toggleInvert);
-    btnInvert.addEventListener('click', toggleInvert);
   }
 
   if (isTouchDeviceFlag) {
@@ -521,6 +509,7 @@ export function createInputManager(
       fire: firePressed || touchFirePressed,
       reload: reloadOnce || touchReloadOnce,
       skill: skillOnce || touchSkillOnce,
+      heal: healOnce || touchHealOnce,
       weapon1: w1 || touchW1,
       weapon2: w2 || touchW2,
       weapon3: w3 || touchW3,
@@ -532,6 +521,7 @@ export function createInputManager(
     mouseY = 0;
     reloadOnce = false;
     skillOnce = false;
+    healOnce = false;
     jumpOnce = false;
     w1 = false;
     w2 = false;
@@ -540,6 +530,7 @@ export function createInputManager(
     touchJumpOnce = false;
     touchReloadOnce = false;
     touchSkillOnce = false;
+    touchHealOnce = false;
     touchW1 = false;
     touchW2 = false;
     touchW3 = false;

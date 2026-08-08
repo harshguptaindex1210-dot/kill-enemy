@@ -7,7 +7,14 @@ import {
   tickMatch,
   type MatchState,
 } from './match';
-import { MAP_BOUND, DEFAULT_POI_POSITIONS, DEFAULT_OBSTACLES } from './constants';
+import {
+  MAP_BOUND,
+  DEFAULT_POI_POSITIONS,
+  DEFAULT_OBSTACLES,
+  START_BANDAGES,
+  START_MEDKITS,
+  MAX_MEDKITS,
+} from './constants';
 import { ZoneLogic } from './zone';
 import { createPlayer, type PlayerBundle, type PlayerInput } from './player';
 import {
@@ -297,7 +304,7 @@ export class MatchSim {
       melee: createMeleeWeapon(meleeType),
       meleeMode: false,
       grenadeCount: 2,
-      heals: { medkit: 1, bandage: 2 },
+      heals: { medkit: START_MEDKITS, bandage: START_BANDAGES },
       healing: null,
       lastDamageTime: -100000,
       inVehicleId: null,
@@ -460,6 +467,7 @@ export class MatchSim {
     if (input.weapon2) this.selectSlot(unit, 1);
     if (input.weapon3) unit.meleeMode = true;
     if (input.skill) this.triggerSkill(unit.id);
+    if (input.heal) this.useHealing(unit.id, 'medkit');
 
     const weapon = this.currentWeapon(unit);
     if (weapon) {
@@ -900,7 +908,8 @@ export class MatchSim {
         break;
       }
       case 'heal':
-        if (loot.subtype === 'medkit') unit.heals.medkit = Math.min(unit.heals.medkit + 1, 3);
+        if (loot.subtype === 'medkit')
+          unit.heals.medkit = Math.min(unit.heals.medkit + 1, MAX_MEDKITS);
         else unit.heals.bandage = Math.min(unit.heals.bandage + 1, 5);
         break;
     }

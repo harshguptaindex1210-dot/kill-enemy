@@ -207,6 +207,24 @@ describe('MatchSim', () => {
     expect(sim.units.get('player')!.healing).toBeNull();
   });
 
+  it('spawns the human with 5 med-kits', () => {
+    const sim = makeSim(0);
+    expect(sim.units.get('player')!.heals.medkit).toBe(5);
+  });
+
+  it('heal input starts a med-kit channel', () => {
+    const sim = makeSim(0);
+    sim.startMatch();
+    runFor(sim, 9);
+    expect(sim.match.phase).toBe('playing');
+    const player = sim.units.get('player')!;
+    player.health = 55;
+    const before = player.heals.medkit;
+    sim.update(1 / 20, fullInput({ heal: true }));
+    expect(player.heals.medkit).toBe(before - 1);
+    expect(player.healing?.kind).toBe('medkit');
+  });
+
   it('healing restores health after duration', () => {
     const sim = makeSim(1);
     sim.startMatch();

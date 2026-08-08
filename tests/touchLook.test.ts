@@ -96,6 +96,14 @@ describe('phone look chain (demo online / local MatchSim path)', () => {
     expect(fromMouse.yaw).toBeLessThan(0);
     expect(fromTouch.yaw).toBeLessThan(0);
   });
+
+  it('swipe right faces toward +X (world-right when starting at yaw 0)', () => {
+    const look = touchDragToLookDelta(80, 0, TOUCH_LOOK_SCALE, false);
+    const p = createPlayer();
+    p.update({ ...idleInput, mouseX: look.mouseX }, 1 / 60, 0);
+    const fwdX = -Math.sin(p.yaw);
+    expect(fwdX).toBeGreaterThan(0);
+  });
 });
 
 describe('shouldUseMouseLook', () => {

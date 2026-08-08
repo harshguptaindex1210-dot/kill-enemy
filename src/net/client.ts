@@ -147,12 +147,14 @@ export class MatchClient {
       let fire = false;
       let reload = false;
       let jump = false;
+      let heal = false;
       for (const f of frames) {
         sumMouseX += f.mouseX ?? 0;
         sumMouseY += f.mouseY ?? 0;
         if (f.fire) fire = true;
         if (f.reload) reload = true;
         if (f.jump) jump = true;
+        if (f.heal) heal = true;
       }
       merged = {
         ...merged,
@@ -161,6 +163,7 @@ export class MatchClient {
         fire,
         reload,
         jump,
+        heal,
       };
     }
     const input = { ...merged, seq: ++this.seq };

@@ -44,6 +44,18 @@ describe('HUD heal action button', () => {
     hud.remove();
   });
 
+  it('fires heal callback from touchstart on phones', () => {
+    const hud = createHUD();
+    const onHeal = vi.fn();
+    hud.onHealAction?.(onHeal);
+    hud.update(baseHudData({ healActionEnabled: true }));
+
+    const btn = document.getElementById('hud-heal-action') as HTMLButtonElement;
+    btn.dispatchEvent(new Event('touchstart', { bubbles: true, cancelable: true }));
+    expect(onHeal).toHaveBeenCalledTimes(1);
+    hud.remove();
+  });
+
   it('disables heal button with provided feedback label', () => {
     const hud = createHUD();
     hud.update(baseHudData({ healActionEnabled: false, healActionLabel: 'HEAL FULL HP' }));

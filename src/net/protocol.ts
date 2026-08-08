@@ -21,6 +21,8 @@ export interface WireInput {
   mouseY?: number;
   fire?: boolean;
   reload?: boolean;
+  /** One-shot med-kit use from touch HUD / keyboard. */
+  heal?: boolean;
 }
 
 export interface WireEntity {

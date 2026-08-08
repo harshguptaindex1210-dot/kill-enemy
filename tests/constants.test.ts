@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { MAP_BOUND, MAP_SIZE, POI_RADIUS, ZONE_PHASE_RADII } from '../src/constants';
+import {
+  MAP_BOUND,
+  MAP_SIZE,
+  POI_RADIUS,
+  ZONE_PHASE_RADII,
+  START_MEDKITS,
+  MAX_MEDKITS,
+} from '../src/constants';
 
 describe('map constants (#50)', () => {
   it('keeps the play area within the requested smaller bound', () => {
@@ -13,5 +20,10 @@ describe('map constants (#50)', () => {
     expect(POI_RADIUS).toBe(54);
     expect(ZONE_PHASE_RADII[0]).toBeLessThanOrEqual(MAP_BOUND);
     expect(ZONE_PHASE_RADII.at(-1)).toBeGreaterThan(0);
+  });
+
+  it('starts players with several med-kits', () => {
+    expect(START_MEDKITS).toBe(5);
+    expect(MAX_MEDKITS).toBeGreaterThanOrEqual(START_MEDKITS);
   });
 });

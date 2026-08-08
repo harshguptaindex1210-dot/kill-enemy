@@ -46,7 +46,7 @@ export function createHUD(): {
         <div>💣 <span id="hud-grenades">2</span></div>
         <div>💊 <span id="hud-heals">3</span></div>
       </div>
-      <button id="hud-heal-action" type="button" style="pointer-events:auto;padding:6px 8px;border:1px solid #34d399;border-radius:6px;background:#0f5132;color:#d1fae5;">HEAL [H]</button>
+      <button id="hud-heal-action" type="button" style="pointer-events:auto;padding:8px 12px;min-width:64px;min-height:40px;border:2px solid #34d399;border-radius:8px;background:#047857;color:#ecfdf5;font:bold 13px sans-serif;">HEAL</button>
     </div>
     <div id="hud-killfeed" style="position:absolute;top:64px;left:12px;display:flex;flex-direction:column;gap:4px;align-items:flex-start;max-width:min(240px,calc(100vw - 200px));"></div>
     <div id="hud-damage" style="position:absolute;inset:0;background:radial-gradient(transparent 50%, rgba(255,0,0,0.4) 100%);opacity:0;transition:opacity 0.1s;pointer-events:none;"></div>
@@ -63,11 +63,13 @@ export function createHUD(): {
   const respawnBtn = el.querySelector('#hud-respawn') as HTMLButtonElement;
   const healBtn = el.querySelector('#hud-heal-action') as HTMLButtonElement;
   respawnBtn.addEventListener('click', () => respawnHandler?.());
-  healBtn.addEventListener('click', (event) => {
+  const fireHeal = (event: Event) => {
     if (healBtn.disabled) return;
     event.preventDefault();
     healActionHandler?.();
-  });
+  };
+  healBtn.addEventListener('click', fireHeal);
+  healBtn.addEventListener('touchstart', fireHeal, { passive: false });
 
   return {
     onRespawn(handler: () => void) {

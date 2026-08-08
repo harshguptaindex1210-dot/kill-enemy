@@ -97,4 +97,19 @@ describe('orientation markup', () => {
     expect(html).toMatch(/@media\s*\(\s*orientation:\s*portrait\s*\)\s*and\s*\(\s*max-width:\s*900px\s*\)/);
     expect(html).toMatch(/dataset\.phoneDevice/);
   });
+
+  it('phone CSS promotes the touch HEAL button', () => {
+    const css = readFileSync(resolve(__dirname, '../src/orientation.css'), 'utf8');
+    expect(css).toMatch(/#tb-heal/);
+    expect(css).toMatch(/#hud-heal-action[\s\S]*display:\s*none/);
+  });
+});
+
+describe('touch overlay heal control', () => {
+  it('ships a labeled HEAL button in the touch actions markup', () => {
+    const src = readFileSync(resolve(__dirname, '../src/input.ts'), 'utf8');
+    expect(src).toMatch(/id="tb-heal"/);
+    expect(src).toMatch(/>HEAL</);
+    expect(src).not.toMatch(/tb-invert-look/);
+  });
 });

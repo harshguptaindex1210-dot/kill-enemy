@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { MatchClient } from '../src/net/client';
+import { touchDragToLookDelta } from '../src/touchLook';
+import { START_MEDKITS } from '../src/constants';
 
 describe('demo online client fire path', () => {
   it('delivers fire input to LocalServer and damages bots', async () => {
@@ -70,6 +72,55 @@ describe('demo online client fire path', () => {
     expect(client.rollback.localState.pos.x).toBeCloseTo(spawnX, 1);
     expect(client.rollback.localState.pos.z).toBeCloseTo(spawnZ, 1);
     expect(Math.hypot(spawnX, spawnZ)).toBeGreaterThan(20);
+    client.dispose();
+  });
+
+  it('swipe-right look turns player toward +X on demo-online LocalServer path', async () => {
+    const client = new MatchClient('local', { onSnapshot: () => {}, onDisconnect: () => {} });
+    await client.connect();
+    await client.startMatch();
+    const flush = (client as unknown as { flushInputs: () => void }).flushInputs;
+
+    for (let i = 0; i < 200 && client.localServer!.sim.match.phase !== 'playing'; i++) {
+      client.localServer!.step();
+    }
+    expect(client.localServer!.sim.match.phase).toBe('playing');
+
+    const player = client.localServer!.sim.units.get('player')!;
+    player.player.setFacing(0, 0);
+    const look = touchDragToLookDelta(50, 0);
+    expect(look.mouseX).toBeGreaterThan(0);
+
+    client.sendInput({ seq: 0, mouseX: look.mouseX, mouseY: 0 });
+    flush.call(client);
+    client.localServer!.step();
+
+    expect(player.player.yaw).toBeLessThan(0);
+    expect(-Math.sin(player.player.yaw)).toBeGreaterThan(0);
+    expect(client.rollback.yaw).toBeLessThan(0);
+    client.dispose();
+  });
+
+  it('starts with 5 med-kits and heal input consumes one on demo-online', async () => {
+    const client = new MatchClient('local', { onSnapshot: () => {}, onDisconnect: () => {} });
+    await client.connect();
+    await client.startMatch();
+    const flush = (client as unknown as { flushInputs: () => void }).flushInputs;
+
+    for (let i = 0; i < 200 && client.localServer!.sim.match.phase !== 'playing'; i++) {
+      client.localServer!.step();
+    }
+
+    const player = client.localServer!.sim.units.get('player')!;
+    expect(player.heals.medkit).toBe(START_MEDKITS);
+    player.health = 40;
+
+    client.sendInput({ seq: 0, heal: true });
+    flush.call(client);
+    client.localServer!.step();
+
+    expect(player.heals.medkit).toBe(START_MEDKITS - 1);
+    expect(player.healing?.kind).toBe('medkit');
     client.dispose();
   });
 });

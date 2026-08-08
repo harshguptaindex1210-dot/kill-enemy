@@ -86,8 +86,27 @@ describe('settings (#33)', () => {
 
   it('falls back to defaults for invalid / corrupt values', () => {
     const store = memStorage();
-    store.setItem('robot_arena_settings_v1', 'not-json');
+    store.setItem('robot_arena_settings_v2', 'not-json');
     expect(loadSettings(store)).toEqual(defaultSettings());
+  });
+
+  it('migrates v1 settings and clears sticky horizontal invert', () => {
+    const store = memStorage();
+    store.setItem(
+      'robot_arena_settings_v1',
+      JSON.stringify({
+        quality: 'low',
+        sensitivity: 1.2,
+        volume: 0.5,
+        cameraMode: 'fps',
+        minimapSize: 'large',
+        invertLookHorizontal: true,
+      })
+    );
+    const loaded = loadSettings(store);
+    expect(loaded.quality).toBe('low');
+    expect(loaded.invertLookHorizontal).toBe(false);
+    expect(store.getItem('robot_arena_settings_v2')).toBeTruthy();
   });
 
   it('sanitizes wrong-typed and unrecognized values to defaults', () => {

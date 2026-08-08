@@ -152,6 +152,23 @@
     font-size: 10px !important;
   }
 
+  html[data-phone-device='true'] #hud-heal-action {
+    display: none !important;
+  }
+
+  html[data-phone-device='true'] #tb-heal {
+    width: 56px !important;
+    height: 56px !important;
+    font-size: 12px !important;
+    font-weight: bold !important;
+    box-shadow: 0 0 0 2px #a7f3d0, 0 4px 12px rgba(0, 0, 0, 0.55) !important;
+  }
+
+  html[data-phone-device='true'] #t {
+    left: max(10px, env(safe-area-inset-left)) !important;
+    bottom: 168px !important;
+  }
+
   html[data-phone-device='true'] #hud-prompt {
     bottom: 88px !important;
     font-size: 12px !important;
