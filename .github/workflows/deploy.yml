@@ -32,6 +32,7 @@ jobs:
         run: npm run build
         env:
           VITE_ONLINE_DEMO: 'true'
+          VITE_CACHE_BUST: ${{ github.sha }}
 
       - uses: actions/configure-pages@v5
 

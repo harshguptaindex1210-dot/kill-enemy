@@ -93,6 +93,13 @@
         <p style="margin: 0; opacity: 0.85; line-height: 1.5">
           Try refreshing, enabling JavaScript, or switching to a newer browser with WebGL support.
         </p>
+        <p style="margin: 16px 0 0">
+          <a
+            href="https://harshguptaindex1210-dot.github.io/kill-enemy/"
+            style="color: #2dd4bf; font-weight: 700"
+            >Open Kill Enemy directly</a
+          >
+        </p>
       </div>
     </div>
     <div id="rotate-device-overlay" role="dialog" aria-labelledby="rotate-device-title">
@@ -102,6 +109,22 @@
       </div>
     </div>
     <canvas id="game"></canvas>
+    <script>
+      window.addEventListener(
+        'error',
+        function (event) {
+          var target = event.target;
+          if (!target || target.tagName !== 'SCRIPT' || window.__killEnemyBooted || window.__cacheBustReloaded) {
+            return;
+          }
+          window.__cacheBustReloaded = true;
+          var next = new URL(location.href);
+          next.searchParams.set('v', String(Date.now()));
+          location.replace(next.toString());
+        },
+        true
+      );
+    </script>
     <script>
       (function () {
         var ua = navigator.userAgent;

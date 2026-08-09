@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="refresh" content="0;url=/kill-enemy/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Kill Enemy — Open Game</title>
+    <script>
+      (function () {
+        var target = '/kill-enemy/' + window.location.search + window.location.hash;
+        try {
+          window.location.replace(target);
+        } catch (err) {
+          window.location.href = target;
+        }
+        window.setTimeout(function () {
+          window.location.href = target;
+        }, 800);
+      })();
+    </script>
+    <style>
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        font-family: system-ui, sans-serif;
+        background: #05060c;
+        color: #eef3f8;
+        padding: 24px;
+        text-align: center;
+      }
+      a {
+        color: #2dd4bf;
+        font-weight: 700;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p>Opening Kill Enemy…</p>
+      <p><a href="/kill-enemy/">Tap here if the game does not open</a></p>
+    </main>
+  </body>
+</html>
