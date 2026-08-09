@@ -103,6 +103,32 @@ describe('player', () => {
     expect(p.state).toBe('jump');
   });
 
+  it('can jump after resetGroundContact following an air state', () => {
+    const p = createPlayer(new THREE.Vector3(0, 0.9, 0));
+    const idle = {
+      forward: false,
+      backward: false,
+      left: false,
+      right: false,
+      sprint: false,
+      crouch: false,
+      jump: false,
+      aim: false,
+      fire: false,
+      reload: false,
+      weapon1: false,
+      weapon2: false,
+      weapon3: false,
+      mouseX: 0,
+      mouseY: 0,
+    };
+    p.update({ ...idle, jump: true }, 1 / 60, 0);
+    expect(p.velocity.y).toBeGreaterThan(0);
+    p.resetGroundContact(0);
+    p.update({ ...idle, jump: true }, 1 / 60, 0);
+    expect(p.velocity.y).toBeGreaterThan(0);
+  });
+
   it('stops at ground level', () => {
     const p = createPlayer(new THREE.Vector3(0, 10, 0));
     for (let i = 0; i < 200; i++) {

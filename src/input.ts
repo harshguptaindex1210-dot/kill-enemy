@@ -99,7 +99,7 @@ export function createInputManager(
     if (e.code === 'KeyH') healOnce = true;
     if (e.code === 'Space') {
       jumpOnce = true;
-      desktopJumpLatchUntil = Date.now() + 450;
+      desktopJumpLatchUntil = Date.now() + 600;
     }
     if (e.code === 'Digit1') w1 = true;
     if (e.code === 'Digit2') w2 = true;
@@ -125,7 +125,19 @@ export function createInputManager(
 
   const onPointerLockChange = () => {
     if (!document.pointerLockElement) {
-      keys.clear();
+      keys.delete('KeyW');
+      keys.delete('KeyS');
+      keys.delete('KeyA');
+      keys.delete('KeyD');
+      keys.delete('ArrowUp');
+      keys.delete('ArrowDown');
+      keys.delete('ArrowLeft');
+      keys.delete('ArrowRight');
+      keys.delete('ShiftLeft');
+      keys.delete('ShiftRight');
+      keys.delete('ControlLeft');
+      keys.delete('ControlRight');
+      keys.delete('Space');
       firePressed = false;
       aimPressed = false;
     }
@@ -258,7 +270,7 @@ export function createInputManager(
     touchOverlay = document.createElement('div');
     touchOverlay.id = 'touch-controls-overlay';
     touchOverlay.style.cssText =
-      'position:fixed;inset:0;pointer-events:none;z-index:10000;user-select:none;-webkit-user-select:none;touch-action:none;';
+      'position:fixed;inset:0;pointer-events:none;z-index:10010;user-select:none;-webkit-user-select:none;touch-action:none;';
 
     touchOverlay.innerHTML = `<div id="touch-joystick-area"><div id="touch-joystick-knob"></div></div><button id="tb-fire-left" type="button">🔥</button><button id="tb-rs">RESPAWN</button><div id="touch-actions-area"><div><button id="tb-heal" type="button">HEAL</button><button id="tb-skill" type="button">⚡</button><button id="tb-jump" type="button">⬆</button></div><div><button id="tb-reload" type="button">↻</button><button id="tb-aim" type="button">🎯</button><button id="tb-fire" type="button">🔥</button></div></div><div id="touch-weapons-area"><button id="tb-w1" type="button">R1</button><button id="tb-w2" type="button">P2</button><button id="tb-w3" type="button">M3</button></div>`;
 
@@ -479,15 +491,19 @@ export function createInputManager(
     const armJump = (e: Event) => {
       e.preventDefault();
       touchJumpHeld = true;
-      touchJumpLatchUntil = Date.now() + 450;
+      touchJumpLatchUntil = Date.now() + 600;
     };
     const releaseJump = (e: Event) => {
       e.preventDefault();
       touchJumpHeld = false;
     };
     btnJump.addEventListener('touchstart', armJump, { passive: false });
+    btnJump.addEventListener('pointerdown', armJump);
+    btnJump.addEventListener('click', armJump);
     btnJump.addEventListener('touchend', releaseJump);
     btnJump.addEventListener('touchcancel', releaseJump);
+    btnJump.addEventListener('pointerup', releaseJump);
+    btnJump.addEventListener('pointerleave', releaseJump);
 
     if (options.onRespawn) {
       touchRespawnBtn = touchOverlay.querySelector('#tb-rs') as HTMLButtonElement;

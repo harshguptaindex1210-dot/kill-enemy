@@ -77,6 +77,19 @@ export interface SelfPose {
 
 /** Local player pose from client prediction — never interpolate self from the network buffer. */
 export function resolveLocalPlayerPose(client: MatchClient): SelfPose {
+  if (client.mode === 'local') {
+    const unit = client.localServer?.sim.units.get(client.selfId);
+    if (unit) {
+      const p = unit.player;
+      return {
+        x: p.position.x,
+        y: p.position.y,
+        z: p.position.z,
+        yaw: p.yaw,
+        alive: unit.alive,
+      };
+    }
+  }
   const ent = client.interp.latest?.entities[client.selfId];
   const state = client.rollback.localState;
   return {
@@ -611,7 +624,18 @@ export class OnlineMatchGame {
   }
 
   private getSelfPose(): SelfPose {
-    return resolveLocalPlayerPose(this.client);
+    const pose = resolveLocalPlayerPose(this.client);
+    if (this.client.mode !== 'local') return pose;
+    const snap = this.client.interp.latest;
+    if (!snap) return pose;
+    const vel = this.client.rollback.localState.vel;
+    const dt = Math.max(0, Math.min(0.05, (performance.now() - snap.time_ms + REWIND_MS) / 1000));
+    return {
+      ...pose,
+      x: pose.x + vel.x * dt,
+      y: pose.y + vel.y * dt,
+      z: pose.z + vel.z * dt,
+    };
   }
 
   private syncRig(

@@ -992,6 +992,7 @@ export class MatchSim {
     unit.player.health = 100;
     unit.player.velocity.set(0, 0, 0);
     unit.player.position.copy(unit.spawnPos);
+    unit.player.resetGroundContact(GROUND_Y);
     unit.player.setFacing(0, 0);
 
     const mp = this.match.players[unitId];

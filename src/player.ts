@@ -37,6 +37,8 @@ export interface PlayerBundle {
   update: (input: PlayerInput, dt: number, groundY: number, speedMult?: number) => void;
   getEyeHeight: () => number;
   setFacing: (yaw: number, pitch?: number) => void;
+  /** Re-sync ground contact after teleport/respawn. */
+  resetGroundContact: (groundY?: number) => void;
 }
 
 const STAND_HEIGHT = 1.8;
@@ -48,6 +50,7 @@ const JUMP_VELOCITY = 5;
 const GRAVITY = -20;
 const MOUSE_SENSITIVITY = 0.002;
 const MAX_PITCH = Math.PI / 2 - 0.01;
+const GROUND_EPS = 0.08;
 
 export function createPlayer(startPos: THREE.Vector3 = new THREE.Vector3(0, 0.9, 0)): PlayerBundle {
   const bundle = {} as PlayerBundle;
@@ -95,9 +98,31 @@ export function createPlayer(startPos: THREE.Vector3 = new THREE.Vector3(0, 0.9,
     return WALK_SPEED;
   }
 
+  bundle.resetGroundContact = (gy = 0) => {
+    const height = getHeight();
+    const groundLevel = gy + height / 2;
+    bundle.position.y = Math.max(bundle.position.y, groundLevel);
+    bundle.velocity.set(0, 0, 0);
+    onGround = true;
+    pState = 'stand';
+    crouchToggle = false;
+  };
+
   bundle.update = (input: PlayerInput, dt: number, groundY: number, speedMult: number = 1.0) => {
     const height = getHeight();
     const speed = getSpeed() * speedMult;
+    const groundLevel = groundY + height / 2;
+    const standLevel = groundY + STAND_HEIGHT / 2;
+
+    // Coyote-time: standing on the floor but onGround was lost (respawn / float drift).
+    if (
+      !onGround &&
+      pState !== 'crouch' &&
+      bundle.velocity.y <= 0 &&
+      bundle.position.y <= standLevel + GROUND_EPS
+    ) {
+      onGround = true;
+    }
 
     if (input.crouch && onGround) {
       if (!crouchToggle) {
@@ -150,10 +175,12 @@ export function createPlayer(startPos: THREE.Vector3 = new THREE.Vector3(0, 0.9,
     bundle.position.y += bundle.velocity.y * dt;
     bundle.position.z += bundle.velocity.z * dt;
 
-    if (bundle.position.y < groundY + height / 2) {
-      bundle.position.y = groundY + height / 2;
-      bundle.velocity.y = 0;
-      onGround = true;
+    if (bundle.position.y <= groundLevel) {
+      bundle.position.y = groundLevel;
+      if (bundle.velocity.y <= 0) {
+        bundle.velocity.y = 0;
+        onGround = true;
+      }
     }
 
     bundle.capsule.position.copy(bundle.position);

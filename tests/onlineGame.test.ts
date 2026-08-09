@@ -5,7 +5,6 @@ import * as THREE from 'three';
 import { resolveLocalPlayerPose } from '../src/net/onlineGame';
 import { MatchClient } from '../src/net/client';
 import { quantize, type WireSnapshot } from '../src/net/protocol';
-import type { InputFrame } from '../src/netcode';
 
 function makeSnap(tick: number, px: number, pz: number): WireSnapshot {
   return {
@@ -32,49 +31,22 @@ function makeSnap(tick: number, px: number, pz: number): WireSnapshot {
   };
 }
 
-function frame(seq: number, patch: Partial<InputFrame> = {}): InputFrame {
-  return {
-    seq,
-    forward: false,
-    backward: false,
-    left: false,
-    right: false,
-    sprint: false,
-    jump: false,
-    aim: false,
-    mouseX: 0,
-    mouseY: 0,
-    fire: false,
-    reload: false,
-    weapon1: false,
-    weapon2: false,
-    weapon3: false,
-    ...patch,
-  };
-}
-
 describe('online local player pose', () => {
-  it('uses rollback prediction instead of interpolated network samples', () => {
+  it('uses in-process sim state for local demo mode', async () => {
     const client = new MatchClient('local', { onSnapshot: () => {}, onDisconnect: () => {} });
-    client.interp.push(makeSnap(1, 0, 0));
-    client.interp.push(makeSnap(2, 4, 0));
-
-    client.rollback.applyInput(frame(1, { forward: true }), 1 / 20, 0);
-    const predicted = client.rollback.localState.pos.clone();
-
-    const interpolated = client.sampleRemotes(75);
-    const interpSelf = interpolated?.find((e) => e.id === 'player');
-    expect(interpSelf).toBeDefined();
-    expect(interpSelf!.x).not.toBe(predicted.x);
+    await client.connect();
+    client.localServer!.start();
+    const unit = client.localServer!.sim.units.get('player')!;
+    unit.player.position.set(3, 0.9, 4);
 
     const pose = resolveLocalPlayerPose(client);
-    expect(pose.x).toBe(predicted.x);
-    expect(pose.z).toBe(predicted.z);
-    expect(pose.yaw).toBe(client.rollback.yaw);
+    expect(pose.x).toBe(3);
+    expect(pose.z).toBe(4);
+    expect(pose.y).toBeCloseTo(0.9, 1);
     client.dispose();
   });
 
-  it('adopts authoritative rollback state for local demo mode', () => {
+  it('falls back to rollback when local sim is unavailable', () => {
     const client = new MatchClient('local', { onSnapshot: () => {}, onDisconnect: () => {} });
     const handle = (
       client as unknown as { handleSnapshot: (s: WireSnapshot) => void }

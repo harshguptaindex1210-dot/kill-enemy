@@ -7,10 +7,10 @@ describe('touch jump input', () => {
     const src = readFileSync(resolve(__dirname, '../src/input.ts'), 'utf8');
     expect(src).toMatch(/touchJumpHeld/);
     expect(src).toMatch(/touchJumpLatchUntil/);
-    expect(src).toMatch(/Date\.now\(\)\s*\+\s*450/);
+    expect(src).toMatch(/Date\.now\(\)\s*\+\s*600/);
     expect(src).toMatch(/touchJumpHeld\s*\|\|\s*Date\.now\(\)\s*<\s*touchJumpLatchUntil/);
     expect(src).toMatch(/desktopJumpLatchUntil/);
-    expect(src).toMatch(/z-index:10000/);
+    expect(src).toMatch(/z-index:10010/);
   });
 
   it('mounts touch UI only on phones, not touch laptops', () => {
@@ -23,6 +23,7 @@ describe('touch jump input', () => {
     const src = readFileSync(resolve(__dirname, '../src/input.ts'), 'utf8');
     expect(src).toMatch(/id="tb-jump"\s+type="button"/);
     expect(src).toMatch(/btnJump\.addEventListener\('touchstart', armJump/);
+    expect(src).toMatch(/btnJump\.addEventListener\('pointerdown', armJump/);
   });
 
   it('ships a touch respawn button wired to onRespawn', () => {

@@ -525,7 +525,9 @@ describe('melee gameplay (#27)', () => {
     bot.player.position.set(0, 0.9, -1.2);
     player.player.position.set(0, 0.9, 0);
     player.meleeMode = true;
-    runFor(sim, 0.6, fullInput({ fire: true }));
+    for (let i = 0; i < 8; i++) {
+      sim.update(1 / 20, fullInput({ fire: true }));
+    }
     expect(bot.health).toBeLessThan(100);
   });
 });
