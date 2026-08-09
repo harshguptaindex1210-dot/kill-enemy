@@ -19,7 +19,8 @@ Loop: lobby → countdown → drop → play → death/spectate → results → a
 | Crouch | `Ctrl` |
 | Jump | `Space` |
 | Fire | LMB |
-| Aim (FPS) | Hold aim / settings camera mode |
+| Aim / FPS view | Hold **RMB** (right mouse) |
+| Camera mode | Lobby **Settings → Camera** |
 | Reload | `R` |
 | Weapon 1 / 2 | `1` / `2` |
 | Melee slot | `3` |
@@ -29,6 +30,13 @@ Loop: lobby → countdown → drop → play → death/spectate → results → a
 | Spectate next (when dead) | `F` |
 | Mute toggle | `M` |
 | Minimap size toggle | `N` |
+
+### Camera tips (laptop)
+
+- **Third person (default):** mouse look includes up/down; over-shoulder BGMI-style cam.
+- **Hold right-click** to aim in first-person for precise shots.
+- **First person always:** Lobby → Settings → Camera → **First Person**.
+- Raise **Sensitivity** in settings if turning feels slow (try `1.2`–`1.5`).
 
 ## Combat
 

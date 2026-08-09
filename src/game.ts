@@ -146,6 +146,7 @@ export class MatchGame {
   private renderer: THREE.WebGLRenderer;
   private matchRenderer: MatchRenderHandle;
   private sceneControls: import('three/addons/controls/OrbitControls.js').OrbitControls;
+  private sceneDisposeEnvironment: () => void = () => {};
   private zoneSys: ZoneSystem;
   private input: InputManager;
   private hud: ReturnType<typeof createHUD>;
@@ -236,7 +237,7 @@ export class MatchGame {
     c.style.cssText = 'position:fixed;inset:0;width:100vw;height:100vh;display:block;';
 
     const quality: QualityPreset = this.settings.quality;
-    const { scene, camera, renderer, controls, pois } = createScene(
+    const { scene, camera, renderer, controls, pois, disposeEnvironment } = createScene(
       c,
       quality,
       this.settings.mapId
@@ -246,6 +247,7 @@ export class MatchGame {
     this.camera = camera;
     this.renderer = renderer;
     this.sceneControls = controls;
+    this.sceneDisposeEnvironment = disposeEnvironment;
     this.matchRenderer = createMatchRenderer(renderer, scene, camera, quality, this.settings.mapId);
 
     this.sim = new MatchSim({
@@ -387,6 +389,7 @@ export class MatchGame {
       controls: this.sceneControls,
       pois: [],
       mapId: this.settings.mapId,
+      disposeEnvironment: this.sceneDisposeEnvironment,
     });
     this.input.dispose();
   }

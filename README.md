@@ -8,8 +8,8 @@ Three.js + Vite + TypeScript; authoritative multiplayer via Nakama.
 
 | Use | Link |
 |-----|------|
-| **Phone / share with friends** | https://harshguptaindex1210-dot.github.io/kill-enemy/ |
-| **Laptop / bookmark / direct** | https://harshguptaindex1210-dot.github.io/kill-enemy/ |
+| **Phone / share with friends** | https://harshguptaindex1210-dot.github.io/kill-enemy/?v=13296e0 |
+| **Laptop / bookmark / direct** | https://harshguptaindex1210-dot.github.io/kill-enemy/?v=13296e0 |
 
 On a phone in portrait you may see “Rotate your device to landscape” — turn the phone sideways to play.
 

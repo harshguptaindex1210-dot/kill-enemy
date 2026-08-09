@@ -111,6 +111,7 @@ export class OnlineMatchGame {
   private lastSnapTick = -1;
   private renderTimeMs = 0;
   private latencyEl: HTMLElement;
+  private sceneDisposeEnvironment: () => void = () => {};
   private input: InputManager;
   private finished = false;
   private cameraPos = new THREE.Vector3();
@@ -167,10 +168,11 @@ export class OnlineMatchGame {
     c.style.cssText = 'position:fixed;inset:0;width:100vw;height:100vh;display:block;';
 
     const quality: QualityPreset = opts.settings.quality;
-    const { scene, camera, renderer } = createScene(c, quality, opts.settings.mapId);
+    const { scene, camera, renderer, disposeEnvironment } = createScene(c, quality, opts.settings.mapId);
     this.scene = scene;
     this.camera = camera;
     this.renderer = renderer;
+    this.sceneDisposeEnvironment = disposeEnvironment;
     this.matchRenderer = createMatchRenderer(renderer, scene, camera, quality, opts.settings.mapId);
 
     this.zoneSys = new ZoneSystem(scene);
@@ -267,6 +269,7 @@ export class OnlineMatchGame {
       }
     });
     this.matchRenderer.dispose();
+    this.sceneDisposeEnvironment();
     this.renderer.dispose();
   }
 

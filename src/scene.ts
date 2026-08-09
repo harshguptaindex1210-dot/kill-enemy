@@ -28,9 +28,11 @@ export interface SceneBundle {
   controls: OrbitControls;
   pois: { name: string; group: THREE.Group; position: THREE.Vector3 }[];
   mapId: MapId;
+  disposeEnvironment: () => void;
 }
 
 export function disposeScene(bundle: SceneBundle) {
+  bundle.disposeEnvironment();
   bundle.controls.dispose();
   bundle.scene.traverse((obj) => {
     if (obj instanceof THREE.Mesh) {
@@ -202,5 +204,19 @@ export function createScene(
     pois.push({ name: district, group, position: new THREE.Vector3(x, 0, z) });
   }
 
-  return { scene, camera, renderer, controls, pois, mapId };
+  let disposed = false;
+  let envHandle: { dispose: () => void } | null = null;
+  const disposeEnvironment = () => {
+    disposed = true;
+    envHandle?.dispose();
+    envHandle = null;
+  };
+  if (quality !== 'low') {
+    void import('./environment').then(({ attachDaylightEnvironment }) => {
+      if (disposed) return;
+      envHandle = attachDaylightEnvironment(renderer, scene, quality);
+    });
+  }
+
+  return { scene, camera, renderer, controls, pois, mapId, disposeEnvironment };
 }

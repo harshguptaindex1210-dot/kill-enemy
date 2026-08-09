@@ -6,7 +6,7 @@ export type SurfaceRole =
 
 const SURFACE: Record<SurfaceRole, { roughness: number; metalness: number }> = {
   metal: { roughness: 0.36, metalness: 0.74 },
-  paint: { roughness: 0.46, metalness: 0.52 },
+  paint: { roughness: 0.42, metalness: 0.58 },
   concrete: { roughness: 0.9, metalness: 0.05 },
   foliage: { roughness: 0.94, metalness: 0.02 },
   glass: { roughness: 0.16, metalness: 0.78 },
@@ -25,6 +25,7 @@ export function styleMat(
     color,
     roughness: surf.roughness,
     metalness: surf.metalness,
+    envMapIntensity: role === 'glass' || role === 'metal' || role === 'paint' ? 1.1 : 0.85,
     ...(emissive !== undefined ? { emissive, emissiveIntensity } : {}),
   });
 }
