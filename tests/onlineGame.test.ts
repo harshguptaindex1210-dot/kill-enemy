@@ -74,6 +74,15 @@ describe('camera snap option', () => {
   });
 });
 
+describe('online camera height', () => {
+  it('onlineGame.ts uses live sim eye height for the camera', () => {
+    const src = readFileSync(resolve(__dirname, '../src/net/onlineGame.ts'), 'utf8');
+    expect(src).toMatch(/localEyeHeight\(\)/);
+    expect(src).toMatch(/getEyeHeight\(\)/);
+    expect(src).not.toMatch(/updateCamera\([\s\S]*?,\s*1\.6,/);
+  });
+});
+
 describe('online respawn wiring', () => {
   it('onlineGame.ts tracks death and wires touch respawn', () => {
     const src = readFileSync(resolve(__dirname, '../src/net/onlineGame.ts'), 'utf8');

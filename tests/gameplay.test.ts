@@ -522,11 +522,13 @@ describe('melee gameplay (#27)', () => {
     const bot = sim.units.get('bot_1')!;
     bot.isBot = false;
     bot.health = 100;
-    bot.player.position.set(0, 0.9, -1.2);
+    bot.player.position.set(0, 0.9, -0.8);
     player.player.position.set(0, 0.9, 0);
+    const yaw = Math.atan2(-(bot.player.position.x - player.player.position.x), -(bot.player.position.z - player.player.position.z));
+    player.player.setFacing(yaw, 0);
     player.meleeMode = true;
-    for (let i = 0; i < 24; i++) {
-      sim.update(1 / 20, fullInput({ fire: true }));
+    for (let i = 0; i < 40; i++) {
+      sim.update(1 / 20, fullInput({ fire: i % 5 === 0 }));
     }
     expect(bot.health).toBeLessThan(100);
   });

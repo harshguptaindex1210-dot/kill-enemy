@@ -150,6 +150,7 @@ export class OnlineMatchGame {
   private fpsSamples: number[] = [];
   private fpsSampleAt = -Infinity;
   private qualityDowngraded = false;
+  private rigAnimFrame = 0;
   private readonly minimapBuildings = [
     { x: POI_RADIUS, z: 0 },
     { x: 0, z: POI_RADIUS },
@@ -180,7 +181,8 @@ export class OnlineMatchGame {
     c.height = window.innerHeight;
     c.style.cssText = 'position:fixed;inset:0;width:100vw;height:100vh;display:block;';
 
-    const quality: QualityPreset = opts.settings.quality;
+    const quality: QualityPreset =
+      isMobileDevice() && opts.settings.quality !== 'low' ? 'low' : opts.settings.quality;
     const { scene, camera, renderer, disposeEnvironment } = createScene(c, quality, opts.settings.mapId);
     this.scene = scene;
     this.camera = camera;
@@ -634,18 +636,14 @@ export class OnlineMatchGame {
   }
 
   private getSelfPose(): SelfPose {
-    const pose = resolveLocalPlayerPose(this.client);
-    if (this.client.mode !== 'local') return pose;
-    const snap = this.client.interp.latest;
-    if (!snap) return pose;
-    const vel = this.client.rollback.localState.vel;
-    const dt = Math.max(0, Math.min(0.05, (performance.now() - snap.time_ms + REWIND_MS) / 1000));
-    return {
-      ...pose,
-      x: pose.x + vel.x * dt,
-      y: pose.y + vel.y * dt,
-      z: pose.z + vel.z * dt,
-    };
+    return resolveLocalPlayerPose(this.client);
+  }
+
+  private localEyeHeight(): number {
+    const human = this.localHumanUnit();
+    if (human) return human.player.getEyeHeight();
+    const self = this.getSelfPose();
+    return self.y + 1.6;
   }
 
   private syncRig(
@@ -684,7 +682,10 @@ export class OnlineMatchGame {
     if (isLocal && this.localHeld) {
       syncHeldWeaponKit(this.localHeld, alive ? 'rifle' : 'none');
     }
-    updateRobotAnim(rig.anim, dt);
+    const animEveryFrame = isLocal || !isMobileDevice() || this.rigAnimFrame++ % 2 === 0;
+    if (animEveryFrame) {
+      updateRobotAnim(rig.anim, dt);
+    }
   }
 
   private buildTargetsFromSim() {
@@ -707,7 +708,7 @@ export class OnlineMatchGame {
 
     const cameraMode = this.lastAim || this.opts.settings.cameraMode === 'fps' ? 'fps' : 'tps';
 
-    updateCamera(this.camera, self.yaw, this.pitch, 1.6, cameraMode, this.cameraPos, dt, {
+    updateCamera(this.camera, self.yaw, this.pitch, this.localEyeHeight(), cameraMode, this.cameraPos, dt, {
       snapPosition: true,
     });
   }
