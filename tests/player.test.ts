@@ -103,6 +103,35 @@ describe('player', () => {
     expect(p.state).toBe('jump');
   });
 
+  it('does not bunny-hop when jump stays held through landing', () => {
+    const p = createPlayer();
+    const idle = {
+      forward: false,
+      backward: false,
+      left: false,
+      right: false,
+      sprint: false,
+      crouch: false,
+      jump: false,
+      aim: false,
+      fire: false,
+      reload: false,
+      weapon1: false,
+      weapon2: false,
+      weapon3: false,
+      mouseX: 0,
+      mouseY: 0,
+    };
+    const held = { ...idle, jump: true };
+    p.update(held, 1 / 60, 0);
+    expect(p.velocity.y).toBeGreaterThan(0);
+    for (let i = 0; i < 120; i++) p.update(held, 1 / 60, 0);
+    expect(p.position.y).toBeCloseTo(0.9, 1);
+    expect(p.velocity.y).toBe(0);
+    p.update(held, 1 / 60, 0);
+    expect(p.velocity.y).toBe(0);
+  });
+
   it('buffers jump for a few ticks after a single press', () => {
     const p = createPlayer();
     const idle = {
@@ -127,7 +156,6 @@ describe('player', () => {
     for (let i = 0; i < 90; i++) p.update(idle, 1 / 60, 0);
     expect(p.state).toBe('stand');
     p.update({ ...idle, jump: true }, 1 / 60, 0);
-    p.update(idle, 1 / 60, 0);
     p.update(idle, 1 / 60, 0);
     expect(p.velocity.y).toBeGreaterThan(0);
   });

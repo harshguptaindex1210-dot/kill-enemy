@@ -3,13 +3,12 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 describe('touch jump input', () => {
-  it('input.ts latches jump across frames for 20Hz online ticks', () => {
+  it('input.ts uses one-shot jump pulses instead of a long latch', () => {
     const src = readFileSync(resolve(__dirname, '../src/input.ts'), 'utf8');
-    expect(src).toMatch(/touchJumpHeld/);
-    expect(src).toMatch(/touchJumpLatchUntil/);
-    expect(src).toMatch(/Date\.now\(\)\s*\+\s*900/);
-    expect(src).toMatch(/touchJumpHeld\s*\|\|\s*Date\.now\(\)\s*<\s*touchJumpLatchUntil/);
-    expect(src).toMatch(/desktopJumpLatchUntil/);
+    expect(src).toMatch(/touchJumpOnce/);
+    expect(src).toMatch(/jump:\s*jumpOnce\s*\|\|\s*touchJump/);
+    expect(src).not.toMatch(/touchJumpLatchUntil/);
+    expect(src).not.toMatch(/desktopJumpLatchUntil/);
     expect(src).toMatch(/z-index:10010/);
   });
 

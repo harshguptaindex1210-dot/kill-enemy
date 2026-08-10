@@ -51,7 +51,6 @@ export function createInputManager(
   let skillOnce = false;
   let healOnce = false;
   let jumpOnce = false;
-  let desktopJumpLatchUntil = 0;
   let w1 = false,
     w2 = false,
     w3 = false;
@@ -64,8 +63,7 @@ export function createInputManager(
   let touchSprint = false;
   let touchFirePressed = false;
   let touchAimPressed = false;
-  let touchJumpHeld = false;
-  let touchJumpLatchUntil = 0;
+  let touchJumpOnce = false;
   let touchReloadOnce = false;
   let touchSkillOnce = false;
   let touchHealOnce = false;
@@ -99,7 +97,6 @@ export function createInputManager(
     if (e.code === 'KeyH') healOnce = true;
     if (e.code === 'Space') {
       jumpOnce = true;
-      desktopJumpLatchUntil = Date.now() + 900;
     }
     if (e.code === 'Digit1') w1 = true;
     if (e.code === 'Digit2') w2 = true;
@@ -493,12 +490,10 @@ export function createInputManager(
     const btnJump = touchOverlay.querySelector('#tb-jump') as HTMLButtonElement;
     const armJump = (e: Event) => {
       e.preventDefault();
-      touchJumpHeld = true;
-      touchJumpLatchUntil = Date.now() + 900;
+      touchJumpOnce = true;
     };
     const releaseJump = (e: Event) => {
       e.preventDefault();
-      touchJumpHeld = false;
     };
     btnJump.addEventListener('touchstart', armJump, { passive: false });
     btnJump.addEventListener('pointerdown', armJump);
@@ -607,8 +602,7 @@ export function createInputManager(
 
   function getInput(): PlayerInput {
     if (touchOverlay) applyTouchUiSettings();
-    const touchJump = touchJumpHeld || Date.now() < touchJumpLatchUntil;
-    const desktopJump = Date.now() < desktopJumpLatchUntil;
+    const touchJump = touchJumpOnce;
     const input: PlayerInput = {
       forward: keys.has('KeyW') || keys.has('ArrowUp') || touchForward,
       backward: keys.has('KeyS') || keys.has('ArrowDown') || touchBackward,
@@ -616,7 +610,7 @@ export function createInputManager(
       right: keys.has('KeyD') || keys.has('ArrowRight') || touchRight,
       sprint: keys.has('ShiftLeft') || keys.has('ShiftRight') || touchSprint,
       crouch: keys.has('ControlLeft') || keys.has('ControlRight'),
-      jump: keys.has('Space') || jumpOnce || touchJump || desktopJump,
+      jump: jumpOnce || touchJump,
       aim: aimPressed || touchAimPressed,
       fire: firePressed || touchFirePressed,
       reload: reloadOnce || touchReloadOnce,
@@ -635,6 +629,7 @@ export function createInputManager(
     skillOnce = false;
     healOnce = false;
     jumpOnce = false;
+    touchJumpOnce = false;
     w1 = false;
     w2 = false;
     w3 = false;

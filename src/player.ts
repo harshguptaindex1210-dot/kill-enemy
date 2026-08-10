@@ -51,8 +51,8 @@ const GRAVITY = -20;
 const MOUSE_SENSITIVITY = 0.002;
 const MAX_PITCH = Math.PI / 2 - 0.01;
 const GROUND_EPS = 0.08;
-/** Sim ticks to remember a jump press (covers 20Hz sampling + coyote landing). */
-const JUMP_BUFFER_TICKS = 24;
+/** Sim ticks to remember a jump press (missed-frame buffer only). */
+const JUMP_BUFFER_TICKS = 10;
 
 export function createPlayer(startPos: THREE.Vector3 = new THREE.Vector3(0, 0.9, 0)): PlayerBundle {
   const bundle = {} as PlayerBundle;
@@ -63,6 +63,8 @@ export function createPlayer(startPos: THREE.Vector3 = new THREE.Vector3(0, 0.9,
   let onGround = startPos.y <= 0.9;
   let crouchToggle = false;
   let pendingJump = 0;
+  let prevJumpInput = false;
+  let jumpLock = false;
 
   bundle.velocity = new THREE.Vector3(0, 0, 0);
   bundle.position = startPos.clone();
@@ -110,6 +112,8 @@ export function createPlayer(startPos: THREE.Vector3 = new THREE.Vector3(0, 0.9,
     pState = 'stand';
     crouchToggle = false;
     pendingJump = 0;
+    prevJumpInput = false;
+    jumpLock = false;
   };
 
   bundle.update = (input: PlayerInput, dt: number, groundY: number, speedMult: number = 1.0) => {
@@ -143,17 +147,21 @@ export function createPlayer(startPos: THREE.Vector3 = new THREE.Vector3(0, 0.9,
       pState = 'stand';
     }
 
-    if (input.jump) pendingJump = JUMP_BUFFER_TICKS;
-    if (pendingJump > 0) {
-      if (onGround) {
-        bundle.velocity.y = JUMP_VELOCITY;
-        pState = 'jump';
-        onGround = false;
-        pendingJump = 0;
-      } else {
-        pendingJump--;
-      }
+    const jumpPressed = input.jump && !prevJumpInput;
+    prevJumpInput = input.jump;
+    if (jumpPressed) pendingJump = JUMP_BUFFER_TICKS;
+
+    if (pendingJump > 0 && onGround && !jumpLock) {
+      bundle.velocity.y = JUMP_VELOCITY;
+      pState = 'jump';
+      onGround = false;
+      pendingJump = 0;
+      jumpLock = true;
+    } else if (pendingJump > 0 && !onGround) {
+      pendingJump--;
     }
+
+    if (!onGround) jumpLock = false;
 
     if (pState === 'jump' && onGround) {
       pState = 'stand';
