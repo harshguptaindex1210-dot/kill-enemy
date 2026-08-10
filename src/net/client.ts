@@ -109,15 +109,17 @@ export class MatchClient {
   /** Local: spawn the in-process server + start match. Online: create + join. */
   async startMatch(): Promise<string> {
     if (this.mode === 'local') {
-      this.local!.start();
-      // Bootstrap snapshot so the render loop has spawn pose before the first interval tick.
-      this.local!.step();
+      this.local!.start({ externalDrive: true });
+      // Bootstrap snapshot so the render loop has spawn pose before the first frame tick.
+      this.local!.stepWithDt(1 / 60);
       this.matchId = 'local-match';
     } else {
       this.matchId = await createMatchViaSocket(this.socket!);
       await joinMatch(this.socket!, this.matchId);
     }
-    this.flushTimer = setInterval(() => this.flushInputs(), TICK_MS);
+    if (this.mode !== 'local') {
+      this.flushTimer = setInterval(() => this.flushInputs(), TICK_MS);
+    }
     return this.matchId;
   }
 
@@ -135,6 +137,13 @@ export class MatchClient {
   /** Queue an input frame; sent at 20 Hz by flushInputs(). */
   sendInput(input: WireInput) {
     this.pending.push(input);
+  }
+
+  /** Demo-local: flush queued input and advance sim once per render frame. */
+  tickLocal(dt: number) {
+    if (this.mode !== 'local' || !this.local) return;
+    this.flushInputs();
+    this.local.stepWithDt(Math.min(Math.max(dt, 0.001), 0.05));
   }
 
   private flushInputs() {

@@ -45,11 +45,13 @@ export class LocalServer {
     return this.sim.match.phase;
   }
 
-  start() {
+  start(options: { externalDrive?: boolean } = {}) {
     if (this.started) return;
     this.started = true;
     this.sim.startMatch();
-    this.timer = setInterval(() => this.step(), TICK_MS);
+    if (!options.externalDrive) {
+      this.timer = setInterval(() => this.step(), TICK_MS);
+    }
   }
 
   /** Push an input frame for the human unit; last-write-wins per tick. */
@@ -59,9 +61,14 @@ export class LocalServer {
 
   /** Advance one tick manually (used by tests and the browser driver). */
   step() {
+    this.stepWithDt(1 / TICK_HZ);
+  }
+
+  /** Variable-dt step for render-loop-driven demo-local play. */
+  stepWithDt(dt: number) {
     this.tick++;
     if (this.input) this.lastInputSeq = Math.max(this.lastInputSeq, this.input.seq);
-    this.sim.update(1 / TICK_HZ, this.toPlayerInput(this.input));
+    this.sim.update(dt, this.toPlayerInput(this.input));
     this.input = null;
     if (this.listeners.onEvents) {
       const events = this.sim.events.splice(0, this.sim.events.length);

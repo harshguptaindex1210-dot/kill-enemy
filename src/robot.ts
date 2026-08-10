@@ -8,6 +8,48 @@ export interface RobotAnimState {
   root: THREE.Object3D;
 }
 
+/** Shared soldier primitives — one GPU buffer per shape across all rigs. */
+const SOLDIER_GEO = {
+  vest: new THREE.BoxGeometry(0.62, 0.52, 0.34),
+  torso: new THREE.BoxGeometry(0.48, 0.42, 0.26),
+  plate: new THREE.BoxGeometry(0.14, 0.28, 0.06),
+  pouch: new THREE.BoxGeometry(0.1, 0.12, 0.08),
+  pelvis: new THREE.BoxGeometry(0.44, 0.18, 0.28),
+  neck: new THREE.CylinderGeometry(0.09, 0.1, 0.1, 6),
+  head: new THREE.SphereGeometry(0.14, 8, 8),
+  helmet: new THREE.SphereGeometry(0.17, 8, 6, 0, Math.PI * 2, 0, Math.PI * 0.62),
+  visor: new THREE.BoxGeometry(0.2, 0.06, 0.06),
+  hair: new THREE.BoxGeometry(0.12, 0.04, 0.14),
+  backpack: new THREE.BoxGeometry(0.36, 0.42, 0.18),
+  upperArm: new THREE.CylinderGeometry(0.075, 0.085, 0.34, 6),
+  lowerArm: new THREE.CylinderGeometry(0.065, 0.075, 0.32, 6),
+  hand: new THREE.BoxGeometry(0.08, 0.1, 0.06),
+  upperLeg: new THREE.CylinderGeometry(0.11, 0.12, 0.42, 6),
+  lowerLeg: new THREE.CylinderGeometry(0.09, 0.1, 0.4, 6),
+  boot: new THREE.BoxGeometry(0.14, 0.1, 0.26),
+  armband: new THREE.BoxGeometry(0.08, 0.06, 0.08),
+};
+
+function addSoldierMesh(
+  group: THREE.Group,
+  geo: THREE.BufferGeometry,
+  mat: THREE.Material,
+  position: THREE.Vector3Like,
+  rotation?: { x?: number; y?: number; z?: number }
+) {
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.position.copy(position as THREE.Vector3);
+  if (rotation) {
+    if (rotation.x !== undefined) mesh.rotation.x = rotation.x;
+    if (rotation.y !== undefined) mesh.rotation.y = rotation.y;
+    if (rotation.z !== undefined) mesh.rotation.z = rotation.z;
+  }
+  mesh.castShadow = false;
+  mesh.receiveShadow = false;
+  group.add(mesh);
+  return mesh;
+}
+
 /** BGMI / PUBG-style tactical soldier; `teamColor` tints vest + armband. */
 export function createRobotModel(teamColor = 0x3366cc): {
   group: THREE.Group;
@@ -31,97 +73,48 @@ export function createRobotModel(teamColor = 0x3366cc): {
   const hairMat = styleMat(0x2a2018, 'rubber');
 
   // Vest is first child — team tint readable at distance (matches robot.test.ts).
-  const vest = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.52, 0.34), vestMat);
-  vest.position.set(0, 1.22, 0.02);
-  group.add(vest);
+  addSoldierMesh(group, SOLDIER_GEO.vest, vestMat, { x: 0, y: 1.22, z: 0.02 });
+  addSoldierMesh(group, SOLDIER_GEO.torso, skinMat, { x: 0, y: 1.2, z: 0 });
 
-  const torso = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.42, 0.26), skinMat);
-  torso.position.set(0, 1.2, 0);
-  group.add(torso);
-
-  const plateL = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.28, 0.06), plateMat);
-  plateL.position.set(-0.22, 1.24, 0.2);
-  group.add(plateL);
-  const plateR = plateL.clone();
-  plateR.position.x = 0.22;
-  group.add(plateR);
+  addSoldierMesh(group, SOLDIER_GEO.plate, plateMat, { x: -0.22, y: 1.24, z: 0.2 });
+  addSoldierMesh(group, SOLDIER_GEO.plate, plateMat, { x: 0.22, y: 1.24, z: 0.2 });
 
   [-0.18, 0.12, -0.12].forEach((x, i) => {
-    const pouch = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.12, 0.08), pouchMat);
-    pouch.position.set(x, 1.08, 0.2);
-    pouch.rotation.y = i * 0.08;
-    group.add(pouch);
+    addSoldierMesh(group, SOLDIER_GEO.pouch, pouchMat, { x, y: 1.08, z: 0.2 }, { y: i * 0.08 });
   });
 
-  const pelvis = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.18, 0.28), pantsMat);
-  pelvis.position.set(0, 0.96, 0);
-  group.add(pelvis);
-
-  const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.1, 0.1, 8), skinMat);
-  neck.position.set(0, 1.48, 0);
-  group.add(neck);
-
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.14, 10, 10), skinMat);
-  head.position.set(0, 1.6, 0.02);
+  addSoldierMesh(group, SOLDIER_GEO.pelvis, pantsMat, { x: 0, y: 0.96, z: 0 });
+  addSoldierMesh(group, SOLDIER_GEO.neck, skinMat, { x: 0, y: 1.48, z: 0 });
+  const head = addSoldierMesh(group, SOLDIER_GEO.head, skinMat, { x: 0, y: 1.6, z: 0.02 });
   head.scale.set(1, 1.08, 0.95);
-  group.add(head);
 
-  const helmet = new THREE.Mesh(new THREE.SphereGeometry(0.17, 12, 10, 0, Math.PI * 2, 0, Math.PI * 0.62), helmetMat);
-  helmet.position.set(0, 1.64, 0);
+  const helmet = addSoldierMesh(group, SOLDIER_GEO.helmet, helmetMat, { x: 0, y: 1.64, z: 0 });
   helmet.scale.set(1.05, 0.9, 1.05);
-  group.add(helmet);
-
-  const visor = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.06, 0.06), visorMat);
-  visor.position.set(0, 1.6, 0.14);
-  group.add(visor);
-
-  const hair = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.04, 0.14), hairMat);
-  hair.position.set(0, 1.7, -0.06);
-  group.add(hair);
-
-  const backpack = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.42, 0.18), pouchMat);
-  backpack.position.set(0, 1.18, -0.22);
-  group.add(backpack);
-
-  const upperArmGeo = new THREE.CylinderGeometry(0.075, 0.085, 0.34, 8);
-  const lowerArmGeo = new THREE.CylinderGeometry(0.065, 0.075, 0.32, 8);
-  const handGeo = new THREE.BoxGeometry(0.08, 0.1, 0.06);
-  const upperLegGeo = new THREE.CylinderGeometry(0.11, 0.12, 0.42, 8);
-  const lowerLegGeo = new THREE.CylinderGeometry(0.09, 0.1, 0.4, 8);
-  const bootGeo = new THREE.BoxGeometry(0.14, 0.1, 0.26);
+  addSoldierMesh(group, SOLDIER_GEO.visor, visorMat, { x: 0, y: 1.6, z: 0.14 });
+  addSoldierMesh(group, SOLDIER_GEO.hair, hairMat, { x: 0, y: 1.7, z: -0.06 });
+  addSoldierMesh(group, SOLDIER_GEO.backpack, pouchMat, { x: 0, y: 1.18, z: -0.22 });
 
   for (const side of [-1, 1] as const) {
     const sx = side;
-
-    const armband = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.06, 0.08), armbandMat);
-    armband.position.set(0.34 * sx, 1.38, 0.04);
-    group.add(armband);
-
-    const upperArm = new THREE.Mesh(upperArmGeo, vestMat);
-    upperArm.position.set(0.36 * sx, 1.28, 0);
-    upperArm.rotation.z = side * 0.12;
-    group.add(upperArm);
-
-    const lowerArm = new THREE.Mesh(lowerArmGeo, skinMat);
-    lowerArm.position.set(0.4 * sx, 0.98, 0.04);
-    lowerArm.rotation.z = side * 0.08;
-    group.add(lowerArm);
-
-    const hand = new THREE.Mesh(handGeo, skinMat);
-    hand.position.set(0.42 * sx, 0.78, 0.05);
-    group.add(hand);
-
-    const upperLeg = new THREE.Mesh(upperLegGeo, pantsMat);
-    upperLeg.position.set(0.13 * sx, 0.66, 0);
-    group.add(upperLeg);
-
-    const lowerLeg = new THREE.Mesh(lowerLegGeo, pantsMat);
-    lowerLeg.position.set(0.13 * sx, 0.28, 0);
-    group.add(lowerLeg);
-
-    const boot = new THREE.Mesh(bootGeo, bootMat);
-    boot.position.set(0.13 * sx, 0.05, 0.04);
-    group.add(boot);
+    addSoldierMesh(group, SOLDIER_GEO.armband, armbandMat, { x: 0.34 * sx, y: 1.38, z: 0.04 });
+    addSoldierMesh(
+      group,
+      SOLDIER_GEO.upperArm,
+      vestMat,
+      { x: 0.36 * sx, y: 1.28, z: 0 },
+      { z: side * 0.12 }
+    );
+    addSoldierMesh(
+      group,
+      SOLDIER_GEO.lowerArm,
+      skinMat,
+      { x: 0.4 * sx, y: 0.98, z: 0.04 },
+      { z: side * 0.08 }
+    );
+    addSoldierMesh(group, SOLDIER_GEO.hand, skinMat, { x: 0.42 * sx, y: 0.78, z: 0.05 });
+    addSoldierMesh(group, SOLDIER_GEO.upperLeg, pantsMat, { x: 0.13 * sx, y: 0.66, z: 0 });
+    addSoldierMesh(group, SOLDIER_GEO.lowerLeg, pantsMat, { x: 0.13 * sx, y: 0.28, z: 0 });
+    addSoldierMesh(group, SOLDIER_GEO.boot, bootMat, { x: 0.13 * sx, y: 0.05, z: 0.04 });
   }
 
   const anim = createAnimState(group);

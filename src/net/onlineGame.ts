@@ -481,6 +481,10 @@ export class OnlineMatchGame {
       heal,
     });
 
+    if (this.client.mode === 'local') {
+      this.client.tickLocal(dt);
+    }
+
     if (snap) {
       this.renderTimeMs = snap.time_ms - REWIND_MS;
       if (snap.tick > this.lastSnapTick) this.syncSnapshot(snap);
@@ -511,12 +515,18 @@ export class OnlineMatchGame {
     if (this.fpsSamples.length < 6) return;
     const sorted = [...this.fpsSamples].sort((a, b) => a - b);
     const median = sorted[Math.floor(sorted.length / 2)]!;
-    if (median >= (isMobileDevice() ? 28 : 52)) return;
+    if (median >= (isMobileDevice() ? 24 : 48)) return;
     this.qualityDowngraded = true;
     this.renderer.shadowMap.enabled = false;
     this.renderer.setPixelRatio(1);
     this.hudIntervalMs = 140;
     this.minimapIntervalMs = 220;
+    this.scene.traverse((obj) => {
+      if (obj instanceof THREE.Mesh) {
+        obj.castShadow = false;
+        obj.receiveShadow = false;
+      }
+    });
     this.scene.traverse((obj) => {
       if (obj instanceof THREE.Mesh || obj instanceof THREE.InstancedMesh) {
         obj.castShadow = false;

@@ -7,7 +7,7 @@ describe('touch jump input', () => {
     const src = readFileSync(resolve(__dirname, '../src/input.ts'), 'utf8');
     expect(src).toMatch(/touchJumpHeld/);
     expect(src).toMatch(/touchJumpLatchUntil/);
-    expect(src).toMatch(/Date\.now\(\)\s*\+\s*600/);
+    expect(src).toMatch(/Date\.now\(\)\s*\+\s*900/);
     expect(src).toMatch(/touchJumpHeld\s*\|\|\s*Date\.now\(\)\s*<\s*touchJumpLatchUntil/);
     expect(src).toMatch(/desktopJumpLatchUntil/);
     expect(src).toMatch(/z-index:10010/);

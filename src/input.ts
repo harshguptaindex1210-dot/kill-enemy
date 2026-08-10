@@ -99,7 +99,7 @@ export function createInputManager(
     if (e.code === 'KeyH') healOnce = true;
     if (e.code === 'Space') {
       jumpOnce = true;
-      desktopJumpLatchUntil = Date.now() + 600;
+      desktopJumpLatchUntil = Date.now() + 900;
     }
     if (e.code === 'Digit1') w1 = true;
     if (e.code === 'Digit2') w2 = true;
@@ -137,7 +137,6 @@ export function createInputManager(
       keys.delete('ShiftRight');
       keys.delete('ControlLeft');
       keys.delete('ControlRight');
-      keys.delete('Space');
       firePressed = false;
       aimPressed = false;
     }
@@ -307,6 +306,10 @@ export function createInputManager(
     paintRoundBtn('#tb-heal', 'rgba(16,120,72,.88)', '2px solid #c9a860');
     paintRoundBtn('#tb-skill', 'rgba(42,58,48,.85)', '2px solid rgba(201,168,96,.5)');
     paintRoundBtn('#tb-jump', 'rgba(58,72,52,.9)', '2px solid #9cb06e');
+    setStyle(
+      '#tb-jump',
+      `${(touchOverlay.querySelector('#tb-jump') as HTMLElement).style.cssText};pointer-events:auto;touch-action:none;`
+    );
     paintRoundBtn('#tb-reload', 'rgba(72,62,40,.88)', '2px solid #c9a860');
     paintRoundBtn('#tb-aim', 'rgba(38,52,64,.9)', '2px solid rgba(140,160,180,.55)');
     paintRoundBtn('#tb-fire', 'rgba(140,48,32,.9)', '2px solid #e8c878');
@@ -491,7 +494,7 @@ export function createInputManager(
     const armJump = (e: Event) => {
       e.preventDefault();
       touchJumpHeld = true;
-      touchJumpLatchUntil = Date.now() + 600;
+      touchJumpLatchUntil = Date.now() + 900;
     };
     const releaseJump = (e: Event) => {
       e.preventDefault();

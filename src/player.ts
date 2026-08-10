@@ -51,6 +51,8 @@ const GRAVITY = -20;
 const MOUSE_SENSITIVITY = 0.002;
 const MAX_PITCH = Math.PI / 2 - 0.01;
 const GROUND_EPS = 0.08;
+/** Sim ticks to remember a jump press (covers 20Hz sampling + coyote landing). */
+const JUMP_BUFFER_TICKS = 8;
 
 export function createPlayer(startPos: THREE.Vector3 = new THREE.Vector3(0, 0.9, 0)): PlayerBundle {
   const bundle = {} as PlayerBundle;
@@ -60,6 +62,7 @@ export function createPlayer(startPos: THREE.Vector3 = new THREE.Vector3(0, 0.9,
   let pPitch = 0;
   let onGround = startPos.y <= 0.9;
   let crouchToggle = false;
+  let pendingJump = 0;
 
   bundle.velocity = new THREE.Vector3(0, 0, 0);
   bundle.position = startPos.clone();
@@ -106,6 +109,7 @@ export function createPlayer(startPos: THREE.Vector3 = new THREE.Vector3(0, 0.9,
     onGround = true;
     pState = 'stand';
     crouchToggle = false;
+    pendingJump = 0;
   };
 
   bundle.update = (input: PlayerInput, dt: number, groundY: number, speedMult: number = 1.0) => {
@@ -139,10 +143,14 @@ export function createPlayer(startPos: THREE.Vector3 = new THREE.Vector3(0, 0.9,
       pState = 'stand';
     }
 
-    if (input.jump && onGround) {
+    if (input.jump) pendingJump = JUMP_BUFFER_TICKS;
+    if (pendingJump > 0 && onGround) {
       bundle.velocity.y = JUMP_VELOCITY;
       pState = 'jump';
       onGround = false;
+      pendingJump = 0;
+    } else if (pendingJump > 0) {
+      pendingJump--;
     }
 
     if (pState === 'jump' && onGround) {

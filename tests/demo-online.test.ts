@@ -123,4 +123,23 @@ describe('demo online client fire path', () => {
     expect(player.healing?.kind).toBe('medkit');
     client.dispose();
   });
+
+  it('demo-local advances sim on tickLocal with jump input', async () => {
+    const client = new MatchClient('local', { onSnapshot: () => {}, onDisconnect: () => {} });
+    await client.connect();
+    await client.startMatch();
+
+    for (let i = 0; i < 700 && client.localServer!.sim.match.phase !== 'playing'; i++) {
+      client.tickLocal(1 / 60);
+    }
+    expect(client.localServer!.sim.match.phase).toBe('playing');
+
+    const player = client.localServer!.sim.units.get('player')!;
+    const y0 = player.player.position.y;
+    client.sendInput({ seq: 0, jump: true });
+    client.tickLocal(1 / 60);
+    expect(player.player.velocity.y).toBeGreaterThan(0);
+    expect(player.player.position.y).toBeGreaterThan(y0);
+    client.dispose();
+  });
 });
