@@ -15,14 +15,15 @@ export interface WireInput {
   left?: boolean;
   right?: boolean;
   sprint?: boolean;
+  crouch?: boolean;
   jump?: boolean;
   aim?: boolean;
   mouseX?: number;
   mouseY?: number;
   fire?: boolean;
   reload?: boolean;
-  /** One-shot med-kit use from touch HUD / keyboard. */
   heal?: boolean;
+  glooWall?: boolean;
 }
 
 export interface WireEntity {

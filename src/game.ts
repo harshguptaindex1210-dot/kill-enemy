@@ -947,6 +947,11 @@ export class MatchGame {
 
     this.syncAirdrops();
     this.syncGrenades();
+    if (this.sim.glooWalls.walls.length) {
+      void import('./glooWallVisual').then((m) =>
+        m.paintGlooWalls(this.scene, this.sim.glooWalls.walls)
+      );
+    }
     this.syncTargets(now);
     this.updateExplosionFx(now);
 

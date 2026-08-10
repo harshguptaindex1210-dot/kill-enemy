@@ -474,6 +474,7 @@ export class OnlineMatchGame {
       left: rawInput.left,
       right: rawInput.right,
       sprint: rawInput.sprint,
+      crouch: rawInput.crouch,
       jump: rawInput.jump,
       aim: this.lastAim,
       mouseX: rawInput.mouseX * sensX,
@@ -481,6 +482,7 @@ export class OnlineMatchGame {
       fire: rawInput.fire,
       reload: rawInput.reload,
       heal,
+      glooWall: rawInput.glooWall,
     });
 
     if (this.client.mode === 'local') {
@@ -495,6 +497,10 @@ export class OnlineMatchGame {
 
     this.syncPlayers(dt);
     this.syncTargets(dt);
+    const sim = this.client.localServer?.sim;
+    if (sim?.glooWalls.walls.length) {
+      void import('../glooWallVisual').then((m) => m.paintGlooWalls(this.scene, sim.glooWalls.walls));
+    }
     this.updateCamera(dt);
     if (now >= this.hudNext) {
       this.hudNext = now + this.hudIntervalMs;

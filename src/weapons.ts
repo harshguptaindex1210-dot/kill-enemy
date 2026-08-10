@@ -88,7 +88,8 @@ export function fireWeapon(
   origin: THREE.Vector3,
   direction: THREE.Vector3,
   targets: { id: string; position: THREE.Vector3; capsuleHeight: number; capsuleRadius: number }[],
-  time: number
+  time: number,
+  maxRange?: number
 ): FireResult[] {
   const results: FireResult[] = [];
 
@@ -100,9 +101,10 @@ export function fireWeapon(
   weapon.lastFireTime = time;
   weapon.ammo--;
   weapon.recoilAccum += weapon.def.recoil;
+  const range = maxRange ?? weapon.def.range;
 
   if (weapon.def.isProjectile) {
-    const end = origin.clone().add(direction.clone().multiplyScalar(weapon.def.range));
+    const end = origin.clone().add(direction.clone().multiplyScalar(range));
     const closest = findClosestHit(origin, end, targets);
     if (closest) {
       const dz = getDamageZone(
@@ -147,7 +149,7 @@ export function fireWeapon(
   spreadDir.applyAxisAngle(spreadUp, spreadAngle);
   spreadDir.applyAxisAngle(right, (Math.random() - 0.5) * weapon.def.spread * 2);
 
-  const end = origin.clone().add(spreadDir.clone().multiplyScalar(weapon.def.range));
+  const end = origin.clone().add(spreadDir.clone().multiplyScalar(range));
   const closest = findClosestHit(origin, end, targets);
   if (closest) {
     const dz = getDamageZone(

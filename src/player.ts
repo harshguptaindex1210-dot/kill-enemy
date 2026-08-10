@@ -10,6 +10,7 @@ export interface PlayerInput {
   right: boolean;
   sprint: boolean;
   crouch: boolean;
+  glooWall?: boolean;
   jump: boolean;
   aim: boolean;
   fire: boolean;
@@ -61,7 +62,6 @@ export function createPlayer(startPos: THREE.Vector3 = new THREE.Vector3(0, 0.9,
   let pYaw = 0;
   let pPitch = 0;
   let onGround = startPos.y <= 0.9;
-  let crouchToggle = false;
   let pendingJump = 0;
   let prevJumpInput = false;
   let jumpLock = false;
@@ -110,7 +110,6 @@ export function createPlayer(startPos: THREE.Vector3 = new THREE.Vector3(0, 0.9,
     bundle.velocity.set(0, 0, 0);
     onGround = true;
     pState = 'stand';
-    crouchToggle = false;
     pendingJump = 0;
     prevJumpInput = false;
     jumpLock = false;
@@ -133,12 +132,9 @@ export function createPlayer(startPos: THREE.Vector3 = new THREE.Vector3(0, 0.9,
     }
 
     if (input.crouch && onGround) {
-      if (!crouchToggle) {
-        crouchToggle = true;
-        pState = pState === 'stand' ? 'crouch' : 'stand';
-      }
-    } else if (!input.crouch) {
-      crouchToggle = false;
+      pState = 'crouch';
+    } else if (!input.crouch && pState === 'crouch' && onGround) {
+      pState = 'stand';
     }
 
     if (input.sprint && pState !== 'crouch' && onGround) {

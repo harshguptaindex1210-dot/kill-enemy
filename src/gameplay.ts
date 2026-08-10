@@ -66,6 +66,12 @@ import {
   type ShootingTarget,
 } from './targets';
 import { isMobileDevice } from './platform';
+import type { GlooWallSystem } from './glooWall';
+
+let glooMod: typeof import('./glooWall') | null = null;
+import('./glooWall').then((m) => {
+  glooMod = m;
+});
 
 export type DamageCause = 'shot' | 'melee' | 'grenade' | 'zone' | 'vehicle';
 
@@ -102,6 +108,7 @@ export interface SimUnit {
   melee: MeleeState;
   meleeMode: boolean;
   grenadeCount: number;
+  glooWallCount: number;
   heals: { medkit: number; bandage: number };
   healing: { kind: 'medkit' | 'bandage'; until: number; healTotal: number } | null;
   lastDamageTime: number;
@@ -200,6 +207,7 @@ export class MatchSim {
   match: MatchState;
   zone: ZoneLogic;
   grenades: GrenadeSystem;
+  glooWalls: GlooWallSystem;
   units: Map<string, SimUnit>;
   loot: LootSpawnData[] = [];
   lootRespawns: { id: number; until: number }[] = [];
@@ -224,6 +232,7 @@ export class MatchSim {
     this.time = config.time ?? 0;
     this.zone = new ZoneLogic();
     this.grenades = createGrenadeSystem();
+    this.glooWalls = { walls: [], nextId: 1 };
     this.airdrops = createAirdropSystem();
 
     const botCount = config.botCount ?? 9;
@@ -299,6 +308,7 @@ export class MatchSim {
       melee: createMeleeWeapon(meleeType),
       meleeMode: false,
       grenadeCount: 2,
+      glooWallCount: 3,
       heals: { medkit: START_MEDKITS, bandage: START_BANDAGES },
       healing: null,
       lastDamageTime: -100000,
@@ -461,6 +471,18 @@ export class MatchSim {
     if (input.weapon3) unit.meleeMode = true;
     if (input.skill) this.triggerSkill(unit.id);
     if (input.heal) this.useHealing(unit.id, 'medkit');
+    if (input.glooWall && glooMod && unit.glooWallCount > 0) {
+      this.glooWalls.walls = this.glooWalls.walls.filter((w) => w.until > now);
+      const wall = glooMod.deployGlooWall(
+        this.glooWalls,
+        unit.id,
+        unit.player.position,
+        unit.player.yaw,
+        now,
+        MAP_BOUND
+      );
+      if (wall) unit.glooWallCount--;
+    }
 
     const weapon = this.currentWeapon(unit);
     if (weapon) {
@@ -494,6 +516,7 @@ export class MatchSim {
     bundle.update(input, dt, GROUND_Y, speedMult);
     clampPos(bundle.position);
     this.resolveObstacles(unit);
+    if (glooMod) glooMod.resolveGlooWallCollisions(unit.player.position, this.glooWalls.walls, UNIT_RADIUS);
     bundle.health = unit.health;
 
     if (unit.isBot) {
@@ -561,7 +584,11 @@ export class MatchSim {
       }));
     const shootTargets = targetsForHitscan(this.targets);
     const beforeFire = weapon.lastFireTime;
-    const results = fireWeapon(weapon, origin, dir, [...unitTargets, ...shootTargets], now);
+    const wallDist = glooMod
+      ? glooMod.raycastGlooWalls(origin, dir, weapon.def.range, this.glooWalls.walls)
+      : null;
+    const maxRange = wallDist ?? weapon.def.range;
+    const results = fireWeapon(weapon, origin, dir, [...unitTargets, ...shootTargets], now, maxRange);
     // Rate-limited frames must not emit shot SFX / tracers.
     if (weapon.lastFireTime === beforeFire) return;
     this.events.push({

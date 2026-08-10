@@ -49,6 +49,7 @@ export function createInputManager(
   let aimPressed = false;
   let reloadOnce = false;
   let skillOnce = false;
+  let wallOnce = false;
   let healOnce = false;
   let jumpOnce = false;
   let w1 = false,
@@ -65,8 +66,8 @@ export function createInputManager(
   let touchAimPressed = false;
   let touchJumpOnce = false;
   let touchReloadOnce = false;
-  let touchSkillOnce = false;
   let touchHealOnce = false;
+  let touchCrouch = false;
   let touchW1 = false;
   let touchW2 = false;
   let touchW3 = false;
@@ -94,6 +95,7 @@ export function createInputManager(
     keys.add(e.code);
     if (e.code === 'KeyR') reloadOnce = true;
     if (e.code === 'KeyF') skillOnce = true;
+    if (e.code === 'KeyG') wallOnce = true;
     if (e.code === 'KeyH') healOnce = true;
     if (e.code === 'Space') {
       jumpOnce = true;
@@ -268,7 +270,7 @@ export function createInputManager(
     touchOverlay.style.cssText =
       'position:fixed;inset:0;pointer-events:none;z-index:10010;user-select:none;-webkit-user-select:none;touch-action:none;';
 
-    touchOverlay.innerHTML = `<div id="touch-joystick-area"><div id="touch-joystick-knob"></div></div><button id="tb-fire-left" type="button">🔥</button><button id="tb-rs">RESPAWN</button><div id="touch-actions-area"><div><button id="tb-heal" type="button">HEAL</button><button id="tb-skill" type="button">⚡</button><button id="tb-jump" type="button">⬆</button></div><div><button id="tb-reload" type="button">↻</button><button id="tb-aim" type="button">🎯</button><button id="tb-fire" type="button">🔥</button></div></div><div id="touch-weapons-area"><button id="tb-w1" type="button">R1</button><button id="tb-w2" type="button">P2</button><button id="tb-w3" type="button">M3</button></div>`;
+    touchOverlay.innerHTML = `<div id="touch-joystick-area"><div id="touch-joystick-knob"></div></div><button id="tb-fire-left" type="button">🔥</button><button id="tb-rs">RESPAWN</button><div id="touch-actions-area"><div><button id="tb-heal" type="button">HEAL</button><button id="tb-skill" type="button">W</button><button id="tb-down" type="button">⬇</button><button id="tb-jump" type="button">⬆</button></div><div><button id="tb-reload" type="button">↻</button><button id="tb-aim" type="button">🎯</button><button id="tb-fire" type="button">🔥</button></div></div><div id="touch-weapons-area"><button id="tb-w1" type="button">R1</button><button id="tb-w2" type="button">P2</button><button id="tb-w3" type="button">M3</button></div>`;
 
     document.body.appendChild(touchOverlay);
     const setStyle = (id: string, css: string) => {
@@ -301,7 +303,8 @@ export function createInputManager(
       );
     };
     paintRoundBtn('#tb-heal', 'rgba(16,120,72,.88)', '2px solid #c9a860');
-    paintRoundBtn('#tb-skill', 'rgba(42,58,48,.85)', '2px solid rgba(201,168,96,.5)');
+    paintRoundBtn('#tb-skill', 'rgba(42,88,120,.88)', '2px solid rgba(120,200,255,.55)');
+    paintRoundBtn('#tb-down', 'rgba(48,52,58,.9)', '2px solid rgba(180,190,200,.5)');
     paintRoundBtn('#tb-jump', 'rgba(58,72,52,.9)', '2px solid #9cb06e');
     setStyle(
       '#tb-jump',
@@ -518,8 +521,21 @@ export function createInputManager(
     const btnSkill = touchOverlay.querySelector('#tb-skill') as HTMLButtonElement;
     btnSkill.addEventListener('touchstart', (e) => {
       e.preventDefault();
-      touchSkillOnce = true;
+      wallOnce = true;
     });
+
+    const btnDown = touchOverlay.querySelector('#tb-down') as HTMLButtonElement;
+    const crouchDown = (e: Event) => {
+      e.preventDefault();
+      touchCrouch = true;
+    };
+    const crouchUp = (e: Event) => {
+      e.preventDefault();
+      touchCrouch = false;
+    };
+    btnDown.addEventListener('touchstart', crouchDown, { passive: false });
+    btnDown.addEventListener('touchend', crouchUp);
+    btnDown.addEventListener('touchcancel', crouchUp);
 
     const btnHeal = touchOverlay.querySelector('#tb-heal') as HTMLButtonElement;
     btnHeal.addEventListener('touchstart', (e) => {
@@ -609,12 +625,13 @@ export function createInputManager(
       left: keys.has('KeyA') || keys.has('ArrowLeft') || touchLeft,
       right: keys.has('KeyD') || keys.has('ArrowRight') || touchRight,
       sprint: keys.has('ShiftLeft') || keys.has('ShiftRight') || touchSprint,
-      crouch: keys.has('ControlLeft') || keys.has('ControlRight'),
+      crouch: keys.has('ControlLeft') || keys.has('ControlRight') || touchCrouch,
       jump: jumpOnce || touchJump,
       aim: aimPressed || touchAimPressed,
       fire: firePressed || touchFirePressed,
       reload: reloadOnce || touchReloadOnce,
-      skill: skillOnce || touchSkillOnce,
+      skill: skillOnce,
+      glooWall: wallOnce,
       heal: healOnce || touchHealOnce,
       weapon1: w1 || touchW1,
       weapon2: w2 || touchW2,
@@ -627,6 +644,7 @@ export function createInputManager(
     mouseY = 0;
     reloadOnce = false;
     skillOnce = false;
+    wallOnce = false;
     healOnce = false;
     jumpOnce = false;
     touchJumpOnce = false;
@@ -635,7 +653,6 @@ export function createInputManager(
     w3 = false;
 
     touchReloadOnce = false;
-    touchSkillOnce = false;
     touchHealOnce = false;
     touchW1 = false;
     touchW2 = false;
