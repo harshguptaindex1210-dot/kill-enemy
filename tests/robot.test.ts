@@ -58,14 +58,23 @@ describe('robot model', () => {
     updateRobotAnim(anim, 0.2);
     transitionAnim(anim, 'walk');
     expect(group.scale.y).toBeCloseTo(1);
+    expect(group.rotation.z).toBeCloseTo(0);
   });
 
   it('tints chassis from team color', () => {
     const { group } = createRobotModel(0xff0000);
-    const torso = group.children[0];
-    expect(torso).toBeInstanceOf(Mesh);
-    const mat = (torso as Mesh).material as MeshStandardMaterial;
+    const vest = group.children[0];
+    expect(vest).toBeInstanceOf(Mesh);
+    const mat = (vest as Mesh).material as MeshStandardMaterial;
     expect(mat.color.r).toBeGreaterThan(mat.color.g);
     expect(mat.color.r).toBeGreaterThan(mat.color.b);
+  });
+
+  it('builds a tactical soldier silhouette (helmet + vest + boots)', () => {
+    const { group } = createRobotModel();
+    expect(group.children.length).toBeGreaterThan(18);
+    const ys = group.children.map((c) => c.position.y);
+    expect(Math.max(...ys)).toBeGreaterThan(1.5);
+    expect(Math.min(...ys)).toBeLessThan(0.2);
   });
 });

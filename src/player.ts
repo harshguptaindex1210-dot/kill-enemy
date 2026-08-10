@@ -72,20 +72,20 @@ export function createPlayer(startPos: THREE.Vector3 = new THREE.Vector3(0, 0.9,
     pitch: { get: () => pPitch },
   });
 
-  const geo = new THREE.CapsuleGeometry(0.4, 1.0, 4, 8);
-  const mat = new THREE.MeshStandardMaterial({ color: 0x3366cc });
+  const geo = new THREE.CapsuleGeometry(0.34, 0.72, 6, 10);
+  const mat = new THREE.MeshStandardMaterial({ color: 0xc49a6c, roughness: 0.55, metalness: 0.08 });
   bundle.capsule = new THREE.Mesh(geo, mat);
   bundle.capsule.position.copy(bundle.position);
 
-  const bodyMat = new THREE.MeshStandardMaterial({ color: 0x4477dd });
-  const bodyGeo = new THREE.BoxGeometry(0.8, 1.2, 0.5);
+  const bodyMat = new THREE.MeshStandardMaterial({ color: 0x4a5240, roughness: 0.82, metalness: 0.04 });
+  const bodyGeo = new THREE.BoxGeometry(0.44, 0.5, 0.28);
   bundle.mesh = new THREE.Mesh(bodyGeo, bodyMat);
   bundle.mesh.position.copy(bundle.position);
 
-  const headMat = new THREE.MeshStandardMaterial({ color: 0xddaa88 });
-  const headGeo = new THREE.SphereGeometry(0.25, 8, 8);
+  const headMat = new THREE.MeshStandardMaterial({ color: 0xc49a6c, roughness: 0.5, metalness: 0.06 });
+  const headGeo = new THREE.SphereGeometry(0.14, 8, 8);
   const head = new THREE.Mesh(headGeo, headMat);
-  head.position.set(0, 0.85, 0);
+  head.position.set(0, 0.72, 0);
   bundle.mesh.add(head);
 
   function getHeight(): number {
