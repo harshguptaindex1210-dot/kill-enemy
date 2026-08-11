@@ -31,6 +31,9 @@ import {
   type HeldWeaponKit,
 } from '../heldWeapons';
 import type { SimEvent, SimUnit } from '../gameplay';
+
+const SHOT_TRACER_AXIS = new THREE.Vector3(0, 0, 1);
+const SHOT_TRACER_LEN = 18;
 import { summarizeMatch } from '../game';
 import { mountTargetMeshes, syncTargetMeshes, type TargetMeshParts } from '../targetVisuals';
 
@@ -136,10 +139,10 @@ export class OnlineMatchGame {
   private zonePhaseStartMs = 0;
   private bannerEl: HTMLElement;
   private muzzleFlashPool: { light: THREE.PointLight; tracer: THREE.Mesh }[] = [];
-  private muzzleFlashGeo = new THREE.SphereGeometry(0.08, 4, 4);
-  private muzzleFlashMat = new THREE.MeshBasicMaterial({ color: 0xffff00 });
-  private tracerGeo = new THREE.BoxGeometry(0.05, 0.05, 1.2);
-  private tracerMat = new THREE.MeshBasicMaterial({ color: 0xffff88 });
+  private tracerGeo = new THREE.BoxGeometry(0.08, 0.08, SHOT_TRACER_LEN);
+  private tracerMat = new THREE.MeshBasicMaterial({ color: 0xffdd55 });
+  private glooWallPaint: ((scene: THREE.Scene, walls: import('../glooWall').GlooWall[]) => void) | null =
+    null;
   private lastPhaseBanner = '';
   private hudNext = 0;
   private minimapNext = 0;
@@ -248,6 +251,9 @@ export class OnlineMatchGame {
 
     window.addEventListener('resize', this.onResize);
     window.addEventListener('keydown', this.onKeyDown);
+    void import('../glooWallVisual').then((m) => {
+      this.glooWallPaint = m.paintGlooWalls;
+    });
   }
 
   start() {
@@ -276,8 +282,6 @@ export class OnlineMatchGame {
       this.scene.remove(fx.light);
       this.scene.remove(fx.tracer);
     }
-    this.muzzleFlashGeo.dispose();
-    this.muzzleFlashMat.dispose();
     this.tracerGeo.dispose();
     this.tracerMat.dispose();
     this.scene.traverse((obj) => {
@@ -304,7 +308,7 @@ export class OnlineMatchGame {
         if (e.melee) this.opts.audio.play('melee');
         else if (e.grenade) this.opts.audio.play('shot');
         else this.opts.audio.play(e.weapon === 'pistol' ? 'pistol' : 'shot');
-        this.muzzleFlash(String(e.unitId));
+        this.muzzleFlash(String(e.unitId), typeof e.yaw === 'number' ? e.yaw : undefined);
         if (String(e.unitId) !== selfId && !e.melee && !e.grenade) {
           const yaw = typeof e.yaw === 'number' ? e.yaw : 0;
           addCompassPing(formatCompassBearing(yaw));
@@ -386,25 +390,34 @@ export class OnlineMatchGame {
     );
   }
 
-  private muzzleFlash(unitId: string) {
+  private muzzleFlash(unitId: string, yaw?: number) {
     const rig = this.rigs.get(unitId);
     if (!rig) return;
+    const shotYaw = yaw ?? rig.group.rotation.y;
+    const shotPitch = unitId === this.client.selfId ? this.pitch : 0;
+    const origin = rig.group.position.clone();
+    origin.y += 1.2;
+    const dir = new THREE.Vector3(
+      -Math.sin(shotYaw) * Math.cos(shotPitch),
+      -Math.sin(shotPitch),
+      -Math.cos(shotYaw) * Math.cos(shotPitch)
+    ).normalize();
+    const muzzle = origin.addScaledVector(dir, 0.6);
+
     const fx = this.muzzleFlashPool.pop() ?? {
-      light: new THREE.PointLight(0xffaa00, 2, 4),
+      light: new THREE.PointLight(0xffff44, 8, 24),
       tracer: new THREE.Mesh(this.tracerGeo, this.tracerMat),
     };
-    const pos = rig.group.position.clone();
-    pos.y += 1.2;
-    fx.light.position.copy(pos);
-    fx.tracer.position.copy(pos);
-    fx.tracer.rotation.y = rig.group.rotation.y;
+    fx.light.position.copy(muzzle);
+    fx.tracer.position.copy(muzzle).addScaledVector(dir, SHOT_TRACER_LEN / 2);
+    fx.tracer.quaternion.setFromUnitVectors(SHOT_TRACER_AXIS, dir);
     this.scene.add(fx.light);
     this.scene.add(fx.tracer);
     window.setTimeout(() => {
       this.scene.remove(fx.light);
       this.scene.remove(fx.tracer);
       this.muzzleFlashPool.push(fx);
-    }, 80);
+    }, 110);
   }
 
   private localHumanUnit(): SimUnit | null {
@@ -504,8 +517,8 @@ export class OnlineMatchGame {
     this.syncPlayers(dt);
     this.syncTargets(dt);
     const sim = this.client.localServer?.sim;
-    if (sim?.glooWalls.walls.length) {
-      void import('../glooWallVisual').then((m) => m.paintGlooWalls(this.scene, sim.glooWalls.walls));
+    if (this.glooWallPaint && sim?.glooWalls.walls.length) {
+      this.glooWallPaint(this.scene, sim.glooWalls.walls);
     }
     this.updateCamera(dt);
     if (now >= this.hudNext) {

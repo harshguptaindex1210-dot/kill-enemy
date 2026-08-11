@@ -77,6 +77,8 @@ interface UnitRig {
 
 const HUD_INTERVAL_MS = isMobileDevice() ? 110 : 50;
 export const LOCAL_MATCH_BOTS = 9;
+const SHOT_TRACER_AXIS = new THREE.Vector3(0, 0, 1);
+const SHOT_TRACER_LEN = 18;
 
 const ROBOT_GROUP_Y_OFFSET = -0.9;
 const INTERACT_RANGE_LOOT = 2.5;
@@ -165,8 +167,10 @@ export class MatchGame {
   private projMeshes = new Map<number, THREE.Mesh>();
   private explosionFx: { light: THREE.PointLight; mesh: THREE.Mesh; until: number }[] = [];
   private muzzleFlashPool: { light: THREE.PointLight; tracer: THREE.Mesh }[] = [];
-  private muzzleFlashGeo = new THREE.SphereGeometry(0.08, 4, 4);
-  private muzzleFlashMat = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+  private tracerGeo = new THREE.BoxGeometry(0.08, 0.08, SHOT_TRACER_LEN);
+  private tracerMat = new THREE.MeshBasicMaterial({ color: 0xffdd55 });
+  private glooWallPaint: ((scene: THREE.Scene, walls: import('./glooWall').GlooWall[]) => void) | null =
+    null;
 
   private bannerEl: HTMLElement;
   private crosshairEl: HTMLElement;
@@ -237,7 +241,8 @@ export class MatchGame {
     c.height = window.innerHeight;
     c.style.cssText = 'position:fixed;inset:0;width:100vw;height:100vh;display:block;';
 
-    const quality: QualityPreset = this.settings.quality;
+    const quality: QualityPreset =
+      isMobileDevice() && this.settings.quality !== 'low' ? 'low' : this.settings.quality;
     const { scene, camera, renderer, controls, pois, disposeEnvironment } = createScene(
       c,
       quality,
@@ -337,6 +342,9 @@ export class MatchGame {
     window.addEventListener('resize', this.onResize);
 
     void pois;
+    void import('./glooWallVisual').then((m) => {
+      this.glooWallPaint = m.paintGlooWalls;
+    });
   }
 
   start() {
@@ -383,8 +391,8 @@ export class MatchGame {
       this.scene.remove(fx.light);
       this.scene.remove(fx.tracer);
     }
-    this.muzzleFlashGeo.dispose();
-    this.muzzleFlashMat.dispose();
+    this.tracerGeo.dispose();
+    this.tracerMat.dispose();
     this.matchRenderer.dispose();
     disposeScene({
       scene: this.scene,
@@ -879,18 +887,19 @@ export class MatchGame {
     const muzzle = origin.addScaledVector(dir, 1.1);
 
     const fx = this.muzzleFlashPool.pop() ?? {
-      light: new THREE.PointLight(0xffff44, 4, 16),
-      tracer: new THREE.Mesh(this.muzzleFlashGeo, this.muzzleFlashMat),
+      light: new THREE.PointLight(0xffff44, 8, 24),
+      tracer: new THREE.Mesh(this.tracerGeo, this.tracerMat),
     };
     fx.light.position.copy(muzzle);
-    fx.tracer.position.copy(muzzle);
+    fx.tracer.position.copy(muzzle).addScaledVector(dir, SHOT_TRACER_LEN / 2);
+    fx.tracer.quaternion.setFromUnitVectors(SHOT_TRACER_AXIS, dir);
     this.scene.add(fx.light);
     this.scene.add(fx.tracer);
     setTimeout(() => {
       this.scene.remove(fx.light);
       this.scene.remove(fx.tracer);
       this.muzzleFlashPool.push(fx);
-    }, 80);
+    }, 110);
   }
 
   private spawnExplosion(position: THREE.Vector3) {
@@ -953,10 +962,8 @@ export class MatchGame {
 
     this.syncAirdrops();
     this.syncGrenades();
-    if (this.sim.glooWalls.walls.length) {
-      void import('./glooWallVisual').then((m) =>
-        m.paintGlooWalls(this.scene, this.sim.glooWalls.walls)
-      );
+    if (this.glooWallPaint && this.sim.glooWalls.walls.length) {
+      this.glooWallPaint(this.scene, this.sim.glooWalls.walls);
     }
     this.syncTargets(now);
     this.updateExplosionFx(now);
