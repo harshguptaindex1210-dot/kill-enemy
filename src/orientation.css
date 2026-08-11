@@ -165,7 +165,8 @@
     display: none !important;
   }
 
-  html[data-phone-device='true'] #hud-heal-action {
+  html[data-phone-device='true'] #hud-heal-action,
+  html[data-phone-device='true'] #hud-wall-action {
     display: none !important;
   }
 
@@ -534,6 +535,32 @@
 
 .hud-heal-btn:hover:not(:disabled) {
   filter: brightness(1.1);
+}
+
+.hud-wall-btn {
+  pointer-events: auto;
+  padding: 10px 14px;
+  min-width: 68px;
+  min-height: 44px;
+  border: 1px solid #4a8ab8;
+  border-radius: 2px;
+  background: linear-gradient(180deg, #2a5880, #1e4468);
+  color: #e8f4ff;
+  font: 700 11px 'Segoe UI', system-ui, sans-serif;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: filter 0.12s ease, opacity 0.12s ease;
+}
+
+.hud-wall-btn:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.hud-wall-btn.is-disabled,
+.hud-wall-btn:disabled {
+  opacity: 0.48;
+  cursor: not-allowed;
 }
 
 .hud-heal-btn.is-disabled,

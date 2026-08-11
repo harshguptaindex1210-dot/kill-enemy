@@ -14,6 +14,7 @@ export function createHUD(): {
   remove: () => void;
   onRespawn?: (handler: () => void) => void;
   onHealAction?: (handler: () => void) => void;
+  onWallAction?: (handler: () => void) => void;
 } {
   const el = document.createElement('div');
   el.id = 'game-hud';
@@ -57,6 +58,7 @@ export function createHUD(): {
         <div>GRN <span id="hud-grenades">2</span></div>
         <div>MED <span id="hud-heals">3</span></div>
       </div>
+      <button id="hud-wall-action" type="button" class="hud-wall-btn">WALL</button>
       <button id="hud-heal-action" type="button" class="hud-heal-btn">HEAL</button>
     </div>
     <div id="hud-killfeed" class="hud-killfeed"></div>
@@ -71,8 +73,10 @@ export function createHUD(): {
 
   let respawnHandler: (() => void) | null = null;
   let healActionHandler: (() => void) | null = null;
+  let wallActionHandler: (() => void) | null = null;
   const respawnBtn = el.querySelector('#hud-respawn') as HTMLButtonElement;
   const healBtn = el.querySelector('#hud-heal-action') as HTMLButtonElement;
+  const wallBtn = el.querySelector('#hud-wall-action') as HTMLButtonElement;
   respawnBtn.addEventListener('click', () => respawnHandler?.());
   const fireHeal = (event: Event) => {
     if (healBtn.disabled) return;
@@ -81,6 +85,13 @@ export function createHUD(): {
   };
   healBtn.addEventListener('click', fireHeal);
   healBtn.addEventListener('touchstart', fireHeal, { passive: false });
+  const fireWall = (event: Event) => {
+    if (wallBtn.disabled) return;
+    event.preventDefault();
+    wallActionHandler?.();
+  };
+  wallBtn.addEventListener('click', fireWall);
+  wallBtn.addEventListener('touchstart', fireWall, { passive: false });
 
   return {
     onRespawn(handler: () => void) {
@@ -88,6 +99,9 @@ export function createHUD(): {
     },
     onHealAction(handler: () => void) {
       healActionHandler = handler;
+    },
+    onWallAction(handler: () => void) {
+      wallActionHandler = handler;
     },
     update(data: HUDData) {
       el.style.display = 'block';
@@ -142,6 +156,9 @@ export function createHUD(): {
       healBtn.textContent = data.healActionLabel;
       healBtn.disabled = !data.healActionEnabled;
       healBtn.classList.toggle('is-disabled', !data.healActionEnabled);
+      wallBtn.textContent = data.wallActionLabel ?? 'WALL';
+      wallBtn.disabled = !data.wallActionEnabled;
+      wallBtn.classList.toggle('is-disabled', !data.wallActionEnabled);
       if (data.justHit) {
         const dmg = document.getElementById('hud-damage')!;
         dmg.style.opacity = '1';
@@ -221,6 +238,8 @@ export interface HUDData {
   showRespawn?: boolean;
   healActionLabel: string;
   healActionEnabled: boolean;
+  wallActionLabel?: string;
+  wallActionEnabled?: boolean;
 }
 
 export function createMinimap(onToggleFullscreen?: () => void): {

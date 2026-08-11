@@ -78,7 +78,7 @@ function renderInstructionsPanel(): string {
     <b class="lobby-panel-title">How to Play</b>
     <dl class="lobby-instructions-list">
       <dt>Move</dt>
-      <dd><kbd>W A S D</kbd> walk · <kbd>Shift</kbd> sprint · <kbd>Ctrl</kbd> crouch · <kbd>Space</kbd> jump</dd>
+      <dd><kbd>W A S D</kbd> walk · <kbd>Shift</kbd> sprint · <kbd>Ctrl</kbd> crouch · <kbd>Space</kbd> jump · <kbd>G</kbd>/<kbd>V</kbd> gloo wall</dd>
       <dt>Aim &amp; shoot</dt>
       <dd>Mouse look · <kbd>LMB</kbd> fire · <kbd>R</kbd> reload · <kbd>1</kbd>/<kbd>2</kbd>/<kbd>3</kbd> weapons · <kbd>F</kbd> skill</dd>
       <dt>Grenades</dt>

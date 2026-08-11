@@ -144,6 +144,7 @@ export class OnlineMatchGame {
   private hudNext = 0;
   private minimapNext = 0;
   private healPressed = false;
+  private wallPressed = false;
   private dead = false;
   private hudIntervalMs = HUD_INTERVAL_MS;
   private minimapIntervalMs = MINIMAP_INTERVAL_MS;
@@ -226,6 +227,9 @@ export class OnlineMatchGame {
     this.hud.onRespawn?.(() => this.respawnHuman());
     this.hud.onHealAction?.(() => {
       this.healPressed = true;
+    });
+    this.hud.onWallAction?.(() => {
+      this.wallPressed = true;
     });
     this.minimap = createMinimap();
     this.buildTargetsFromSim();
@@ -459,6 +463,8 @@ export class OnlineMatchGame {
 
     const heal = Boolean(rawInput.heal || this.healPressed);
     this.healPressed = false;
+    const glooWall = Boolean(rawInput.glooWall || this.wallPressed);
+    this.wallPressed = false;
 
     if (playing && !alive && !this.dead) {
       this.dead = true;
@@ -482,7 +488,7 @@ export class OnlineMatchGame {
       fire: rawInput.fire,
       reload: rawInput.reload,
       heal,
-      glooWall: rawInput.glooWall,
+      glooWall: glooWall,
     });
 
     if (this.client.mode === 'local') {
@@ -751,6 +757,11 @@ export class OnlineMatchGame {
     } else if (human) {
       healActionLabel = `HEAL x${human.heals.medkit}`;
     }
+    const wallCount = human?.glooWallCount ?? 0;
+    const canWall =
+      Boolean(human?.alive) && (snap?.phase ?? '') === 'playing' && wallCount > 0;
+    const wallActionLabel =
+      wallCount > 0 ? `WALL x${wallCount}` : (snap?.phase === 'playing' ? 'NO WALL' : 'WALL');
     const data: HUDData = {
       kills: mp?.kills ?? 0,
       targetsHit: sim?.getTargetHits(this.client.selfId) ?? 0,
@@ -773,6 +784,8 @@ export class OnlineMatchGame {
       bearing: this.compassBearing(self.yaw),
       healActionLabel,
       healActionEnabled: canHeal,
+      wallActionLabel,
+      wallActionEnabled: canWall,
       showRespawn: this.dead && snap?.phase === 'playing',
     };
     this.hud.update(data);

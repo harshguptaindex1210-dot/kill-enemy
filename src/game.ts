@@ -175,6 +175,7 @@ export class MatchGame {
   private keys = new Set<string>();
   private usePressed = false;
   private healMedPressed = false;
+  private wallPressed = false;
   private healBandPressed = false;
   private vehicleTypePressed: 'sedan' | 'motorbike' | null = null;
   private spectatePressed = false;
@@ -295,6 +296,9 @@ export class MatchGame {
     this.hud.onRespawn?.(this.respawnHuman);
     this.hud.onHealAction?.(() => {
       this.healMedPressed = true;
+    });
+    this.hud.onWallAction?.(() => {
+      this.wallPressed = true;
     });
     this.minimap = createMinimap(() => {
       this.minimapFullscreen = !this.minimapFullscreen;
@@ -526,7 +530,9 @@ export class MatchGame {
         mouseX: raw.mouseX * sensX,
         mouseY: raw.mouseY * sensY,
         aim: raw.aim || this.settings.cameraMode === 'fps',
+        glooWall: raw.glooWall || this.wallPressed,
       };
+      this.wallPressed = false;
     } else {
       this.input.getInput();
     }
@@ -1217,6 +1223,8 @@ export class MatchGame {
       showRespawn: this.dead && this.sim.match.phase === 'playing',
       healActionLabel: this.healActionLabel(human),
       healActionEnabled: this.canUseHealAction(human),
+      wallActionLabel: this.wallActionLabel(human),
+      wallActionEnabled: this.canUseWallAction(human),
     };
     this.hud.update(data);
     if (this.touchActionRoot && this.mBtn && this.healBtn && this.carBtn && this.bikeBtn) {
@@ -1236,6 +1244,17 @@ export class MatchGame {
     if (human.healing) return false;
     if (human.health >= 100) return false;
     return human.heals.medkit > 0;
+  }
+
+  private canUseWallAction(human: SimUnit): boolean {
+    if (!human.alive || this.sim.match.phase !== 'playing') return false;
+    return human.glooWallCount > 0;
+  }
+
+  private wallActionLabel(human: SimUnit): string {
+    if (!human.alive || this.sim.match.phase !== 'playing') return 'WALL';
+    if (human.glooWallCount <= 0) return 'NO WALL';
+    return `WALL x${human.glooWallCount}`;
   }
 
   private healActionLabel(human: SimUnit): string {

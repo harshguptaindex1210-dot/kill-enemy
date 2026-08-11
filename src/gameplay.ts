@@ -351,9 +351,31 @@ export class MatchSim {
   }
 
   startMatch() {
+    void import('./glooWall').then((m) => {
+      glooMod = m;
+    });
     if (this.match.phase === 'lobby') {
       startCountdown(this.match, this.time);
     }
+  }
+
+  private deployGlooWallNow(unit: SimUnit, now: number) {
+    if (unit.glooWallCount <= 0) return;
+    this.glooWalls.walls = this.glooWalls.walls.filter((w) => w.until > now);
+    const yaw = unit.player.yaw;
+    const pos = unit.player.position;
+    const x = pos.x - Math.sin(yaw) * 1.75;
+    const z = pos.z - Math.cos(yaw) * 1.75;
+    if (Math.abs(x) > MAP_BOUND - 1 || Math.abs(z) > MAP_BOUND - 1) return;
+    this.glooWalls.walls.push({
+      id: this.glooWalls.nextId++,
+      ownerId: unit.id,
+      x,
+      z,
+      yaw,
+      until: now + 45_000,
+    });
+    unit.glooWallCount--;
   }
 
   update(dt: number, humanInput?: PlayerInput) {
@@ -471,18 +493,7 @@ export class MatchSim {
     if (input.weapon3) unit.meleeMode = true;
     if (input.skill) this.triggerSkill(unit.id);
     if (input.heal) this.useHealing(unit.id, 'medkit');
-    if (input.glooWall && glooMod && unit.glooWallCount > 0) {
-      this.glooWalls.walls = this.glooWalls.walls.filter((w) => w.until > now);
-      const wall = glooMod.deployGlooWall(
-        this.glooWalls,
-        unit.id,
-        unit.player.position,
-        unit.player.yaw,
-        now,
-        MAP_BOUND
-      );
-      if (wall) unit.glooWallCount--;
-    }
+    if (input.glooWall) this.deployGlooWallNow(unit, now);
 
     const weapon = this.currentWeapon(unit);
     if (weapon) {
