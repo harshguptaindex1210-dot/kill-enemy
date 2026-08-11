@@ -307,6 +307,10 @@ export function createInputManager(
     paintRoundBtn('#tb-skill', 'rgba(42,58,48,.85)', '2px solid rgba(201,168,96,.5)');
     paintRoundBtn('#tb-wall', 'rgba(42,88,120,.9)', '2px solid rgba(120,200,255,.6)');
     paintRoundBtn('#tb-down', 'rgba(48,52,58,.9)', '2px solid rgba(180,190,200,.5)');
+    setStyle(
+      '#tb-down',
+      `${(touchOverlay.querySelector('#tb-down') as HTMLElement).style.cssText};pointer-events:auto;touch-action:none;`
+    );
     paintRoundBtn('#tb-jump', 'rgba(58,72,52,.9)', '2px solid #9cb06e');
     setStyle(
       '#tb-jump',
@@ -539,17 +543,31 @@ export function createInputManager(
     btnWall.addEventListener('click', armWall);
 
     const btnDown = touchOverlay.querySelector('#tb-down') as HTMLButtonElement;
+    const setCrouchVisual = (active: boolean) => {
+      btnDown.style.background = active ? 'rgba(90,100,110,.95)' : 'rgba(48,52,58,.9)';
+      btnDown.style.borderColor = active ? 'rgba(220,230,240,.8)' : 'rgba(180,190,200,.5)';
+    };
     const crouchDown = (e: Event) => {
       e.preventDefault();
+      e.stopPropagation();
       touchCrouch = true;
+      setCrouchVisual(true);
     };
     const crouchUp = (e: Event) => {
       e.preventDefault();
       touchCrouch = false;
+      setCrouchVisual(false);
     };
     btnDown.addEventListener('touchstart', crouchDown, { passive: false });
-    btnDown.addEventListener('touchend', crouchUp);
-    btnDown.addEventListener('touchcancel', crouchUp);
+    btnDown.addEventListener('touchend', crouchUp, { passive: false });
+    btnDown.addEventListener('touchcancel', crouchUp, { passive: false });
+    btnDown.addEventListener('pointerdown', crouchDown);
+    btnDown.addEventListener('pointerup', crouchUp);
+    btnDown.addEventListener('pointercancel', crouchUp);
+    btnDown.addEventListener('pointerleave', crouchUp);
+    btnDown.addEventListener('mousedown', crouchDown);
+    btnDown.addEventListener('mouseup', crouchUp);
+    btnDown.addEventListener('mouseleave', crouchUp);
 
     const btnHeal = touchOverlay.querySelector('#tb-heal') as HTMLButtonElement;
     btnHeal.addEventListener('touchstart', (e) => {

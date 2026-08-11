@@ -116,9 +116,6 @@ export function createPlayer(startPos: THREE.Vector3 = new THREE.Vector3(0, 0.9,
   };
 
   bundle.update = (input: PlayerInput, dt: number, groundY: number, speedMult: number = 1.0) => {
-    const height = getHeight();
-    const speed = getSpeed() * speedMult;
-    const groundLevel = groundY + height / 2;
     const standLevel = groundY + STAND_HEIGHT / 2;
 
     // Coyote-time: standing on the floor but onGround was lost (respawn / float drift).
@@ -131,17 +128,24 @@ export function createPlayer(startPos: THREE.Vector3 = new THREE.Vector3(0, 0.9,
       onGround = true;
     }
 
-    if (input.crouch && onGround) {
+    if (input.sprint && onGround && !input.crouch) {
+      pState = 'sprint';
+    } else if (!input.sprint && pState === 'sprint' && onGround) {
+      pState = 'stand';
+    }
+
+    const canCrouch =
+      onGround ||
+      (pState === 'crouch' && bundle.velocity.y <= 0.05 && bundle.position.y <= standLevel + 0.2);
+    if (input.crouch && canCrouch) {
       pState = 'crouch';
     } else if (!input.crouch && pState === 'crouch' && onGround) {
       pState = 'stand';
     }
 
-    if (input.sprint && pState !== 'crouch' && onGround) {
-      pState = 'sprint';
-    } else if (!input.sprint && pState === 'sprint' && onGround) {
-      pState = 'stand';
-    }
+    const height = getHeight();
+    const speed = getSpeed() * speedMult;
+    const groundLevel = groundY + height / 2;
 
     const jumpPressed = input.jump && !prevJumpInput;
     prevJumpInput = input.jump;
@@ -160,7 +164,7 @@ export function createPlayer(startPos: THREE.Vector3 = new THREE.Vector3(0, 0.9,
     if (!onGround) jumpLock = false;
 
     if (pState === 'jump' && onGround) {
-      pState = 'stand';
+      pState = input.crouch ? 'crouch' : 'stand';
     }
 
     pYaw -= input.mouseX * MOUSE_SENSITIVITY;

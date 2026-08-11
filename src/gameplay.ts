@@ -308,7 +308,7 @@ export class MatchSim {
       melee: createMeleeWeapon(meleeType),
       meleeMode: false,
       grenadeCount: 2,
-      glooWallCount: 3,
+      glooWallCount: 7,
       heals: { medkit: START_MEDKITS, bandage: START_BANDAGES },
       healing: null,
       lastDamageTime: -100000,
