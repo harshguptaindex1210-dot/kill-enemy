@@ -132,7 +132,7 @@ export class RollbackEngine {
    * Prediction/replay step. Mirrors player.ts: fwd=(-sin,0,-cos), right=(-fz,0,fx).
    */
   private step(state: EntityState, input: InputFrame, dt: number, groundY: number, yaw = 0) {
-    const speed = input.sprint ? 9 : 6;
+    const speed = input.aim ? 2.15 : input.sprint ? 6.2 : 4.5;
     const fwdX = -Math.sin(yaw);
     const fwdZ = -Math.cos(yaw);
     const rgtX = -fwdZ;

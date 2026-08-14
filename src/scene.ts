@@ -211,7 +211,7 @@ export function createScene(
     envHandle?.dispose();
     envHandle = null;
   };
-  if (quality !== 'low') {
+  if (quality !== 'low' && !isMobileDevice()) {
     void import('./environment').then(({ attachDaylightEnvironment }) => {
       if (disposed) return;
       envHandle = attachDaylightEnvironment(renderer, scene, quality);

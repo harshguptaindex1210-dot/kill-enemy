@@ -44,9 +44,11 @@ export interface PlayerBundle {
 
 const STAND_HEIGHT = 1.8;
 const CROUCH_HEIGHT = 1.0;
-const SPRINT_MULT = 1.5;
-const WALK_SPEED = 6;
-const CROUCH_SPEED = 2.5;
+const SPRINT_MULT = 1.38;
+const WALK_SPEED = 4.5;
+const CROUCH_SPEED = 2.2;
+const ADS_SPEED = 2.15;
+const MOVE_ACCEL = 12;
 const JUMP_VELOCITY = 5;
 const GRAVITY = -20;
 const MOUSE_SENSITIVITY = 0.002;
@@ -97,7 +99,8 @@ export function createPlayer(startPos: THREE.Vector3 = new THREE.Vector3(0, 0.9,
     return pState === 'crouch' ? CROUCH_HEIGHT : STAND_HEIGHT;
   }
 
-  function getSpeed(): number {
+  function getSpeed(aiming: boolean): number {
+    if (aiming) return ADS_SPEED;
     if (pState === 'crouch') return CROUCH_SPEED;
     if (pState === 'sprint') return WALK_SPEED * SPRINT_MULT;
     return WALK_SPEED;
@@ -128,9 +131,9 @@ export function createPlayer(startPos: THREE.Vector3 = new THREE.Vector3(0, 0.9,
       onGround = true;
     }
 
-    if (input.sprint && onGround && !input.crouch) {
+    if (input.sprint && onGround && !input.crouch && !input.aim) {
       pState = 'sprint';
-    } else if (!input.sprint && pState === 'sprint' && onGround) {
+    } else if ((!input.sprint || input.aim) && pState === 'sprint' && onGround) {
       pState = 'stand';
     }
 
@@ -144,7 +147,7 @@ export function createPlayer(startPos: THREE.Vector3 = new THREE.Vector3(0, 0.9,
     }
 
     const height = getHeight();
-    const speed = getSpeed() * speedMult;
+    const speed = getSpeed(input.aim) * speedMult;
     const groundLevel = groundY + height / 2;
 
     const jumpPressed = input.jump && !prevJumpInput;
@@ -185,8 +188,11 @@ export function createPlayer(startPos: THREE.Vector3 = new THREE.Vector3(0, 0.9,
       moveDir.normalize();
     }
 
-    bundle.velocity.x = moveDir.x * speed;
-    bundle.velocity.z = moveDir.z * speed;
+    const targetVx = moveDir.x * speed;
+    const targetVz = moveDir.z * speed;
+    const blend = 1 - Math.exp(-MOVE_ACCEL * dt);
+    bundle.velocity.x += (targetVx - bundle.velocity.x) * blend;
+    bundle.velocity.z += (targetVz - bundle.velocity.z) * blend;
     bundle.velocity.y += GRAVITY * dt;
 
     bundle.position.x += bundle.velocity.x * dt;

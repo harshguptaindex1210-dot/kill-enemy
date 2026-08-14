@@ -17,6 +17,7 @@ import {
 } from './constants';
 import { ZoneLogic } from './zone';
 import { createPlayer, type PlayerBundle, type PlayerInput } from './player';
+import { aimDirection as worldAim } from './camera';
 import {
   createWeapon,
   fireWeapon,
@@ -599,7 +600,15 @@ export class MatchSim {
       ? glooMod.raycastGlooWalls(origin, dir, weapon.def.range, this.glooWalls.walls)
       : null;
     const maxRange = wallDist ?? weapon.def.range;
-    const results = fireWeapon(weapon, origin, dir, [...unitTargets, ...shootTargets], now, maxRange);
+    const results = fireWeapon(
+      weapon,
+      origin,
+      dir,
+      [...unitTargets, ...shootTargets],
+      now,
+      maxRange,
+      unit.player.cameraMode === 'fps' ? 0.28 : 1
+    );
     // Rate-limited frames must not emit shot SFX / tracers.
     if (weapon.lastFireTime === beforeFire) return;
     this.events.push({
@@ -657,12 +666,7 @@ export class MatchSim {
   }
 
   private aimDirection(unit: SimUnit): THREE.Vector3 {
-    const dir = new THREE.Vector3(
-      -Math.sin(unit.player.yaw) * Math.cos(unit.player.pitch),
-      -Math.sin(unit.player.pitch),
-      -Math.cos(unit.player.yaw) * Math.cos(unit.player.pitch)
-    );
-    return dir.normalize();
+    return worldAim(unit.player.yaw, unit.player.pitch, new THREE.Vector3());
   }
 
   triggerSkill(unitId: string): boolean {

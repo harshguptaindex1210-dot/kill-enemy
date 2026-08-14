@@ -400,4 +400,57 @@ describe('player', () => {
     const eyeCrouch = p.getEyeHeight();
     expect(eyeCrouch).toBeLessThan(eyeStand);
   });
+
+  it('does not reach full walk speed in one frame (no GTA snap)', () => {
+    const p = createPlayer();
+    p.update(
+      {
+        forward: true,
+        backward: false,
+        left: false,
+        right: false,
+        sprint: false,
+        crouch: false,
+        jump: false,
+        aim: false,
+        fire: false,
+        reload: false,
+        weapon1: false,
+        weapon2: false,
+        weapon3: false,
+        mouseX: 0,
+        mouseY: 0,
+      },
+      1 / 60,
+      0
+    );
+    const instant = 4.5 / 60;
+    expect(Math.abs(p.position.z)).toBeLessThan(instant * 0.85);
+  });
+
+  it('aim-down-sights blocks sprint and slows movement', () => {
+    const p = createPlayer();
+    const walk = createPlayer();
+    const input = {
+      forward: true,
+      backward: false,
+      left: false,
+      right: false,
+      sprint: true,
+      crouch: false,
+      jump: false,
+      aim: false,
+      fire: false,
+      reload: false,
+      weapon1: false,
+      weapon2: false,
+      weapon3: false,
+      mouseX: 0,
+      mouseY: 0,
+    };
+    for (let i = 0; i < 90; i++) walk.update(input, 1 / 60, 0);
+    for (let i = 0; i < 90; i++) p.update({ ...input, aim: true }, 1 / 60, 0);
+    expect(p.cameraMode).toBe('fps');
+    expect(Math.abs(p.position.z)).toBeLessThan(Math.abs(walk.position.z) * 0.55);
+  });
 });

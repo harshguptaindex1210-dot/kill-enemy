@@ -72,13 +72,13 @@ function escapeHtml(value: string): string {
 
 function renderInstructionsPanel(): string {
   const touchHint = isTouchDevice()
-    ? '<dt>Mobile</dt><dd>Left joystick move · drag right side to aim · on-screen buttons to shoot, jump, reload</dd>'
+    ? '<dt>Mobile</dt><dd>Left joystick move · drag right to look · hold 🎯 ADS · 🔥 shoot</dd>'
     : '';
   return `<aside id="lobby-instructions" class="lobby-instructions" aria-label="How to play">
     <b class="lobby-panel-title">How to Play</b>
     <dl class="lobby-instructions-list">
       <dt>Move</dt>
-      <dd><kbd>W A S D</kbd> walk · <kbd>Shift</kbd> sprint · <kbd>Ctrl</kbd> crouch · <kbd>Space</kbd> jump · <kbd>G</kbd>/<kbd>V</kbd> gloo wall</dd>
+      <dd><kbd>W A S D</kbd> walk · <kbd>Shift</kbd> sprint · <kbd>RMB</kbd> hold ADS · <kbd>Ctrl</kbd> crouch · <kbd>Space</kbd> jump · <kbd>G</kbd>/<kbd>V</kbd> gloo wall</dd>
       <dt>Aim &amp; shoot</dt>
       <dd>Mouse look · <kbd>LMB</kbd> fire · <kbd>R</kbd> reload · <kbd>1</kbd>/<kbd>2</kbd>/<kbd>3</kbd> weapons · <kbd>F</kbd> skill</dd>
       <dt>Grenades</dt>

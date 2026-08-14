@@ -6,7 +6,7 @@ import { POI_RADIUS, MAP_SIZE } from './constants';
 import { MatchSim, type SimEvent, type SimUnit } from './gameplay';
 import { ZoneSystem } from './zone';
 import { createInputManager, type InputManager } from './input';
-import { updateCamera } from './camera';
+import { updateCamera, aimDirection } from './camera';
 import { createRobotModel, transitionAnim, updateRobotAnim, type RobotAnimState } from './robot';
 import {
   createHUD,
@@ -166,7 +166,7 @@ export class MatchGame {
   private beaconMesh: THREE.Group | null = null;
   private projMeshes = new Map<number, THREE.Mesh>();
   private explosionFx: { light: THREE.PointLight; mesh: THREE.Mesh; until: number }[] = [];
-  private muzzleFlashPool: { light: THREE.PointLight; tracer: THREE.Mesh }[] = [];
+  private muzzleFlashPool: { tracer: THREE.Mesh }[] = [];
   private tracerGeo = new THREE.BoxGeometry(0.08, 0.08, SHOT_TRACER_LEN);
   private tracerMat = new THREE.MeshBasicMaterial({ color: 0xffdd55 });
   private glooWallPaint: ((scene: THREE.Scene, walls: import('./glooWall').GlooWall[]) => void) | null =
@@ -388,7 +388,6 @@ export class MatchGame {
       this.scene.remove(fx.mesh);
     }
     for (const fx of this.muzzleFlashPool) {
-      this.scene.remove(fx.light);
       this.scene.remove(fx.tracer);
     }
     this.tracerGeo.dispose();
@@ -879,24 +878,16 @@ export class MatchGame {
       unit.player.getEyeHeight(),
       unit.player.position.z
     );
-    const dir = new THREE.Vector3(
-      -Math.sin(unit.player.yaw) * Math.cos(unit.player.pitch),
-      -Math.sin(unit.player.pitch),
-      -Math.cos(unit.player.yaw) * Math.cos(unit.player.pitch)
-    ).normalize();
+    const dir = aimDirection(unit.player.yaw, unit.player.pitch, new THREE.Vector3());
     const muzzle = origin.addScaledVector(dir, 1.1);
 
     const fx = this.muzzleFlashPool.pop() ?? {
-      light: new THREE.PointLight(0xffff44, 8, 24),
       tracer: new THREE.Mesh(this.tracerGeo, this.tracerMat),
     };
-    fx.light.position.copy(muzzle);
     fx.tracer.position.copy(muzzle).addScaledVector(dir, SHOT_TRACER_LEN / 2);
     fx.tracer.quaternion.setFromUnitVectors(SHOT_TRACER_AXIS, dir);
-    this.scene.add(fx.light);
     this.scene.add(fx.tracer);
     setTimeout(() => {
-      this.scene.remove(fx.light);
       this.scene.remove(fx.tracer);
       this.muzzleFlashPool.push(fx);
     }, 110);
@@ -983,7 +974,7 @@ export class MatchGame {
       const isLocalFps =
         unit.id === this.humanId &&
         unit.inVehicleId === null &&
-        (unit.player.cameraMode === 'fps' || this.settings.cameraMode === 'fps');
+        this.settings.cameraMode === 'fps';
       rig.group.visible = shouldShowUnitRig(true) && !isLocalFps;
       if (unit.inVehicleId !== null) {
         const v = this.sim.vehicles.find((vv) => vv.id === unit.inVehicleId);

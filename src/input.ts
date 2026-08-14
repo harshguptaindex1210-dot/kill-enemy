@@ -494,11 +494,28 @@ export function createInputManager(
     bindFireButton('#tb-fire-left');
 
     const btnAim = touchOverlay.querySelector('#tb-aim') as HTMLButtonElement;
-    btnAim.addEventListener('touchstart', (e) => {
+    const setAimVisual = (active: boolean) => {
+      btnAim.style.background = active ? 'rgba(0,180,160,.95)' : 'rgba(38,52,64,.9)';
+      btnAim.style.borderColor = active ? '#7ee8d0' : 'rgba(140,160,180,.55)';
+    };
+    const aimDown = (e: Event) => {
       e.preventDefault();
-      touchAimPressed = !touchAimPressed;
-      btnAim.style.background = touchAimPressed ? 'rgba(0,255,200,0.85)' : 'rgba(50,150,255,0.6)';
-    });
+      e.stopPropagation();
+      touchAimPressed = true;
+      setAimVisual(true);
+    };
+    const aimUp = (e: Event) => {
+      e.preventDefault();
+      touchAimPressed = false;
+      setAimVisual(false);
+    };
+    btnAim.addEventListener('touchstart', aimDown, { passive: false });
+    btnAim.addEventListener('touchend', aimUp, { passive: false });
+    btnAim.addEventListener('touchcancel', aimUp, { passive: false });
+    btnAim.addEventListener('pointerdown', aimDown);
+    btnAim.addEventListener('pointerup', aimUp);
+    btnAim.addEventListener('pointercancel', aimUp);
+    btnAim.addEventListener('pointerleave', aimUp);
 
     const btnJump = touchOverlay.querySelector('#tb-jump') as HTMLButtonElement;
     const armJump = (e: Event) => {

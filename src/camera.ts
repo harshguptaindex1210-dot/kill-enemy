@@ -1,14 +1,14 @@
 import * as THREE from 'three';
 
 /** BGMI-style over-shoulder third person. */
-export const CAMERA_FOV_TPS = 80;
-/** Competitive first-person field of view. */
-export const CAMERA_FOV_FPS = 92;
+export const CAMERA_FOV_TPS = 70;
+/** Hold-ADS zoom (tighter than hip-fire). */
+export const CAMERA_FOV_FPS = 56;
 
-const TPS_DISTANCE = 4.35;
+const TPS_DISTANCE = 4.05;
+const TPS_ADS_DISTANCE = 2.2;
 const TPS_BASE_HEIGHT = 1.7;
 const SHOULDER_OFFSET = 0.5;
-const FPS_EYE_FORWARD = 0.12;
 const LOOK_AHEAD = 14;
 
 const _aimDir = new THREE.Vector3();
@@ -16,7 +16,6 @@ const _behind = new THREE.Vector3();
 const _shoulder = new THREE.Vector3();
 const _targetPos = new THREE.Vector3();
 const _lookTarget = new THREE.Vector3();
-const _targetQuat = new THREE.Quaternion();
 
 /** World-space look direction from yaw + pitch (matches player aim). */
 export function aimDirection(yaw: number, pitch: number, out = _aimDir): THREE.Vector3 {
@@ -47,12 +46,17 @@ export function updateCamera(
   _lookTarget.set(playerPos.x, eyeY, playerPos.z).addScaledVector(_aimDir, LOOK_AHEAD);
 
   if (cameraMode === 'fps') {
-    _targetPos.set(playerPos.x, eyeY, playerPos.z).addScaledVector(_aimDir, FPS_EYE_FORWARD);
+    const adsDist = TPS_ADS_DISTANCE;
+    const pitchOrbit = THREE.MathUtils.clamp(playerPitch, -0.85, 1.05);
+    _behind.set(
+      Math.sin(playerYaw) * adsDist * 0.92,
+      TPS_BASE_HEIGHT * 0.55 + Math.sin(-pitchOrbit) * 0.45,
+      Math.cos(playerYaw) * adsDist * 0.92
+    );
+    _shoulder.set(-Math.cos(playerYaw) * 0.28, 0.08, Math.sin(playerYaw) * 0.28);
+    _targetPos.set(playerPos.x, eyeY, playerPos.z).add(_behind).add(_shoulder);
     camera.position.lerp(_targetPos, lerpFactor);
-
-    _targetQuat.setFromEuler(new THREE.Euler(playerPitch, playerYaw, 0, 'YXZ'));
-    if (lerpFactor >= 0.98) camera.quaternion.copy(_targetQuat);
-    else camera.quaternion.slerp(_targetQuat, lerpFactor);
+    camera.lookAt(_lookTarget);
     return;
   }
 

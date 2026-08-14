@@ -16,17 +16,17 @@ function rendererPixelRatio(quality: QualityPreset, mobile: boolean): number {
 }
 
 function createWebGLRenderer(canvas: HTMLCanvasElement): THREE.WebGLRenderer {
-  const attempts: THREE.WebGLRendererParameters[] = [
+    const attempts: THREE.WebGLRendererParameters[] = [
     {
       canvas,
-      antialias: true,
+      antialias: false,
       alpha: false,
-      powerPreference: 'low-power',
+      powerPreference: 'high-performance',
       failIfMajorPerformanceCaveat: false,
     },
     {
       canvas,
-      antialias: false,
+      antialias: true,
       alpha: false,
       powerPreference: 'default',
       failIfMajorPerformanceCaveat: false,

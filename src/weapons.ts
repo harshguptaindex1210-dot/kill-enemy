@@ -89,7 +89,8 @@ export function fireWeapon(
   direction: THREE.Vector3,
   targets: { id: string; position: THREE.Vector3; capsuleHeight: number; capsuleRadius: number }[],
   time: number,
-  maxRange?: number
+  maxRange?: number,
+  spreadScale = 1
 ): FireResult[] {
   const results: FireResult[] = [];
 
@@ -139,7 +140,8 @@ export function fireWeapon(
     return results;
   }
 
-  const spreadAngle = (Math.random() - 0.5) * weapon.def.spread * 2;
+  const spread = weapon.def.spread * spreadScale;
+  const spreadAngle = (Math.random() - 0.5) * spread * 2;
   const spreadDir = direction.clone();
   const up = new THREE.Vector3(0, 1, 0);
   const right = new THREE.Vector3().crossVectors(spreadDir, up);
@@ -147,7 +149,7 @@ export function fireWeapon(
   right.normalize();
   const spreadUp = new THREE.Vector3().crossVectors(right, spreadDir).normalize();
   spreadDir.applyAxisAngle(spreadUp, spreadAngle);
-  spreadDir.applyAxisAngle(right, (Math.random() - 0.5) * weapon.def.spread * 2);
+  spreadDir.applyAxisAngle(right, (Math.random() - 0.5) * spread * 2);
 
   const end = origin.clone().add(spreadDir.clone().multiplyScalar(range));
   const closest = findClosestHit(origin, end, targets);

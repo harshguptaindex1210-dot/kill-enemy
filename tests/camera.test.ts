@@ -31,5 +31,6 @@ describe('camera POV', () => {
     expect(camera.fov).toBe(CAMERA_FOV_TPS);
     updateCamera(camera, 0, 0, 1.6, 'fps', pos, 0.05, { snapPosition: true });
     expect(camera.fov).toBe(CAMERA_FOV_FPS);
+    expect(CAMERA_FOV_FPS).toBeLessThan(CAMERA_FOV_TPS);
   });
 });

@@ -35,6 +35,14 @@ describe('poiVisuals', () => {
     const med = buildPoiGroup('Town', 0, 'medium', false);
     expect(med.children.length).toBeGreaterThan(low.children.length);
   });
+
+  it('town houses use pitched cone roofs like BGMI villages', () => {
+    const group = buildPoiGroup('Town', 0, 'medium', false);
+    const roofs = group.children.filter(
+      (c) => c instanceof THREE.Mesh && c.geometry instanceof THREE.ConeGeometry
+    );
+    expect(roofs.length).toBeGreaterThanOrEqual(3);
+  });
 });
 
 describe('scene POI wiring', () => {

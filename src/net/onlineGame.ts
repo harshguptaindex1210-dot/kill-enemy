@@ -15,7 +15,7 @@ import {
   type HUDData,
   type MinimapData,
 } from '../hud';
-import { updateCamera } from '../camera';
+import { updateCamera, aimDirection } from '../camera';
 import { createInputManager, type InputManager } from '../input';
 import { MatchClient } from './client';
 import type { AudioManager } from '../audio';
@@ -138,7 +138,7 @@ export class OnlineMatchGame {
   private zonePhaseIdx = 0;
   private zonePhaseStartMs = 0;
   private bannerEl: HTMLElement;
-  private muzzleFlashPool: { light: THREE.PointLight; tracer: THREE.Mesh }[] = [];
+  private muzzleFlashPool: { tracer: THREE.Mesh }[] = [];
   private tracerGeo = new THREE.BoxGeometry(0.08, 0.08, SHOT_TRACER_LEN);
   private tracerMat = new THREE.MeshBasicMaterial({ color: 0xffdd55 });
   private glooWallPaint: ((scene: THREE.Scene, walls: import('../glooWall').GlooWall[]) => void) | null =
@@ -279,7 +279,6 @@ export class OnlineMatchGame {
     for (const m of this.lootMeshes.values()) this.scene.remove(m);
     for (const parts of this.targetMeshes.values()) this.scene.remove(parts.group);
     for (const fx of this.muzzleFlashPool) {
-      this.scene.remove(fx.light);
       this.scene.remove(fx.tracer);
     }
     this.tracerGeo.dispose();
@@ -397,24 +396,16 @@ export class OnlineMatchGame {
     const shotPitch = unitId === this.client.selfId ? this.pitch : 0;
     const origin = rig.group.position.clone();
     origin.y += 1.2;
-    const dir = new THREE.Vector3(
-      -Math.sin(shotYaw) * Math.cos(shotPitch),
-      -Math.sin(shotPitch),
-      -Math.cos(shotYaw) * Math.cos(shotPitch)
-    ).normalize();
+    const dir = aimDirection(shotYaw, shotPitch, new THREE.Vector3());
     const muzzle = origin.addScaledVector(dir, 0.6);
 
     const fx = this.muzzleFlashPool.pop() ?? {
-      light: new THREE.PointLight(0xffff44, 8, 24),
       tracer: new THREE.Mesh(this.tracerGeo, this.tracerMat),
     };
-    fx.light.position.copy(muzzle);
     fx.tracer.position.copy(muzzle).addScaledVector(dir, SHOT_TRACER_LEN / 2);
     fx.tracer.quaternion.setFromUnitVectors(SHOT_TRACER_AXIS, dir);
-    this.scene.add(fx.light);
     this.scene.add(fx.tracer);
     window.setTimeout(() => {
-      this.scene.remove(fx.light);
       this.scene.remove(fx.tracer);
       this.muzzleFlashPool.push(fx);
     }, 110);
@@ -697,8 +688,7 @@ export class OnlineMatchGame {
       rig = { group: model.group, anim: model.anim };
       this.rigs.set(id, rig);
     }
-    const fpsMode =
-      isLocal && alive && (this.lastAim || this.opts.settings.cameraMode === 'fps');
+    const fpsMode = isLocal && alive && this.opts.settings.cameraMode === 'fps';
     rig.group.visible = shouldShowUnitRig(alive) && !fpsMode;
     if (alive) {
       rig.group.position.set(x, y + ROBOT_GROUP_Y_OFFSET, z);
