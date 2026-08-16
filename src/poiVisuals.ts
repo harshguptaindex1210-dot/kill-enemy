@@ -15,7 +15,6 @@ const PALETTE: Record<PoiDistrict, { wall: number; roof: number; accent: number 
 };
 
 const UNIT = new THREE.BoxGeometry(1, 1, 1);
-const ROOF = new THREE.ConeGeometry(1, 1, 4);
 const CHIM = new THREE.CylinderGeometry(1, 1.15, 1, 6);
 
 function mat(color: number): THREE.MeshStandardMaterial {
@@ -56,9 +55,28 @@ function house(
   shadows: boolean
 ) {
   group.add(mesh(UNIT, wall, x, h / 2, z, w, h, d, shadows, yaw));
-  const rad = Math.max(w, d) * 0.74;
-  const top = mesh(ROOF, roof, x, h + 1.15, z, rad, 2.3, rad, shadows, yaw + Math.PI / 4);
-  group.add(top);
+  const off = w * 0.2;
+  const c = Math.cos(yaw);
+  const s = Math.sin(yaw);
+  for (const sign of [-1, 1] as const) {
+    const slab = mesh(
+      UNIT,
+      roof,
+      x + c * off * sign,
+      h + 0.9,
+      z - s * off * sign,
+      w * 0.56,
+      0.2,
+      d * 1.05,
+      shadows,
+      yaw
+    );
+    slab.rotation.order = 'YXZ';
+    slab.rotation.y = yaw;
+    slab.rotation.z = 0.56 * sign;
+    slab.userData.gable = 1;
+    group.add(slab);
+  }
 }
 
 function windows(

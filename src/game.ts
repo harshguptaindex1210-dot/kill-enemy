@@ -962,6 +962,10 @@ export class MatchGame {
     const human = this.humanUnit();
     if (human.alive && human.inVehicleId === null) {
       this.crosshairEl.style.display = 'block';
+      const ads = human.player.cameraMode === 'fps';
+      this.crosshairEl.style.width = ads ? '5px' : '8px';
+      this.crosshairEl.style.height = ads ? '5px' : '8px';
+      this.crosshairEl.style.borderRadius = ads ? '1px' : '50%';
     } else {
       this.crosshairEl.style.display = 'none';
     }

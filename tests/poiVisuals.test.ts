@@ -36,12 +36,17 @@ describe('poiVisuals', () => {
     expect(med.children.length).toBeGreaterThan(low.children.length);
   });
 
-  it('town houses use pitched cone roofs like BGMI villages', () => {
+  it('town houses use two-plane gable roofs like BGMI villages', () => {
     const group = buildPoiGroup('Town', 0, 'medium', false);
-    const roofs = group.children.filter(
-      (c) => c instanceof THREE.Mesh && c.geometry instanceof THREE.ConeGeometry
-    );
-    expect(roofs.length).toBeGreaterThanOrEqual(3);
+    const gables = group.children.filter((c) => c.userData.gable === 1);
+    expect(gables.length).toBeGreaterThanOrEqual(8);
+    for (const roof of gables) {
+      expect(Math.abs(roof.rotation.z)).toBeGreaterThan(0.4);
+      expect(Math.abs(roof.rotation.x)).toBeLessThan(0.05);
+    }
+    expect(
+      group.children.some((c) => c instanceof THREE.Mesh && c.geometry instanceof THREE.ConeGeometry)
+    ).toBe(false);
   });
 });
 
