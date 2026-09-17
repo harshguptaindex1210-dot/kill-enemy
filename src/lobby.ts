@@ -139,15 +139,15 @@ function hexColor(n: number): string {
 function renderGunSvg(weapon: 'rifle' | 'pistol', colorNum: number): string {
   const hex = hexColor(colorNum);
   if (weapon === 'rifle') {
-    return `<svg width="84" height="34" viewBox="0 0 84 34" style="filter:drop-shadow(0 2px 4px rgba(0,0,0,0.6));">
-      <rect x="4" y="15" width="14" height="8" rx="2" fill="#222" />
-      <rect x="18" y="13" width="12" height="10" rx="1" fill="#333" />
-      <rect x="30" y="11" width="24" height="12" rx="2" fill="${hex}" stroke="#ffffff" stroke-width="0.75" />
-      <polygon points="38,23 44,23 42,31 36,31" fill="#111" />
-      <rect x="54" y="13" width="20" height="4" fill="#555" />
-      <rect x="74" y="12" width="4" height="6" fill="#111" />
-      <rect x="36" y="8" width="12" height="3" fill="#444" />
-      <rect x="30" y="23" width="6" height="8" rx="1" fill="#222" transform="rotate(15 30 23)" />
+    return `<svg width="96" height="34" viewBox="0 0 96 34" style="filter:drop-shadow(0 2px 4px rgba(0,0,0,0.6));">
+      <rect x="2" y="12" width="18" height="8" rx="1" fill="#6b4423" transform="rotate(12 11 16)" />
+      <rect x="18" y="11" width="28" height="11" rx="1" fill="${hex}" stroke="#fff" stroke-width="0.7" />
+      <rect x="22" y="20" width="7" height="10" rx="1" fill="#222" transform="rotate(18 22 20)" />
+      <rect x="32" y="21" width="8" height="16" rx="1" fill="#2a2c32" transform="rotate(28 36 29)" />
+      <rect x="44" y="12" width="16" height="8" rx="1" fill="#6b4423" />
+      <rect x="58" y="13" width="28" height="4" fill="#555" />
+      <rect x="84" y="11" width="4" height="7" fill="#111" />
+      <rect x="28" y="8" width="10" height="3" fill="#333" />
     </svg>`;
   } else {
     return `<svg width="64" height="34" viewBox="0 0 64 34" style="filter:drop-shadow(0 2px 4px rgba(0,0,0,0.6));">

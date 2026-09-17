@@ -13,12 +13,25 @@ describe('held weapons', () => {
     expect(kit.rifle.children.length).toBeGreaterThan(kit.pistol.children.length - 1);
   });
 
-  it('tints rifle and pistol body materials from accent colors', () => {
+  it('tints rifle receiver from accent; wood and barrel stay unskinned', () => {
     const kit = createHeldWeaponKit({ rifle: 0xff5522, pistol: 0xaa66ff });
     const rifleBody = kit.rifle.children[0] as THREE.Mesh;
-    const pistolBody = kit.pistol.children[0] as THREE.Mesh;
+    expect(rifleBody.name).toBe('ak-receiver');
     expect((rifleBody.material as THREE.MeshStandardMaterial).color.getHex()).toBe(0xff5522);
+    const pistolBody = kit.pistol.children[0] as THREE.Mesh;
     expect((pistolBody.material as THREE.MeshStandardMaterial).color.getHex()).toBe(0xaa66ff);
+  });
+
+  it('rifle silhouette is a compact AK (banana mag, stock, barrel)', () => {
+    const kit = createHeldWeaponKit();
+    const names = kit.rifle.children.map((c) => c.name);
+    expect(names).toEqual(
+      expect.arrayContaining(['ak-receiver', 'ak-mag', 'ak-stock', 'ak-barrel', 'ak-gas'])
+    );
+    const box = new THREE.Box3().setFromObject(kit.rifle);
+    const len = box.max.z - box.min.z;
+    expect(len).toBeGreaterThan(1.1);
+    expect(len).toBeLessThan(1.85);
   });
 
   it('shows rifle when alive with rifle slot', () => {
@@ -77,9 +90,12 @@ describe('held weapons', () => {
 });
 
 describe('weapon pacing', () => {
-  it('rifle fires slowly so armor can last (gap >= 1500ms)', () => {
-    expect(WEAPON_DEFS.rifle.fireRate * 1000).toBeGreaterThanOrEqual(1500);
+  it('rifle fires like an AK (auto ~600rpm, mag can kill, not a two-tap)', () => {
+    expect(WEAPON_DEFS.rifle.fireRate * 1000).toBeLessThanOrEqual(120);
+    expect(WEAPON_DEFS.rifle.fireRate * 1000).toBeGreaterThanOrEqual(80);
+    expect(WEAPON_DEFS.rifle.magSize).toBe(30);
+    expect(WEAPON_DEFS.rifle.damage * 12).toBeLessThan(100);
+    expect(WEAPON_DEFS.rifle.damage * WEAPON_DEFS.rifle.magSize).toBeGreaterThanOrEqual(100);
     expect(WEAPON_DEFS.pistol.fireRate * 1000).toBeGreaterThanOrEqual(1700);
-    expect(WEAPON_DEFS.rifle.damage).toBeLessThanOrEqual(12);
   });
 });

@@ -64,11 +64,7 @@ export function updateCamera(
   const horizontalDist = TPS_DISTANCE * (0.88 + Math.cos(pitchOrbit) * 0.12);
   const lift = TPS_BASE_HEIGHT + Math.sin(-pitchOrbit) * 1.35;
 
-  _behind.set(
-    Math.sin(playerYaw) * horizontalDist,
-    lift,
-    Math.cos(playerYaw) * horizontalDist
-  );
+  _behind.set(Math.sin(playerYaw) * horizontalDist, lift, Math.cos(playerYaw) * horizontalDist);
   _shoulder.set(
     -Math.cos(playerYaw) * SHOULDER_OFFSET,
     0.12,

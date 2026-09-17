@@ -47,7 +47,7 @@ describe('createRenderer', () => {
     const { WebGLRenderer } = await import('three');
     expect(WebGLRenderer).toHaveBeenCalled();
     expect(renderer.setSize).toHaveBeenCalledWith(1024, 576);
-    expect(renderer.setPixelRatio).toHaveBeenCalledWith(2);
+    expect(renderer.setPixelRatio).toHaveBeenCalledWith(1.5);
     expect(renderer.domElement).toBeDefined();
   });
 

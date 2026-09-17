@@ -32,7 +32,12 @@ function paintDirtColor(g: CanvasRenderingContext2D, n: number) {
   }
   for (let i = 0; i < n / 5; i++) {
     g.fillStyle = 'rgba(72,98,48,0.18)';
-    g.fillRect((Math.random() * n) | 0, (Math.random() * n) | 0, 10 + ((Math.random() * 14) | 0), 6);
+    g.fillRect(
+      (Math.random() * n) | 0,
+      (Math.random() * n) | 0,
+      10 + ((Math.random() * 14) | 0),
+      6
+    );
   }
 }
 

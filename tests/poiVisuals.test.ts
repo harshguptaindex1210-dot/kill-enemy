@@ -45,7 +45,9 @@ describe('poiVisuals', () => {
       expect(Math.abs(roof.rotation.x)).toBeLessThan(0.05);
     }
     expect(
-      group.children.some((c) => c instanceof THREE.Mesh && c.geometry instanceof THREE.ConeGeometry)
+      group.children.some(
+        (c) => c instanceof THREE.Mesh && c.geometry instanceof THREE.ConeGeometry
+      )
     ).toBe(false);
   });
 });

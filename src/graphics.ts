@@ -84,7 +84,7 @@ export function addMapLighting(
   const sun = new THREE.DirectionalLight(preset.sunColor, preset.sunIntensity);
   sun.position.set(118, 92, 148);
   if (quality !== 'low') {
-    configureSunShadow(sun, bound, quality === 'high' ? 2048 : 1024, quality === 'high');
+    configureSunShadow(sun, bound, quality === 'high' ? 2048 : 512, quality === 'high');
   }
   scene.add(sun);
 

@@ -19,12 +19,12 @@ export interface WeaponDef {
 export const WEAPON_DEFS: Record<WeaponType, WeaponDef> = {
   rifle: {
     type: 'rifle',
-    damage: 12,
-    fireRate: 2.2,
+    damage: 8,
+    fireRate: 0.1,
     magSize: 30,
     reloadTime: 2.4,
-    spread: 0.03,
-    recoil: 0.05,
+    spread: 0.038,
+    recoil: 0.045,
     range: 500,
     isProjectile: false,
   },

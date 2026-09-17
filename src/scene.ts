@@ -18,8 +18,8 @@ import { mapPreset, type MapId } from './mapPresets';
 
 export type QualityPreset = 'low' | 'medium' | 'high';
 
-const TREE_COUNTS: Record<QualityPreset, number> = { low: 0, medium: 80, high: 80 };
-const GRASS_COUNTS: Record<QualityPreset, number> = { low: 0, medium: 220, high: 320 };
+const TREE_COUNTS: Record<QualityPreset, number> = { low: 0, medium: 48, high: 80 };
+const GRASS_COUNTS: Record<QualityPreset, number> = { low: 0, medium: 120, high: 240 };
 
 export interface SceneBundle {
   scene: THREE.Scene;
@@ -211,7 +211,7 @@ export function createScene(
     envHandle?.dispose();
     envHandle = null;
   };
-  if (quality !== 'low' && !isMobileDevice()) {
+  if (quality === 'high' && !isMobileDevice()) {
     void import('./environment').then(({ attachDaylightEnvironment }) => {
       if (disposed) return;
       envHandle = attachDaylightEnvironment(renderer, scene, quality);

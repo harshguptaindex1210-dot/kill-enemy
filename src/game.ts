@@ -25,13 +25,7 @@ import { formatPlacement, formatTimer, formatCompassBearing } from './feedback';
 import { safeRequestPointerLock, isMobileDevice, isTouchDevice } from './platform';
 import { calculateXP } from './match';
 import { recordMatchResult } from './net/leaderboard';
-import {
-  attachHeldWeaponKit,
-  createHeldWeaponKit,
-  resolveHeldKind,
-  syncHeldWeaponKit,
-  type HeldWeaponKit,
-} from './heldWeapons';
+import type { HeldWeaponKit } from './heldWeapons';
 import type { TargetMeshParts } from './targetVisuals';
 
 export interface MatchSummary {
@@ -166,11 +160,12 @@ export class MatchGame {
   private beaconMesh: THREE.Group | null = null;
   private projMeshes = new Map<number, THREE.Mesh>();
   private explosionFx: { light: THREE.PointLight; mesh: THREE.Mesh; until: number }[] = [];
-  private muzzleFlashPool: { tracer: THREE.Mesh }[] = [];
+  private muzzleFlashPool: { tracer: THREE.Mesh; until: number }[] = [];
+  private liveTracers: { tracer: THREE.Mesh; until: number }[] = [];
   private tracerGeo = new THREE.BoxGeometry(0.08, 0.08, SHOT_TRACER_LEN);
   private tracerMat = new THREE.MeshBasicMaterial({ color: 0xffdd55 });
-  private glooWallPaint: ((scene: THREE.Scene, walls: import('./glooWall').GlooWall[]) => void) | null =
-    null;
+  private glooWallPaint:
+    ((scene: THREE.Scene, walls: import('./glooWall').GlooWall[]) => void) | null = null;
 
   private bannerEl: HTMLElement;
   private crosshairEl: HTMLElement;
@@ -194,6 +189,8 @@ export class MatchGame {
   private lastTime = 0;
   private hudNext = 0;
   private minimapNext = 0;
+  private lastCrosshair = '';
+  private heldMod: typeof import('./heldWeapons') | null = null;
   private readonly minimapBuildings = [
     { x: POI_RADIUS, z: 0 },
     { x: 0, z: POI_RADIUS },
@@ -345,6 +342,10 @@ export class MatchGame {
     void import('./glooWallVisual').then((m) => {
       this.glooWallPaint = m.paintGlooWalls;
     });
+    void import('./heldWeapons').then((m) => {
+      this.heldMod = m;
+      this.attachLocalHeld();
+    });
   }
 
   start() {
@@ -387,9 +388,8 @@ export class MatchGame {
       this.scene.remove(fx.light);
       this.scene.remove(fx.mesh);
     }
-    for (const fx of this.muzzleFlashPool) {
-      this.scene.remove(fx.tracer);
-    }
+    for (const fx of this.liveTracers) this.scene.remove(fx.tracer);
+    for (const fx of this.muzzleFlashPool) this.scene.remove(fx.tracer);
     this.tracerGeo.dispose();
     this.tracerMat.dispose();
     this.matchRenderer.dispose();
@@ -430,23 +430,6 @@ export class MatchGame {
       model.group.add(mark);
 
       let held: HeldWeaponKit | undefined;
-      if (!unit.isBot && unit.id === this.humanId) {
-        held = createHeldWeaponKit({
-          rifle: cos?.rifleColor ?? 0xffcc33,
-          pistol: cos?.pistolColor ?? 0xff8844,
-        });
-        attachHeldWeaponKit(model.group, held);
-        syncHeldWeaponKit(
-          held,
-          resolveHeldKind({
-            alive: unit.alive,
-            inVehicle: unit.inVehicleId !== null,
-            meleeMode: unit.meleeMode,
-            weaponType: unit.weapons[unit.inventory.weaponIndex]?.def.type ?? null,
-          })
-        );
-      }
-
       model.group.position.copy(unit.player.position);
       model.group.position.y = unit.player.position.y + ROBOT_GROUP_Y_OFFSET;
       model.group.rotation.y = unit.player.yaw;
@@ -454,6 +437,20 @@ export class MatchGame {
       this.scene.add(model.group);
       this.rigs.set(unit.id, { group: model.group, anim: model.anim, dead: false, held });
     }
+    this.attachLocalHeld();
+  }
+
+  private attachLocalHeld() {
+    const m = this.heldMod;
+    const rig = this.rigs.get(this.humanId);
+    if (!m || !rig || rig.held) return;
+    const cos = this.opts.cosmetics;
+    const held = m.createHeldWeaponKit({
+      rifle: cos?.rifleColor ?? 0xffcc33,
+      pistol: cos?.pistolColor ?? 0xff8844,
+    });
+    m.attachHeldWeaponKit(rig.group, held);
+    rig.held = held;
   }
 
   private lootColor(type: string): number {
@@ -883,14 +880,24 @@ export class MatchGame {
 
     const fx = this.muzzleFlashPool.pop() ?? {
       tracer: new THREE.Mesh(this.tracerGeo, this.tracerMat),
+      until: 0,
     };
     fx.tracer.position.copy(muzzle).addScaledVector(dir, SHOT_TRACER_LEN / 2);
     fx.tracer.quaternion.setFromUnitVectors(SHOT_TRACER_AXIS, dir);
-    this.scene.add(fx.tracer);
-    setTimeout(() => {
-      this.scene.remove(fx.tracer);
+    fx.tracer.visible = true;
+    if (!fx.tracer.parent) this.scene.add(fx.tracer);
+    fx.until = performance.now() + 90;
+    this.liveTracers.push(fx);
+  }
+
+  private expireTracers(now: number) {
+    for (let i = this.liveTracers.length - 1; i >= 0; i--) {
+      const fx = this.liveTracers[i]!;
+      if (now < fx.until) continue;
+      fx.tracer.visible = false;
       this.muzzleFlashPool.push(fx);
-    }, 110);
+      this.liveTracers.splice(i, 1);
+    }
   }
 
   private spawnExplosion(position: THREE.Vector3) {
@@ -958,16 +965,19 @@ export class MatchGame {
     }
     this.syncTargets(now);
     this.updateExplosionFx(now);
+    this.expireTracers(now);
 
     const human = this.humanUnit();
-    if (human.alive && human.inVehicleId === null) {
-      this.crosshairEl.style.display = 'block';
-      const ads = human.player.cameraMode === 'fps';
-      this.crosshairEl.style.width = ads ? '5px' : '8px';
-      this.crosshairEl.style.height = ads ? '5px' : '8px';
-      this.crosshairEl.style.borderRadius = ads ? '1px' : '50%';
-    } else {
-      this.crosshairEl.style.display = 'none';
+    const ads = human.player.cameraMode === 'fps';
+    const next = human.alive && human.inVehicleId === null ? (ads ? 'ads' : 'hip') : 'none';
+    if (next !== this.lastCrosshair) {
+      this.lastCrosshair = next;
+      const on = next !== 'none';
+      this.crosshairEl.style.display = on ? 'block' : 'none';
+      if (on) {
+        this.crosshairEl.style.width = this.crosshairEl.style.height = ads ? '5px' : '8px';
+        this.crosshairEl.style.borderRadius = ads ? '1px' : '50%';
+      }
     }
   }
 
@@ -976,9 +986,7 @@ export class MatchGame {
     if (!rig) return;
     if (unit.alive) {
       const isLocalFps =
-        unit.id === this.humanId &&
-        unit.inVehicleId === null &&
-        this.settings.cameraMode === 'fps';
+        unit.id === this.humanId && unit.inVehicleId === null && this.settings.cameraMode === 'fps';
       rig.group.visible = shouldShowUnitRig(true) && !isLocalFps;
       if (unit.inVehicleId !== null) {
         const v = this.sim.vehicles.find((vv) => vv.id === unit.inVehicleId);
@@ -1008,10 +1016,10 @@ export class MatchGame {
                   : 'idle';
         transitionAnim(rig.anim, anim);
       }
-      if (rig.held) {
-        syncHeldWeaponKit(
+      if (rig.held && this.heldMod) {
+        this.heldMod.syncHeldWeaponKit(
           rig.held,
-          resolveHeldKind({
+          this.heldMod.resolveHeldKind({
             alive: true,
             inVehicle: unit.inVehicleId !== null,
             meleeMode: unit.meleeMode,
@@ -1024,9 +1032,7 @@ export class MatchGame {
       rig.dead = true;
       rig.group.visible = shouldShowUnitRig(false);
       rig.group.rotation.x = -Math.PI / 2;
-      if (rig.held) {
-        syncHeldWeaponKit(rig.held, 'none');
-      }
+      if (rig.held) this.heldMod?.syncHeldWeaponKit(rig.held, 'none');
       const mark = rig.group.getObjectByName('teamMark') as THREE.Mesh | undefined;
       if (mark) {
         const mat = mark.material as THREE.MeshStandardMaterial;

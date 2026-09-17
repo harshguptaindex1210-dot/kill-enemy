@@ -157,8 +157,13 @@ export function createLobbyScene(
       }
     });
     held.rifle.traverse((obj) => {
-      if (obj instanceof THREE.Mesh && obj.material instanceof THREE.MeshStandardMaterial) {
+      if (
+        obj instanceof THREE.Mesh &&
+        obj.userData.tint &&
+        obj.material instanceof THREE.MeshStandardMaterial
+      ) {
         obj.material.color.setHex(c.rifleColor);
+        obj.material.emissive.setHex(c.rifleColor);
       }
     });
     held.pistol.traverse((obj) => {

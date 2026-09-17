@@ -528,7 +528,8 @@ export class MatchSim {
     bundle.update(input, dt, GROUND_Y, speedMult);
     clampPos(bundle.position);
     this.resolveObstacles(unit);
-    if (glooMod) glooMod.resolveGlooWallCollisions(unit.player.position, this.glooWalls.walls, UNIT_RADIUS);
+    if (glooMod)
+      glooMod.resolveGlooWallCollisions(unit.player.position, this.glooWalls.walls, UNIT_RADIUS);
     bundle.health = unit.health;
 
     if (unit.isBot) {

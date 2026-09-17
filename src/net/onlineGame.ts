@@ -138,11 +138,12 @@ export class OnlineMatchGame {
   private zonePhaseIdx = 0;
   private zonePhaseStartMs = 0;
   private bannerEl: HTMLElement;
-  private muzzleFlashPool: { tracer: THREE.Mesh }[] = [];
+  private muzzleFlashPool: { tracer: THREE.Mesh; until: number }[] = [];
+  private liveTracers: { tracer: THREE.Mesh; until: number }[] = [];
   private tracerGeo = new THREE.BoxGeometry(0.08, 0.08, SHOT_TRACER_LEN);
   private tracerMat = new THREE.MeshBasicMaterial({ color: 0xffdd55 });
-  private glooWallPaint: ((scene: THREE.Scene, walls: import('../glooWall').GlooWall[]) => void) | null =
-    null;
+  private glooWallPaint:
+    ((scene: THREE.Scene, walls: import('../glooWall').GlooWall[]) => void) | null = null;
   private lastPhaseBanner = '';
   private hudNext = 0;
   private minimapNext = 0;
@@ -187,7 +188,11 @@ export class OnlineMatchGame {
 
     const quality: QualityPreset =
       isMobileDevice() && opts.settings.quality !== 'low' ? 'low' : opts.settings.quality;
-    const { scene, camera, renderer, disposeEnvironment } = createScene(c, quality, opts.settings.mapId);
+    const { scene, camera, renderer, disposeEnvironment } = createScene(
+      c,
+      quality,
+      opts.settings.mapId
+    );
     this.scene = scene;
     this.camera = camera;
     this.renderer = renderer;
@@ -278,9 +283,8 @@ export class OnlineMatchGame {
     for (const rig of this.rigs.values()) this.scene.remove(rig.group);
     for (const m of this.lootMeshes.values()) this.scene.remove(m);
     for (const parts of this.targetMeshes.values()) this.scene.remove(parts.group);
-    for (const fx of this.muzzleFlashPool) {
-      this.scene.remove(fx.tracer);
-    }
+    for (const fx of this.liveTracers) this.scene.remove(fx.tracer);
+    for (const fx of this.muzzleFlashPool) this.scene.remove(fx.tracer);
     this.tracerGeo.dispose();
     this.tracerMat.dispose();
     this.scene.traverse((obj) => {
@@ -401,14 +405,24 @@ export class OnlineMatchGame {
 
     const fx = this.muzzleFlashPool.pop() ?? {
       tracer: new THREE.Mesh(this.tracerGeo, this.tracerMat),
+      until: 0,
     };
     fx.tracer.position.copy(muzzle).addScaledVector(dir, SHOT_TRACER_LEN / 2);
     fx.tracer.quaternion.setFromUnitVectors(SHOT_TRACER_AXIS, dir);
-    this.scene.add(fx.tracer);
-    window.setTimeout(() => {
-      this.scene.remove(fx.tracer);
+    fx.tracer.visible = true;
+    if (!fx.tracer.parent) this.scene.add(fx.tracer);
+    fx.until = performance.now() + 90;
+    this.liveTracers.push(fx);
+  }
+
+  private expireTracers(now: number) {
+    for (let i = this.liveTracers.length - 1; i >= 0; i--) {
+      const fx = this.liveTracers[i]!;
+      if (now < fx.until) continue;
+      fx.tracer.visible = false;
       this.muzzleFlashPool.push(fx);
-    }, 110);
+      this.liveTracers.splice(i, 1);
+    }
   }
 
   private localHumanUnit(): SimUnit | null {
@@ -511,6 +525,7 @@ export class OnlineMatchGame {
     if (this.glooWallPaint && sim?.glooWalls.walls.length) {
       this.glooWallPaint(this.scene, sim.glooWalls.walls);
     }
+    this.expireTracers(now);
     this.updateCamera(dt);
     if (now >= this.hudNext) {
       this.hudNext = now + this.hudIntervalMs;
@@ -723,9 +738,18 @@ export class OnlineMatchGame {
 
     const cameraMode = this.lastAim || this.opts.settings.cameraMode === 'fps' ? 'fps' : 'tps';
 
-    updateCamera(this.camera, self.yaw, this.pitch, this.localEyeHeight(), cameraMode, this.cameraPos, dt, {
-      snapPosition: true,
-    });
+    updateCamera(
+      this.camera,
+      self.yaw,
+      this.pitch,
+      this.localEyeHeight(),
+      cameraMode,
+      this.cameraPos,
+      dt,
+      {
+        snapPosition: true,
+      }
+    );
   }
 
   private updateHUD(snap: WireSnapshot | null) {
@@ -761,10 +785,9 @@ export class OnlineMatchGame {
       healActionLabel = `HEAL x${human.heals.medkit}`;
     }
     const wallCount = human?.glooWallCount ?? 0;
-    const canWall =
-      Boolean(human?.alive) && (snap?.phase ?? '') === 'playing' && wallCount > 0;
+    const canWall = Boolean(human?.alive) && (snap?.phase ?? '') === 'playing' && wallCount > 0;
     const wallActionLabel =
-      wallCount > 0 ? `WALL x${wallCount}` : (snap?.phase === 'playing' ? 'NO WALL' : 'WALL');
+      wallCount > 0 ? `WALL x${wallCount}` : snap?.phase === 'playing' ? 'NO WALL' : 'WALL';
     const data: HUDData = {
       kills: mp?.kills ?? 0,
       targetsHit: sim?.getTargetHits(this.client.selfId) ?? 0,

@@ -57,10 +57,10 @@ describe('graphics.ts BGMI palette wiring', () => {
     expect(src).toMatch(/GRASS_COUNTS/);
   });
 
-  it('post-processing is lazy-loaded for medium and high quality', () => {
+  it('post-processing is lazy-loaded for high quality only', () => {
     const matchRender = readFileSync(resolve(__dirname, '../src/matchRender.ts'), 'utf8');
     expect(matchRender).toMatch(/import\('\.\/postProcess'\)/);
-    expect(matchRender).toMatch(/quality !== 'low'/);
+    expect(matchRender).toMatch(/quality === 'high'/);
     const post = readFileSync(resolve(__dirname, '../src/postProcess.ts'), 'utf8');
     expect(post).toMatch(/UnrealBloomPass/);
     expect(post).toMatch(/ColorGradeShader/);

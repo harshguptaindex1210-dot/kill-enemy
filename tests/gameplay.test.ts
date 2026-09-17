@@ -524,7 +524,10 @@ describe('melee gameplay (#27)', () => {
     bot.health = 100;
     bot.player.position.set(0, 0.9, -0.8);
     player.player.position.set(0, 0.9, 0);
-    const yaw = Math.atan2(-(bot.player.position.x - player.player.position.x), -(bot.player.position.z - player.player.position.z));
+    const yaw = Math.atan2(
+      -(bot.player.position.x - player.player.position.x),
+      -(bot.player.position.z - player.player.position.z)
+    );
     player.player.setFacing(yaw, 0);
     player.meleeMode = true;
     for (let i = 0; i < 40; i++) {

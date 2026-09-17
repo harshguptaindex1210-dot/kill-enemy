@@ -84,12 +84,20 @@ export function createPlayer(startPos: THREE.Vector3 = new THREE.Vector3(0, 0.9,
   bundle.capsule = new THREE.Mesh(geo, mat);
   bundle.capsule.position.copy(bundle.position);
 
-  const bodyMat = new THREE.MeshStandardMaterial({ color: 0x4a5240, roughness: 0.82, metalness: 0.04 });
+  const bodyMat = new THREE.MeshStandardMaterial({
+    color: 0x4a5240,
+    roughness: 0.82,
+    metalness: 0.04,
+  });
   const bodyGeo = new THREE.BoxGeometry(0.44, 0.5, 0.28);
   bundle.mesh = new THREE.Mesh(bodyGeo, bodyMat);
   bundle.mesh.position.copy(bundle.position);
 
-  const headMat = new THREE.MeshStandardMaterial({ color: 0xc49a6c, roughness: 0.5, metalness: 0.06 });
+  const headMat = new THREE.MeshStandardMaterial({
+    color: 0xc49a6c,
+    roughness: 0.5,
+    metalness: 0.06,
+  });
   const headGeo = new THREE.SphereGeometry(0.14, 8, 8);
   const head = new THREE.Mesh(headGeo, headMat);
   head.position.set(0, 0.72, 0);

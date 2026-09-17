@@ -45,11 +45,7 @@ export function deployGlooWall(
 }
 
 /** Push a capsule position out of all active walls. */
-export function resolveGlooWallCollisions(
-  pos: THREE.Vector3,
-  walls: GlooWall[],
-  radius: number
-) {
+export function resolveGlooWallCollisions(pos: THREE.Vector3, walls: GlooWall[], radius: number) {
   for (const wall of walls) {
     pushOutOfWall(pos, wall, radius);
   }

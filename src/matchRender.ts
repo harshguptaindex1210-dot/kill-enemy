@@ -9,7 +9,7 @@ export interface MatchRenderHandle {
   dispose(): void;
 }
 
-/** Lazy-loads bloom + color grade on medium/high; direct render on low. */
+/** Bloom/grade on high only. */
 export function createMatchRenderer(
   renderer: THREE.WebGLRenderer,
   scene: THREE.Scene,
@@ -20,7 +20,7 @@ export function createMatchRenderer(
   let pipeline: PostPipeline | null = null;
   let disposed = false;
 
-  if (quality !== 'low') {
+  if (quality === 'high') {
     void import('./postProcess').then(({ createPostPipeline }) => {
       if (!disposed) {
         pipeline = createPostPipeline(renderer, scene, camera, quality, mapId);

@@ -12,11 +12,11 @@ function rendererPixelRatio(quality: QualityPreset, mobile: boolean): number {
   if (quality === 'low') return 1;
   const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
   if (mobile) return Math.min(dpr, quality === 'high' ? 1.6 : 1.35);
-  return Math.min(dpr, quality === 'high' ? 2.25 : 2);
+  return Math.min(dpr, quality === 'high' ? 2 : 1.5);
 }
 
 function createWebGLRenderer(canvas: HTMLCanvasElement): THREE.WebGLRenderer {
-    const attempts: THREE.WebGLRendererParameters[] = [
+  const attempts: THREE.WebGLRendererParameters[] = [
     {
       canvas,
       antialias: false,
