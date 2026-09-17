@@ -31,11 +31,9 @@ import {
   type HeldWeaponKit,
 } from '../heldWeapons';
 import type { SimEvent, SimUnit } from '../gameplay';
-
-const SHOT_TRACER_AXIS = new THREE.Vector3(0, 0, 1);
-const SHOT_TRACER_LEN = 18;
 import { summarizeMatch } from '../game';
 import { mountTargetMeshes, syncTargetMeshes, type TargetMeshParts } from '../targetVisuals';
+import { createShotTracerPool } from '../shotTracers';
 
 const HUD_INTERVAL_MS = isMobileDevice() ? 110 : 50;
 const MINIMAP_INTERVAL_MS = isMobileDevice() ? 150 : 50;
@@ -138,10 +136,7 @@ export class OnlineMatchGame {
   private zonePhaseIdx = 0;
   private zonePhaseStartMs = 0;
   private bannerEl: HTMLElement;
-  private muzzleFlashPool: { tracer: THREE.Mesh; until: number }[] = [];
-  private liveTracers: { tracer: THREE.Mesh; until: number }[] = [];
-  private tracerGeo = new THREE.BoxGeometry(0.08, 0.08, SHOT_TRACER_LEN);
-  private tracerMat = new THREE.MeshBasicMaterial({ color: 0xffdd55 });
+  private tracers = createShotTracerPool();
   private glooWallPaint:
     ((scene: THREE.Scene, walls: import('../glooWall').GlooWall[]) => void) | null = null;
   private lastPhaseBanner = '';
@@ -283,10 +278,7 @@ export class OnlineMatchGame {
     for (const rig of this.rigs.values()) this.scene.remove(rig.group);
     for (const m of this.lootMeshes.values()) this.scene.remove(m);
     for (const parts of this.targetMeshes.values()) this.scene.remove(parts.group);
-    for (const fx of this.liveTracers) this.scene.remove(fx.tracer);
-    for (const fx of this.muzzleFlashPool) this.scene.remove(fx.tracer);
-    this.tracerGeo.dispose();
-    this.tracerMat.dispose();
+    this.tracers.dispose(this.scene);
     this.scene.traverse((obj) => {
       if (obj instanceof THREE.Mesh) {
         obj.geometry?.dispose();
@@ -402,27 +394,7 @@ export class OnlineMatchGame {
     origin.y += 1.2;
     const dir = aimDirection(shotYaw, shotPitch, new THREE.Vector3());
     const muzzle = origin.addScaledVector(dir, 0.6);
-
-    const fx = this.muzzleFlashPool.pop() ?? {
-      tracer: new THREE.Mesh(this.tracerGeo, this.tracerMat),
-      until: 0,
-    };
-    fx.tracer.position.copy(muzzle).addScaledVector(dir, SHOT_TRACER_LEN / 2);
-    fx.tracer.quaternion.setFromUnitVectors(SHOT_TRACER_AXIS, dir);
-    fx.tracer.visible = true;
-    if (!fx.tracer.parent) this.scene.add(fx.tracer);
-    fx.until = performance.now() + 90;
-    this.liveTracers.push(fx);
-  }
-
-  private expireTracers(now: number) {
-    for (let i = this.liveTracers.length - 1; i >= 0; i--) {
-      const fx = this.liveTracers[i]!;
-      if (now < fx.until) continue;
-      fx.tracer.visible = false;
-      this.muzzleFlashPool.push(fx);
-      this.liveTracers.splice(i, 1);
-    }
+    this.tracers.spawn(this.scene, muzzle, dir, performance.now());
   }
 
   private localHumanUnit(): SimUnit | null {
@@ -525,7 +497,7 @@ export class OnlineMatchGame {
     if (this.glooWallPaint && sim?.glooWalls.walls.length) {
       this.glooWallPaint(this.scene, sim.glooWalls.walls);
     }
-    this.expireTracers(now);
+    this.tracers.expire(now);
     this.updateCamera(dt);
     if (now >= this.hudNext) {
       this.hudNext = now + this.hudIntervalMs;

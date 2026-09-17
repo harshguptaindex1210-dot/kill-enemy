@@ -76,24 +76,6 @@ export function attachHeldWeaponKit(robot: THREE.Group, kit: HeldWeaponKit): voi
   robot.add(kit.group);
 }
 
-function akPart(
-  name: string,
-  w: number,
-  h: number,
-  d: number,
-  mat: THREE.Material,
-  x: number,
-  y: number,
-  z: number,
-  rx = 0
-): THREE.Mesh {
-  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
-  m.name = name;
-  m.position.set(x, y, z);
-  if (rx) m.rotation.x = rx;
-  return m;
-}
-
 function buildRifle(color: number): THREE.Group {
   const g = new THREE.Group();
   g.name = 'held-rifle';
@@ -107,19 +89,26 @@ function buildRifle(color: number): THREE.Group {
   const metal = new THREE.MeshLambertMaterial({ color: 0x2a2c32 });
   const wood = new THREE.MeshLambertMaterial({ color: 0x6b4423 });
   const dark = new THREE.MeshLambertMaterial({ color: 0x16161a });
-  const body = akPart('ak-receiver', 0.16, 0.18, 0.58, skin, 0, 0.03, 0.04);
-  body.userData.tint = 1;
-  g.add(
-    body,
-    akPart('ak-stock', 0.13, 0.16, 0.42, wood, 0, -0.05, 0.48, 0.28),
-    akPart('ak-grip', 0.1, 0.22, 0.11, dark, 0, -0.16, 0.12, 0.48),
-    akPart('ak-mag', 0.09, 0.38, 0.15, metal, 0, -0.26, -0.08, 0.58),
-    akPart('ak-guard', 0.14, 0.13, 0.32, wood, 0, 0.01, -0.36),
-    akPart('ak-gas', 0.055, 0.045, 0.38, metal, 0, 0.11, -0.5),
-    akPart('ak-barrel', 0.05, 0.05, 0.55, metal, 0, 0.02, -0.78),
-    akPart('ak-sight', 0.04, 0.1, 0.04, dark, 0, 0.1, -1.02),
-    akPart('ak-rear', 0.08, 0.06, 0.05, dark, 0, 0.13, 0.22)
-  );
+  const parts: [string, number, number, number, THREE.Material, number, number, number, number?][] =
+    [
+      ['ak-receiver', 0.16, 0.18, 0.58, skin, 0, 0.03, 0.04],
+      ['ak-stock', 0.13, 0.16, 0.42, wood, 0, -0.05, 0.48, 0.28],
+      ['ak-grip', 0.1, 0.22, 0.11, dark, 0, -0.16, 0.12, 0.48],
+      ['ak-mag', 0.09, 0.38, 0.15, metal, 0, -0.26, -0.08, 0.58],
+      ['ak-guard', 0.14, 0.13, 0.32, wood, 0, 0.01, -0.36],
+      ['ak-gas', 0.055, 0.045, 0.38, metal, 0, 0.11, -0.5],
+      ['ak-barrel', 0.05, 0.05, 0.55, metal, 0, 0.02, -0.78],
+      ['ak-sight', 0.04, 0.1, 0.04, dark, 0, 0.1, -1.02],
+      ['ak-rear', 0.08, 0.06, 0.05, dark, 0, 0.13, 0.22],
+    ];
+  for (const [name, w, h, d, mat, x, y, z, rx] of parts) {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+    m.name = name;
+    m.position.set(x, y, z);
+    if (rx) m.rotation.x = rx;
+    if (name === 'ak-receiver') m.userData.tint = 1;
+    g.add(m);
+  }
   return g;
 }
 

@@ -27,6 +27,7 @@ import { calculateXP } from './match';
 import { recordMatchResult } from './net/leaderboard';
 import type { HeldWeaponKit } from './heldWeapons';
 import type { TargetMeshParts } from './targetVisuals';
+import { createShotTracerPool } from './shotTracers';
 
 export interface MatchSummary {
   won: boolean;
@@ -71,8 +72,6 @@ interface UnitRig {
 
 const HUD_INTERVAL_MS = isMobileDevice() ? 110 : 50;
 export const LOCAL_MATCH_BOTS = 9;
-const SHOT_TRACER_AXIS = new THREE.Vector3(0, 0, 1);
-const SHOT_TRACER_LEN = 18;
 
 const ROBOT_GROUP_Y_OFFSET = -0.9;
 const INTERACT_RANGE_LOOT = 2.5;
@@ -160,10 +159,7 @@ export class MatchGame {
   private beaconMesh: THREE.Group | null = null;
   private projMeshes = new Map<number, THREE.Mesh>();
   private explosionFx: { light: THREE.PointLight; mesh: THREE.Mesh; until: number }[] = [];
-  private muzzleFlashPool: { tracer: THREE.Mesh; until: number }[] = [];
-  private liveTracers: { tracer: THREE.Mesh; until: number }[] = [];
-  private tracerGeo = new THREE.BoxGeometry(0.08, 0.08, SHOT_TRACER_LEN);
-  private tracerMat = new THREE.MeshBasicMaterial({ color: 0xffdd55 });
+  private tracers = createShotTracerPool();
   private glooWallPaint:
     ((scene: THREE.Scene, walls: import('./glooWall').GlooWall[]) => void) | null = null;
 
@@ -388,10 +384,7 @@ export class MatchGame {
       this.scene.remove(fx.light);
       this.scene.remove(fx.mesh);
     }
-    for (const fx of this.liveTracers) this.scene.remove(fx.tracer);
-    for (const fx of this.muzzleFlashPool) this.scene.remove(fx.tracer);
-    this.tracerGeo.dispose();
-    this.tracerMat.dispose();
+    this.tracers.dispose(this.scene);
     this.matchRenderer.dispose();
     disposeScene({
       scene: this.scene,
@@ -429,13 +422,12 @@ export class MatchGame {
       mark.name = 'teamMark';
       model.group.add(mark);
 
-      let held: HeldWeaponKit | undefined;
       model.group.position.copy(unit.player.position);
       model.group.position.y = unit.player.position.y + ROBOT_GROUP_Y_OFFSET;
       model.group.rotation.y = unit.player.yaw;
       model.group.scale.setScalar(1.12);
       this.scene.add(model.group);
-      this.rigs.set(unit.id, { group: model.group, anim: model.anim, dead: false, held });
+      this.rigs.set(unit.id, { group: model.group, anim: model.anim, dead: false });
     }
     this.attachLocalHeld();
   }
@@ -877,27 +869,7 @@ export class MatchGame {
     );
     const dir = aimDirection(unit.player.yaw, unit.player.pitch, new THREE.Vector3());
     const muzzle = origin.addScaledVector(dir, 1.1);
-
-    const fx = this.muzzleFlashPool.pop() ?? {
-      tracer: new THREE.Mesh(this.tracerGeo, this.tracerMat),
-      until: 0,
-    };
-    fx.tracer.position.copy(muzzle).addScaledVector(dir, SHOT_TRACER_LEN / 2);
-    fx.tracer.quaternion.setFromUnitVectors(SHOT_TRACER_AXIS, dir);
-    fx.tracer.visible = true;
-    if (!fx.tracer.parent) this.scene.add(fx.tracer);
-    fx.until = performance.now() + 90;
-    this.liveTracers.push(fx);
-  }
-
-  private expireTracers(now: number) {
-    for (let i = this.liveTracers.length - 1; i >= 0; i--) {
-      const fx = this.liveTracers[i]!;
-      if (now < fx.until) continue;
-      fx.tracer.visible = false;
-      this.muzzleFlashPool.push(fx);
-      this.liveTracers.splice(i, 1);
-    }
+    this.tracers.spawn(this.scene, muzzle, dir, performance.now());
   }
 
   private spawnExplosion(position: THREE.Vector3) {
@@ -965,7 +937,7 @@ export class MatchGame {
     }
     this.syncTargets(now);
     this.updateExplosionFx(now);
-    this.expireTracers(now);
+    this.tracers.expire(now);
 
     const human = this.humanUnit();
     const ads = human.player.cameraMode === 'fps';
